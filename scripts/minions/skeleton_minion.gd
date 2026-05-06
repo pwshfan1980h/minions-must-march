@@ -29,6 +29,9 @@ var _height_variant := 1.0
 var _spine_variant := 0.0
 var _stride_variant := 1.0
 var _last_anim_frame := -1
+var _is_tumbling := false
+var _visual_tumble_rotation := 0.0
+var _tumble_speed := 0.0
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -42,10 +45,16 @@ func _ready() -> void:
 	_stride_variant = rng.randf_range(0.88, 1.14)
 	queue_redraw()
 
+func _process(_delta: float) -> void:
+	# Tweened custom draw properties need redraws while the sinking corpse animates.
+	if not alive and not rescued:
+		queue_redraw()
+
 func _physics_process(delta: float) -> void:
 	if not alive or rescued:
 		return
 
+	var was_on_floor := is_on_floor()
 	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
 	velocity.x = 0.0 if is_blocker else WALK_SPEED * direction
 	if is_on_floor() and not is_blocker:
@@ -56,14 +65,23 @@ func _physics_process(delta: float) -> void:
 			queue_redraw()
 	if not is_blocker:
 		highest_fall_speed = maxf(highest_fall_speed, velocity.y)
+		if _is_tumbling:
+			_visual_tumble_rotation += _tumble_speed * delta
+			_tumble_speed = clampf(_tumble_speed + signf(_tumble_speed) * 0.18 * delta, -5.8, 5.8)
+			queue_redraw()
 
 	move_and_slide()
 
-	if is_on_floor():
+	var on_floor := is_on_floor()
+	if not is_blocker and was_on_floor and not on_floor and velocity.y > 0.0:
+		_start_tumble()
+
+	if on_floor:
 		if highest_fall_speed >= FATAL_FALL_SPEED:
 			_die()
 		else:
 			highest_fall_speed = 0.0
+			_stop_tumble()
 
 		if not is_blocker and (_is_blocked_ahead() or _has_blocker_ahead()):
 			_turn_around()
@@ -101,6 +119,7 @@ func become_blocker() -> bool:
 	if not alive or rescued or is_blocker or not is_on_floor():
 		return false
 	is_blocker = true
+	_stop_tumble()
 	velocity = Vector2.ZERO
 	add_to_group("blockers")
 	queue_redraw()
@@ -136,7 +155,10 @@ func _die() -> void:
 	queue_free()
 
 func _die_in_styx() -> void:
-	global_position.y = minf(global_position.y, STYX_SURFACE_Y + 2.0)
+	# Snap the visual body to the surface when the Area2D catches it, then let the
+	# falling rotation carry into the impact. This makes ledge failures read as:
+	# topple -> gravity fall -> goop hit -> sink.
+	global_position.y = STYX_SURFACE_Y + 2.0
 	alive = false
 	death_started.emit(self, death_kind)
 	velocity = Vector2.ZERO
@@ -147,20 +169,42 @@ func _die_in_styx() -> void:
 	if is_blocker:
 		remove_from_group("blockers")
 	_spawn_bone_splash()
+	var impact_rotation := _visual_tumble_rotation + signf(_tumble_speed if _tumble_speed != 0.0 else direction) * 0.38
 	var impact := create_tween()
 	impact.set_parallel(true)
-	impact.tween_property(self, "position:y", position.y + 8.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	impact.tween_property(self, "scale", Vector2(1.12, 0.84), 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	impact.tween_property(self, "position:y", position.y + 10.0, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	impact.tween_property(self, "scale", Vector2(1.16, 0.78), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	impact.tween_property(self, "_visual_tumble_rotation", impact_rotation, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	impact.tween_callback(queue_redraw).set_delay(0.14)
 	await impact.finished
 
 	var sink := create_tween()
 	sink.set_parallel(true)
-	sink.tween_property(self, "modulate:a", 0.0, 0.78).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	sink.tween_property(self, "position:y", position.y + 44.0, 0.78).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	sink.tween_property(self, "scale", Vector2(0.72, 0.52), 0.78).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	sink.tween_property(self, "modulate:a", 0.0, 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	sink.tween_property(self, "position:y", position.y + 58.0, 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	sink.tween_property(self, "scale", Vector2(0.66, 0.42), 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	sink.tween_property(self, "_visual_tumble_rotation", impact_rotation + signf(impact_rotation if impact_rotation != 0.0 else direction) * 0.28, 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	sink.tween_callback(queue_redraw).set_delay(0.88)
 	await sink.finished
 	died.emit(self)
 	queue_free()
+
+func _start_tumble() -> void:
+	if _is_tumbling or is_blocker:
+		return
+	_is_tumbling = true
+	var variant := 0.86 + fposmod(float(get_instance_id()), 11.0) * 0.018
+	_tumble_speed = direction * (2.65 + variant)
+	_visual_tumble_rotation = direction * 0.10
+	queue_redraw()
+
+func _stop_tumble() -> void:
+	if not _is_tumbling and absf(_visual_tumble_rotation) < 0.001:
+		return
+	_is_tumbling = false
+	_tumble_speed = 0.0
+	_visual_tumble_rotation = 0.0
+	queue_redraw()
 
 func _spawn_bone_splash() -> void:
 	var splash := BoneSplashScene.instantiate()
@@ -195,7 +239,7 @@ func _input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> vo
 func _draw() -> void:
 	# Draw at a smaller in-world scale. This keeps the same level camera/field,
 	# but makes the crowd feel more numerous and less toy-large.
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2(VISUAL_SCALE, VISUAL_SCALE))
+	draw_set_transform(Vector2.ZERO, _visual_tumble_rotation, Vector2(VISUAL_SCALE, VISUAL_SCALE))
 
 	var bone := Color("f1e7c8") if is_blocker else Color("e8e0c8") if alive else Color("8c7f91")
 	var shadow := Color("211b2b")

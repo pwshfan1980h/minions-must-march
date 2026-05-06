@@ -223,6 +223,12 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added explicit foot/toe bones and a braced side-view blocker stance.
 - Follow-up detail pass added restrained pelvis, clavicle, elbow, and knee hints so the skeletons read better without becoming noisy medical diagrams.
 
+## 2026-05-06 - Skeleton ledge tumble pass
+
+- Skeletons now start a visual topple/tumble when they walk off a ledge, rotating while gravity pulls them down instead of staying upright in midair.
+- Non-fatal landings reset the tumble; fatal lake falls carry the rotation into the Styx impact.
+- Styx deaths now snap to the surface, squash on impact, then sink deeper/farther into the Lake of Souls while fading out.
+
 ## 2026-05-06 - Lake of souls interaction pass
 
 - Searched ClawHub for Godot skills; `openclaw-godot-skill` was flagged suspicious and not installed, so installed/read `godot-dev-guide` instead.
