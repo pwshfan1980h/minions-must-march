@@ -213,9 +213,11 @@ func _draw() -> void:
 		var rib_width := lerpf(7.2, 4.2, t) * h
 		draw_arc(rib_center, rib_width, -0.75 * PI if face > 0.0 else -0.25 * PI, 0.20 * PI if face > 0.0 else 1.25 * PI, 8, bone, 1.5)
 
+	_draw_pelvis(hip, face, bone.darkened(0.04), h)
 	_draw_side_skull(head, face, bone, shadow)
 
 	var shoulder := chest + Vector2(face * 1.5, -1.0)
+	_draw_clavicles(chest, shoulder, face, bone.darkened(0.02))
 	var elbow_front := shoulder + Vector2(face * (7.0 + counter_stride * 3.2), 8.0 + stride * 1.8)
 	var hand_front := elbow_front + Vector2(face * (5.0 + counter_stride * 2.2), 8.5 - stride * 1.3)
 	var elbow_back := shoulder + Vector2(-face * (5.5 + counter_stride * 2.0), 7.0 - stride * 1.6)
@@ -229,8 +231,10 @@ func _draw() -> void:
 
 	_draw_bone_segment(shoulder, elbow_back, bone.darkened(0.10), 2.0)
 	_draw_bone_segment(elbow_back, hand_back, bone.darkened(0.10), 2.0)
+	_draw_joint(elbow_back, bone.darkened(0.18), 1.5)
 	_draw_bone_segment(shoulder, elbow_front, bone, 2.2)
 	_draw_bone_segment(elbow_front, hand_front, bone, 2.0)
+	_draw_joint(elbow_front, bone.darkened(0.08), 1.6)
 	draw_circle(hand_front, 1.8, accent)
 	draw_circle(hand_back, 1.6, accent.darkened(0.15))
 
@@ -247,9 +251,11 @@ func _draw() -> void:
 
 	_draw_bone_segment(hip, knee_back, bone.darkened(0.12), 2.1)
 	_draw_bone_segment(knee_back, foot_back, bone.darkened(0.12), 2.1)
+	_draw_joint(knee_back, bone.darkened(0.20), 1.7)
 	_draw_foot(foot_back, -face, bone.darkened(0.12))
 	_draw_bone_segment(hip, knee_front, bone, 2.3)
 	_draw_bone_segment(knee_front, foot_front, bone, 2.3)
+	_draw_joint(knee_front, bone.darkened(0.08), 1.9)
 	_draw_foot(foot_front, face, bone)
 
 	if is_blocker:
@@ -259,6 +265,25 @@ func _draw_bone_segment(a: Vector2, b: Vector2, color: Color, width: float) -> v
 	draw_line(a, b, color, width, true)
 	draw_circle(a, width * 0.54, color)
 	draw_circle(b, width * 0.54, color)
+
+func _draw_joint(pos: Vector2, color: Color, radius: float) -> void:
+	draw_circle(pos, radius, color)
+
+func _draw_clavicles(chest: Vector2, shoulder: Vector2, face: float, color: Color) -> void:
+	var back_shoulder := chest + Vector2(-face * 5.2, 1.4)
+	_draw_bone_segment(chest + Vector2(0, -1.8), shoulder, color, 1.45)
+	_draw_bone_segment(chest + Vector2(-face * 0.8, -1.2), back_shoulder, color.darkened(0.12), 1.25)
+
+func _draw_pelvis(hip: Vector2, face: float, color: Color, h: float) -> void:
+	var rear := hip + Vector2(-face * 5.8, 1.8 * h)
+	var front := hip + Vector2(face * 6.4, 2.2 * h)
+	var pubis := hip + Vector2(face * 1.0, 7.2 * h)
+	_draw_bone_segment(rear, hip + Vector2(-face * 0.6, 5.8 * h), color.darkened(0.08), 1.6)
+	_draw_bone_segment(front, hip + Vector2(face * 0.8, 6.2 * h), color, 1.7)
+	_draw_bone_segment(hip + Vector2(-face * 0.6, 5.8 * h), pubis, color.darkened(0.05), 1.35)
+	_draw_bone_segment(hip + Vector2(face * 0.8, 6.2 * h), pubis, color, 1.35)
+	draw_circle(rear, 1.7, color.darkened(0.10))
+	draw_circle(front, 1.8, color)
 
 func _draw_side_skull(center: Vector2, face: float, bone: Color, shadow: Color) -> void:
 	var skull := PackedVector2Array([

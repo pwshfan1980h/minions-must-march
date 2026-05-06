@@ -120,6 +120,7 @@ Start with simple SVG/procedural shapes:
 - Side-view profiles that face the skeleton's current walking direction.
 - Skull-shaped heads rather than circles: cranium, cheek/jaw block, snout/nose read, and one strong side eye socket.
 - Thin rib/body shape with a slight dynamic forward spinal posture.
+- Smart anatomy hints only: clavicles, pelvis shape, elbow/knee joints, and foot/toe bones where they improve readability.
 - Diverse skeleton proportions: small height/posture/stride variation so the crowd does not look cloned.
 - Long lanky arms with subtle counter-swing while walking.
 - Long lanky legs with readable alternating stride and explicit foot bones/toe bones.

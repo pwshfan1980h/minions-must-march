@@ -221,6 +221,7 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added small per-skeleton height/posture/stride variation so the crowd feels less cloned.
 - Made heads more skull-shaped with side eye socket, jaw/cheek block, and nose/mouth strokes instead of simple circles.
 - Added explicit foot/toe bones and a braced side-view blocker stance.
+- Follow-up detail pass added restrained pelvis, clavicle, elbow, and knee hints so the skeletons read better without becoming noisy medical diagrams.
 
 ## 2026-05-06 - Local Web export feasibility test
 
