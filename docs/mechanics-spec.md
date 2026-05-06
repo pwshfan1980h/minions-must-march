@@ -51,6 +51,20 @@ Design note:
 
 Lanky skeleton minions support the job fantasy well: they can brace as blockers, carry bone/plank bridge pieces, scrape downward as diggers, tunnel sideways through crumbly soil, and comically fall apart when lost.
 
+
+## Death and Hazard Feedback
+
+Deaths should carry a reason so visuals, scoring, audio, and future tutorial text can react correctly. Current implemented/expected death kinds:
+
+- `fall`: generic lethal fall or off-world loss. Spawn bone splash, count lost, remove the skeleton.
+- `styx_water`: bottom River Styx hazard. Spawn bone splash at contact, then fade/sink the skeleton before counting it lost. This should feel like the underworld reclaiming the minion, not like a sharp trap.
+
+Design intent:
+
+- Keep bone splash as the common comedic failure language.
+- Let death-specific treatments layer on top: water fade/sink now; crusher flattening, holy ash, acid bubbles, etc. later if needed.
+- Avoid creating many hazards early. The River Styx bottom boundary should carry most first-wave “you failed to bridge/control the crowd” feedback.
+
 ## Job Set
 
 ### Blocker
@@ -172,6 +186,7 @@ Primary setting ingredients:
 - Bats, cobwebs, candles, skull piles, bones, broken coffins
 - Cracked stone, crumbly dirt, collapsed masonry, rusty gates
 - Portals, cursed sigils, ghost light, holy wards
+- River Styx / underworld water as the first bottom-boundary hazard: brownish-black water, pale souls, faint fog, and sink/fade deaths
 
 Use these as flavor and visual cues first. Do not turn ambient bats/spiders into gameplay hazards until the core jobs are proven.
 
@@ -220,11 +235,13 @@ A level should eventually define:
   "rescueRequired": 12,
   "jobs": { "blocker": 2, "builder": 4 },
   "terrain": [],
-  "hazards": []
+  "hazards": {
+    "bottom": "styx_water"
+  }
 }
 ```
 
-Actual schema can change once implementation begins.
+Current prototype has already started representing bottom hazards as `{"bottom": "styx_water"}` in Level 1 data. Actual schema can change once level loading becomes more formal, but keep death kinds explicit rather than hardcoding every loss as a generic fall.
 
 ## Design Philosophy
 

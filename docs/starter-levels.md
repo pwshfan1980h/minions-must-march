@@ -11,6 +11,7 @@ These are the first three paper-designed puzzle levels. Level 1 should be built 
 - Early levels avoid heavy timing precision.
 - Rescue thresholds allow mistakes.
 - Jobs lean into skeleton logic: brace/block, build with planks/bones, dig downward, tunnel sideways.
+- First-wave bottom danger is the River Styx / underworld water, not a generic support floor with spikes.
 
 ---
 
@@ -63,8 +64,8 @@ A cracked spawn arch sits on the upper-left crypt platform, with bats/cobwebs as
 ......................#..............E..
 ......................################..
 ........................................
-.................^^^^...................
-########################################
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ```
 
 Legend:
@@ -73,7 +74,7 @@ Legend:
 - `E` exit crypt / portal
 - `#` solid terrain
 - `.` air
-- `^` Styx water / underworld loss pit
+- `~` Styx water / underworld loss boundary
 - `>` intended walking direction
 
 ### Intended Solution
@@ -85,7 +86,7 @@ Legend:
 
 ### Notes
 
-Visual direction note: the bottom hazard should be a pitch brownish-black River Styx layer with subtle wave motion and pale souls drifting in it, not a generic spike floor. Skeletons that fall in should bone-splash, then fade/sink away.
+Visual direction note: the bottom hazard should be a pitch brownish-black River Styx layer with subtle wave motion, ground fog, and pale souls drifting in it, not a generic support platform or spike floor. Skeletons that fall in should bone-splash, then fade/sink away. This creates a stronger underworld identity and keeps the failure state readable without making the first level visually mean.
 
 If blocker removal is not implemented, design the blocker placement so it does not permanently trap everyone. Options:
 
@@ -98,7 +99,7 @@ Recommended MVP solution: allow clicking an existing blocker to release/cancel i
 ### Test Checklist
 
 - Can win using only blocker + builder.
-- Can lose by not blocking/building.
+- Can lose by not blocking/building; lost skeletons fall into Styx water and fade/sink after bone splash.
 - Builder bridge is reliably walkable.
 - Rescue threshold tolerates a few early losses.
 - No precise frame-perfect assignment required.

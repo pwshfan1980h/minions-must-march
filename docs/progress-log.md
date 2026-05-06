@@ -180,6 +180,13 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Updated skeleton death handling so water deaths keep the bone splash and then fade/sink away before being counted lost.
 - Updated mechanics/asset/level docs to make underworld water the first-wave bottom hazard direction.
 
+## 2026-05-06 - Design docs updated for Styx delta
+
+- Expanded design docs so the River Styx art pass is treated as the intended first-wave underworld direction, not a throwaway placeholder.
+- Documented death-kind intent: shared bone-splash failure language plus death-specific treatments like `styx_water` fade/sink.
+- Updated Level 1 notes/layout to remove the old spike/support-floor mental model and represent the bottom hazard as water.
+- Added near-term polish guidance for waterline readability, souls/fog, and crypt backdrop restraint.
+
 ## 2026-05-06 - Local Web export feasibility test
 
 - Will asked to try a local hosted Web export now that the baseline is playable.

@@ -85,7 +85,29 @@ Theme pillars:
 - **Crumbling crypts:** cracked blocks, collapsing ledges, broken arches, dusty tomb passages.
 - **Spooky critters:** bats as background motion, rats/spiders as optional ambience, not core mechanics at first.
 - **Necromantic machinery:** portals, sigils, cursed switches, bone elevators/crushers later if useful.
-- **Readable slapstick danger:** spikes, crushers, acid slime, holy wards, unstable floors.
+- **Readable slapstick danger:** River Styx bottom boundary first; spikes, crushers, acid slime, holy wards, unstable floors later only when a level lesson needs them.
+
+
+## Current Art Direction Delta - Underworld/Styx Pass
+
+The first visual identity pass moved Level 1 away from a generic spike-floor prototype and toward an underworld crypt mood:
+
+- Background: procedural black-to-grey/purple vertical gradient with faint underworld glow.
+- Atmosphere: low-lying pale dust/fog around platform height and above the waterline.
+- Bottom hazard: pitch brownish-black River Styx water instead of a supporting platform/spike strip.
+- Motion: subtle wave lines across the water to make the hazard feel alive.
+- Souls: pale drifting soul shapes in/above the water to sell the underworld read without needing detailed art assets yet.
+- Death treatment: skeletons still produce the bone-splash gag, then fade/sink into Styx water.
+
+Going forward, treat this as the intended Level 1 mood base, not a throwaway placeholder. Future polish should improve readability and charm while preserving the same design idea: spooky-cute skeleton logistics over an underworld boundary.
+
+Recommended polish targets:
+
+- Sharpen the waterline so players instantly read it as danger.
+- Add occasional soul faces, bubbles, ripples, or reaching wisps sparingly.
+- Add distant crypt arches/chains/candles as faint background silhouettes only after gameplay readability is safe.
+- Keep platforms high-contrast against the gradient and water.
+- Avoid visual noise behind tiny skeletons.
 
 ## SVG / Procedural Asset Strategy
 
@@ -124,7 +146,8 @@ Generate from rectangles/tiles first:
 
 SVG/procgen:
 
-- Spikes: repeated triangles
+- River Styx: dark brown-black animated pool, readable waterline, pale souls/fog, sink/fade death treatment
+- Spikes: repeated triangles, postponed unless a sharper trap shape is needed
 - Lava/acid slime: bright pool with warning edge
 - Crushers: block with teeth, animation later
 - Holy wards/sunbeams: glowing danger strip

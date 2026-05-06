@@ -36,6 +36,8 @@ Completed/proven:
 - First Blocker slice, including **Resume March** unblock behavior and charge refunding.
 - Job-selection plumbing from UI through level/minion logic, currently with Blocker only.
 - Procedural SFX pipeline: Godot headless script generates committed WAV assets, imported as `AudioStream`s, wired to key gameplay events.
+- First underworld art direction pass: procedural crypt gradient backdrop, ground fog/dust, animated River Styx bottom hazard, and drifting soul shapes.
+- Death-cause plumbing has started: skeletons can distinguish `styx_water` from generic fall death, preserving bone splash while fading/sinking into the water.
 - Early local Godot Web export feasibility: exported build runs when served locally; LAN/browser secure-context constraints are documented in the progress log.
 
 Current next target:
@@ -59,6 +61,7 @@ Deliverables:
   - when the minion resumes walking
   - what happens if blocked
 - Decide whether Builder v0 creates scene collision pieces or uses the future terrain API.
+- Keep the current River Styx bottom hazard as the first-wave failure boundary; Builder should bridge over gaps, not interact with/erase water.
 - Add/update `levels/level_001_bridge_school.json` with intended Builder count and tutorial notes.
 
 Gate:
@@ -136,7 +139,7 @@ Deliverables:
 
 - Entrance/exit readability pass.
 - Job icon placeholders.
-- One terrain style pass for crypt blocks/platforms.
+- One terrain style pass for crypt blocks/platforms that harmonizes with the black/grey crypt gradient and Styx water.
 - Tune SFX levels or replace the weakest generated sounds.
 
 Gate:
@@ -340,7 +343,9 @@ Status: partially complete. Local Web export works, and generated audio assets p
 Add:
 
 - Skeleton minion placeholder art upgraded to readable stylized sprites or simple animated vector sprites
-- Terrain style pass
+- Terrain style pass for crypt blocks/platforms
+- Background art pass building on the current black-to-grey/purple gradient, faint underworld glow, and ground dust/fog
+- River Styx polish pass: stronger waterline readability, subtle motion, souls/faces, and clear danger silhouette without reverting to generic spikes
 - Entrance/exit art
 - Job icons
 - Hover/selection feedback
@@ -409,7 +414,7 @@ Exit criteria:
 Likely additions:
 
 - Refined Digger and Tunneler depending on selected starter levels
-- One hazard type: spikes, acid slime, crusher blocks, holy wards, crumbling floors, bats-as-ambience, or similar
+- One additional hazard type only if the River Styx bottom boundary is not enough for the next lessons: spikes, acid slime, crusher blocks, holy wards, crumbling floors, bats-as-ambience, or similar
 - Optional bone/charm/relic collectible pickup
 - Improved level metadata/data format
 - Better tutorial prompts

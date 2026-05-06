@@ -11,6 +11,16 @@ A doc-driven planning folder for building **Minions Must March**, a Lemmings-ins
 - [Tech Stack Decision](./tech-stack-options.md) - Godot 4, web export, and destructible terrain architecture notes
 - [Progress Log](./progress-log.md) - durable implementation notes across sessions
 
+
+## Current Design Delta
+
+The current prototype direction has shifted from generic early hazards toward a clearer underworld identity:
+
+- Level 1 bottom failure boundary is **River Styx-style underworld water**, not spikes.
+- The crypt backdrop is currently procedural: dark gradient, faint glow, low dust/fog, animated water, and pale souls.
+- Skeleton water deaths preserve the bone-splash gag, then fade/sink using an explicit `styx_water` death kind.
+- Near-term design work should keep this mood while adding Builder and making Level 1 solvable.
+
 ## Working Principle
 
 Build from docs, update docs as reality changes, and keep chat summaries concise.
