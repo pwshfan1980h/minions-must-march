@@ -5,20 +5,22 @@ signal job_selected(job_id: String)
 
 @onready var status_label: Label = $JobBar/StatusLabel
 @onready var blocker_button: Button = $JobBar/BlockerButton
+@onready var builder_button: Button = $JobBar/BuilderButton
 @onready var result_label: Label = $ResultLabel
 
-var selected_job := "blocker"
+var selected_job := "builder"
 
 func _ready() -> void:
 	print("GameUI ready")
 	result_label.hide()
 	blocker_button.pressed.connect(_select_blocker)
+	builder_button.pressed.connect(_select_builder)
 	_update_job_buttons()
 
 func update_stats(stats: Dictionary) -> void:
 	selected_job = stats.get("selected_job", selected_job)
 	var debug_text := " | F3: Hitboxes ON" if stats.get("debug_click_areas", false) else " | F3: Hitboxes"
-	status_label.text = "Builder Demo #1 | Spawned %d/%d | Active %d | Saved %d/%d | Lost %d | Selected %s | 1: Blocker | 2: Builder soon | R: Restart%s" % [
+	status_label.text = "Builder Demo #1 | Spawned %d/%d | Active %d | Saved %d/%d | Lost %d | Selected %s | 1: Blocker | 2: Builder | R: Restart%s" % [
 		stats.get("spawned", 0),
 		stats.get("total", 0),
 		stats.get("active", 0),
@@ -29,6 +31,7 @@ func update_stats(stats: Dictionary) -> void:
 		debug_text,
 	]
 	blocker_button.text = "1 BLOCKER x%d\nClick blocker to Resume March" % stats.get("blockers", 0)
+	builder_button.text = "2 BUILDER x%d\nClick skeleton to build" % stats.get("builders", 0)
 	_update_job_buttons()
 
 func show_level_finished(success: bool, stats: Dictionary) -> void:
@@ -48,9 +51,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			restart_requested.emit()
 		elif event.keycode == KEY_1:
 			_select_blocker()
+		elif event.keycode == KEY_2:
+			_select_builder()
 
 func _select_blocker() -> void:
 	selected_job = "blocker"
+	_update_job_buttons()
+	job_selected.emit(selected_job)
+
+func _select_builder() -> void:
+	selected_job = "builder"
 	_update_job_buttons()
 	job_selected.emit(selected_job)
 
@@ -61,3 +71,10 @@ func _update_job_buttons() -> void:
 	else:
 		blocker_button.remove_theme_color_override("font_color")
 		blocker_button.remove_theme_color_override("font_pressed_color")
+
+	if selected_job == "builder":
+		builder_button.add_theme_color_override("font_color", Color("f1e7c8"))
+		builder_button.add_theme_color_override("font_pressed_color", Color("f1e7c8"))
+	else:
+		builder_button.remove_theme_color_override("font_color")
+		builder_button.remove_theme_color_override("font_pressed_color")

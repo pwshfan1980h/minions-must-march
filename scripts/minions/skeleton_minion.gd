@@ -22,6 +22,7 @@ var direction := 1.0
 var alive := true
 var rescued := false
 var is_blocker := false
+var is_builder := false
 var highest_fall_speed := 0.0
 var death_kind := ""
 var _walk_time := 0.0
@@ -63,14 +64,14 @@ func _physics_process(delta: float) -> void:
 
 	var was_on_floor := is_on_floor()
 	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
-	velocity.x = 0.0 if is_blocker else WALK_SPEED * direction
-	if is_on_floor() and not is_blocker:
+	velocity.x = 0.0 if is_blocker or is_builder else WALK_SPEED * direction
+	if is_on_floor() and not is_blocker and not is_builder:
 		_walk_time += delta * 8.8 * _stride_variant
 		var anim_frame := int(_walk_time * WALK_ANIM_FPS)
 		if anim_frame != _last_anim_frame:
 			_last_anim_frame = anim_frame
 			queue_redraw()
-	if not is_blocker:
+	if not is_blocker and not is_builder:
 		highest_fall_speed = maxf(highest_fall_speed, velocity.y)
 		if _is_tumbling:
 			_air_time += delta
@@ -82,7 +83,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 	var on_floor := is_on_floor()
-	if not is_blocker and was_on_floor and not on_floor and velocity.y > 0.0:
+	if not is_blocker and not is_builder and was_on_floor and not on_floor and velocity.y > 0.0:
 		_start_tumble()
 
 	if on_floor:
@@ -92,7 +93,7 @@ func _physics_process(delta: float) -> void:
 			highest_fall_speed = 0.0
 			_stop_tumble()
 
-		if not is_blocker and (_is_blocked_ahead() or _has_blocker_ahead()):
+		if not is_blocker and not is_builder and (_is_blocked_ahead() or _has_blocker_ahead()):
 			_turn_around()
 
 	if position.y > 760:
@@ -125,6 +126,17 @@ func rescue(exit_position := Vector2.INF) -> void:
 	tween.tween_property(self, "scale", Vector2(0.52, 0.52), 0.82).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	await tween.finished
 	queue_free()
+
+func can_become_builder() -> bool:
+	return alive and not rescued and not is_blocker and not is_builder and is_on_floor()
+
+func set_builder_active(active: bool) -> void:
+	if not alive or rescued or is_blocker:
+		return
+	is_builder = active
+	velocity = Vector2.ZERO
+	_stop_tumble()
+	queue_redraw()
 
 func become_blocker() -> bool:
 	if not alive or rescued or is_blocker or not is_on_floor():
@@ -274,7 +286,7 @@ func _draw() -> void:
 	# but makes the crowd feel more numerous and less toy-large.
 	draw_set_transform(Vector2.ZERO, _visual_tumble_rotation + _sink_wobble, Vector2(VISUAL_SCALE, VISUAL_SCALE))
 
-	var bone := Color("f1e7c8") if is_blocker else Color("e8e0c8") if alive else Color("8c7f91")
+	var bone := Color("f1d27a") if is_builder else Color("f1e7c8") if is_blocker else Color("e8e0c8") if alive else Color("8c7f91")
 	var shadow := Color("211b2b")
 	var accent := Color("b9a77b")
 	var back_bone := bone.darkened(0.16)
@@ -284,12 +296,12 @@ func _draw() -> void:
 
 	var airborne_motion := _is_tumbling or (not alive and not rescued)
 	var fall_phase := _air_time * 9.5 + float(get_instance_id()) * 0.01
-	var stride := sin(fall_phase) * 0.55 if airborne_motion else 0.0 if is_blocker else sin(_walk_time)
+	var stride := sin(fall_phase) * 0.55 if airborne_motion else 0.0 if is_blocker or is_builder else sin(_walk_time)
 	var leg_front_phase := stride
 	var leg_back_phase := -stride
 	var front_lift := maxf(0.0, leg_front_phase)
 	var back_lift := maxf(0.0, leg_back_phase)
-	var bob := 0.0 if is_blocker else absf(stride) * (0.55 if airborne_motion else 1.05)
+	var bob := 0.0 if is_blocker or is_builder else absf(stride) * (0.55 if airborne_motion else 1.05)
 	var lean := face * (2.8 + _spine_variant * 7.0 + (0.45 * absf(stride) if not is_blocker else -1.0))
 	if airborne_motion:
 		lean += sin(fall_phase * 0.74) * 5.0
@@ -340,7 +352,7 @@ func _draw() -> void:
 		knee_front += Vector2(face * sin(fall_phase + 0.6) * 3.0, -2.5)
 		knee_back += Vector2(-face * cos(fall_phase + 0.2) * 2.8, -2.2)
 
-	if is_blocker:
+	if is_blocker or is_builder:
 		elbow_front = shoulder + Vector2(face * 13.0, 6.0)
 		hand_front = elbow_front + Vector2(face * 7.0, 4.8)
 		elbow_back = shoulder + Vector2(-face * 11.0, 6.0)
@@ -363,8 +375,9 @@ func _draw() -> void:
 	_draw_bone_segment(knee_front, ankle_front, bone, 2.05)
 	_draw_foot(ankle_front, face, bone, true)
 
-	if is_blocker:
-		draw_rect(Rect2(Vector2(-20, -30), Vector2(40, 55)), Color(0.95, 0.76, 0.23, 0.13), false, 2.0)
+	if is_blocker or is_builder:
+		var outline_color := Color(0.95, 0.76, 0.23, 0.18) if is_builder else Color(0.95, 0.76, 0.23, 0.13)
+		draw_rect(Rect2(Vector2(-20, -30), Vector2(40, 55)), outline_color, false, 2.0)
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if _debug_click_area:

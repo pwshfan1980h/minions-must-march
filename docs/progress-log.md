@@ -316,3 +316,11 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added a gold build-line marker plus six translucent rib-bone ghost pieces showing the exact expected Builder v0 placement: 28x8 px pieces at 24 px forward / 8 px upward increments.
 - Updated `levels/level_001_bridge_school.json` to describe the demo geometry and expected piece centers for implementation verification.
 - Verification: `python3 -m json.tool levels/level_001_bridge_school.json`, Godot headless smoke, and Web export pack all passed. Headless screenshot capture is unavailable with Godot's dummy rendering backend.
+
+## 2026-05-06 - Builder activation and first implementation slice
+
+- Added Builder activation to the UI: `2` hotkey plus a `2 BUILDER` job button, with the demo defaulting to Builder selected.
+- Added Builder charges to level stats/UI; Builder Demo #1 starts with one Builder charge and zero blockers.
+- Clicking a grounded, alive, non-blocker skeleton while Builder is selected now consumes a charge, freezes the skeleton as a gold-tinted builder, and places six 28x8 px rib collision pieces at 0.18s intervals in the facing direction.
+- Builder pieces are simple `StaticBody2D` scene collision blocks with rib-bone visuals; this matches the locked v0 approach and does not touch Styx or terrain bitmap systems.
+- Verification: Godot headless smoke and Web export pack passed after fixing strict GDScript type inference on Builder placement vectors.

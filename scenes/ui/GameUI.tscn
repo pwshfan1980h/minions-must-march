@@ -17,14 +17,21 @@ offset_left = 16.0
 offset_top = 12.0
 offset_right = 1040.0
 offset_bottom = 40.0
-text = "Spawned 0/20 | Active 0 | Saved 0/12 | Lost 0 | Selected Blocker | 1: Blocker | Click blocker to Resume March | R: Restart"
+text = "Spawned 0/20 | Active 0 | Saved 0/12 | Lost 0 | Selected Builder | 1: Blocker | 2: Builder | R: Restart"
 
 [node name="BlockerButton" type="Button" parent="JobBar"]
 offset_left = 16.0
 offset_top = 52.0
 offset_right = 160.0
 offset_bottom = 96.0
-text = "1 BLOCKER x2\nClick blocker to Resume March"
+text = "1 BLOCKER x0\nClick blocker to Resume March"
+
+[node name="BuilderButton" type="Button" parent="JobBar"]
+offset_left = 176.0
+offset_top = 52.0
+offset_right = 320.0
+offset_bottom = 96.0
+text = "2 BUILDER x1\nClick skeleton to build"
 
 [node name="ResultLabel" type="Label" parent="."]
 anchors_preset = 8

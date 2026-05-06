@@ -13,13 +13,15 @@ const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
 @export var spawn_position := Vector2(220, 420)
 @export var spawn_direction := 1.0
 @export var blockers_available := 0
+@export var builders_available := 1
 
-var selected_job := "blocker"
+var selected_job := "builder"
 var spawned_count := 0
 var active_count := 0
 var rescued_count := 0
 var lost_count := 0
 var blockers_remaining := 0
+var builders_remaining := 0
 var _spawn_timer := 0.0
 var _spawning_done := false
 var debug_click_areas := false
@@ -44,6 +46,7 @@ func reset_spawner() -> void:
 	rescued_count = 0
 	lost_count = 0
 	blockers_remaining = blockers_available
+	builders_remaining = builders_available
 	_spawn_timer = 0.1
 	_spawning_done = false
 
@@ -94,6 +97,10 @@ func set_selected_job(job_id: String) -> void:
 	selected_job = job_id
 
 func _on_minion_clicked(minion: Node) -> void:
+	if selected_job == "builder":
+		_try_assign_builder(minion)
+		return
+
 	if selected_job != "blocker":
 		return
 
@@ -111,6 +118,62 @@ func _on_minion_clicked(minion: Node) -> void:
 		sfx_requested.emit("bone_clack")
 		sfx_requested.emit("blocker_brace")
 		minion_spawned.emit(minion)
+
+
+func _try_assign_builder(minion: Node) -> void:
+	if builders_remaining <= 0 or not minion.has_method("can_become_builder") or not minion.can_become_builder():
+		return
+	builders_remaining -= 1
+	sfx_requested.emit("bone_clack")
+	minion_spawned.emit(minion)
+	_run_builder_sequence(minion)
+
+func _run_builder_sequence(minion: Node) -> void:
+	if not is_instance_valid(minion) or not minion.has_method("set_builder_active"):
+		return
+	minion.set_builder_active(true)
+	var facing := signf(float(minion.get("direction")))
+	if facing == 0.0:
+		facing = 1.0
+	var start: Vector2 = minion.global_position
+	for i in 6:
+		await get_tree().create_timer(0.18).timeout
+		if not is_instance_valid(minion) or minion.get("alive") != true or minion.get("rescued") == true:
+			return
+		var center: Vector2 = start + Vector2(facing * 24.0 * float(i + 1), -8.0 * float(i + 1))
+		_add_builder_piece(center, facing, i + 1)
+		sfx_requested.emit("bone_clack")
+	if is_instance_valid(minion) and minion.has_method("set_builder_active"):
+		minion.set_builder_active(false)
+		minion_spawned.emit(minion)
+
+func _add_builder_piece(center: Vector2, facing: float, index: int) -> void:
+	var terrain := get_node_or_null("../TerrainRoot")
+	var parent_node: Node = terrain if terrain != null else self
+	var body := StaticBody2D.new()
+	body.name = "BuilderRibPiece%d" % index
+	body.global_position = center
+	body.collision_layer = 1
+	body.collision_mask = 0
+	parent_node.add_child(body)
+
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(28, 8)
+	shape.shape = rect
+	body.add_child(shape)
+
+	var visual := Polygon2D.new()
+	visual.name = "Visual"
+	visual.color = Color(0.78, 0.66, 0.46, 0.96)
+	visual.polygon = PackedVector2Array([Vector2(-14, -4), Vector2(14, -4), Vector2(14, 4), Vector2(-14, 4)])
+	body.add_child(visual)
+
+	var rib := Line2D.new()
+	rib.default_color = Color(1.0, 0.90, 0.68, 0.86)
+	rib.width = 2.0
+	rib.points = PackedVector2Array([Vector2(-11.0 * facing, 0), Vector2(11.0 * facing, -1)])
+	body.add_child(rib)
 
 func all_done() -> bool:
 	# A placed blocker can remain braced after the crowd is safe; don't let that
