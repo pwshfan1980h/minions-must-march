@@ -100,7 +100,7 @@ Early rule:
 
 ### Builder
 
-Creates a fixed upward stair/bridge segment in the facing direction.
+Creates a deterministic short bridge/stair in the minion's current facing direction.
 
 Theme:
 
@@ -109,17 +109,43 @@ Theme:
 Purpose:
 
 - Cross gaps
-- Reach higher platforms
+- Reach slightly higher platforms
+- Teach controlled route repair without introducing destructible terrain yet
 
-Early rule:
+#### Builder v0 Locked Behavior
 
-- Builds N stair pieces, then resumes walking.
-- Can fail/stop if head hits ceiling or no valid placement exists.
+Assignment constraints:
 
-Prototype builder output:
+- Can be assigned only to an alive, unrescued, non-blocker skeleton that is currently standing on solid ground.
+- Cannot be assigned while the skeleton is falling, sinking, already building, or already rescued/lost.
+- Assignment consumes one Builder charge immediately. If the assignment is invalid, no charge is consumed.
+- Builder v0 does **not** cancel/replace Blocker; if a skeleton is already a Blocker, clicking it keeps the current Resume March behavior rather than converting it to Builder.
 
-- 8-12 steps
-- Each step roughly half-tile wide and quarter-tile high, or simplified to tile-aligned diagonal ramp segments.
+Build output:
+
+- Builds **6 simple scene collision pieces** in the skeleton's facing direction.
+- Each piece is a `StaticBody2D` rectangle, **28 px wide x 8 px tall**.
+- Pieces are offset by **24 px horizontally** and **8 px upward** from the previous piece, forming a short rib-bone stair/bridge.
+- Total reach is roughly **144 px horizontally** and **48 px upward**, enough to prove the mechanic but not enough to solve every future gap.
+- Pieces use placeholder bone/crypt-scrap visuals and should live in a dedicated build-piece parent/root so they can be cleared on restart.
+
+Builder timing/state:
+
+- On assignment, the skeleton stops horizontal walking and enters `builder` state.
+- It places one piece every **0.18 seconds**.
+- After placing the final piece, it resumes normal walking in the same direction.
+- The builder itself should not teleport onto the new stair; normal gravity/collision decides whether it steps onto the pieces.
+
+Failure/stop rules:
+
+- Before placing each piece, v0 checks a simple overlap region for existing solid geometry or level bounds.
+- If the next piece would overlap existing solid geometry, leave the already-placed pieces, stop building, and resume walking. This keeps the first implementation forgiving and deterministic.
+- If the piece would be outside the playable width, stop building and resume walking.
+- Builder v0 does not interact with River Styx water, erase hazards, or modify bitmap terrain. It only adds scene collision pieces above the water.
+
+Implementation choice:
+
+- Builder v0 should use scene collision pieces, **not** the future destructible-terrain API. This avoids blocking on Phase 6 terrain work and gives Session B a compact implementation target.
 
 ### Digger
 

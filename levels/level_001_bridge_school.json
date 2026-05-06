@@ -22,8 +22,23 @@
     "blocker": 2,
     "builder": 4
   },
+  "tutorial": {
+    "primaryLesson": "Use a Blocker to turn the crowd away from the Styx, then assign Builders to create a short rib-bone bridge/stair over the intended gap.",
+    "jobHints": [
+      "1: Blocker turns skeleton traffic around; click a blocker again to Resume March.",
+      "2: Builder places six small bridge/stair pieces in the direction the skeleton is facing, then resumes walking."
+    ],
+    "builderV0": {
+      "charges": 4,
+      "pieces": 6,
+      "pieceSizePx": { "width": 28, "height": 8 },
+      "pieceOffsetPx": { "x": 24, "y": -8 },
+      "usesSceneCollisionPieces": true,
+      "doesNotModifyStyxOrTerrainBitmap": true
+    }
+  },
   "hazards": {
     "bottom": "styx_water"
   },
-  "notes": "Current prototype layout is a blocker/ledge-death test: minions spawn on the right side of the platform and march left. Without a blocker they should walk off the platform and fall into the River Styx underworld water; with a blocker they redirect back toward the exit. This is also the intended core problem for Mission 1."
+  "notes": "Current prototype layout is a blocker/ledge-death test: minions spawn on the right side of the platform and march left. Session B should add Builder v0 using scene collision pieces; Session C should tune the layout into the intended Blocker + Builder solution where the blocker buys time and builders close the route without interacting with the River Styx."
 }

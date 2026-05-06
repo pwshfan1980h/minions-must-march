@@ -223,6 +223,14 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added explicit foot/toe bones and a braced side-view blocker stance.
 - Follow-up detail pass added restrained pelvis, clavicle, elbow, and knee hints so the skeletons read better without becoming noisy medical diagrams.
 
+## 2026-05-06 - Builder design lock
+
+- Completed Small-Session Roadmap Session A.
+- Locked Builder v0 behavior in `docs/mechanics-spec.md`: assign only grounded alive non-blocker skeletons; place six scene collision pieces; 28x8 px pieces; 24 px forward / 8 px upward offsets; one piece every 0.18s; resume walking after completion or deterministic stop.
+- Chose scene collision pieces for Builder v0 instead of waiting for the future destructible-terrain API.
+- Updated `levels/level_001_bridge_school.json` with Builder charges, tutorial hints, and the Builder v0 data block.
+- Updated `docs/project-plan.md` so the next target is Builder v0 implementation.
+
 ## 2026-05-06 - Click-target debug/fairness pass
 
 - Added a separate, larger minion `ClickArea` so selecting skeletons is easier without inflating their physics collision body.

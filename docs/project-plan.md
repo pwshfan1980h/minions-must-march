@@ -42,15 +42,17 @@ Completed/proven:
 
 Current next target:
 
-- Add the **Builder** job as the next small mechanic slice, then use Blocker + Builder to make Level 1 genuinely solvable.
+- Implement **Builder v0** from the locked Session A spec, then use Blocker + Builder to make Level 1 genuinely solvable.
 
 ## Small-Session Roadmap
 
 Use these as bite-sized work packets. Each should be small enough for one focused session and should end with a clear verification command or manual check.
 
-### Session A - Builder Design Lock
+### Session A - Builder Design Lock ✅
 
 Goal: define the smallest Builder that proves the mechanic without over-engineering terrain.
+
+Status: completed on 2026-05-06. Builder v0 is locked as six scene-collision rib-bone/bridge pieces, 28x8 px each, offset 24 px forward and 8 px upward per piece.
 
 Deliverables:
 
