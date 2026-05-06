@@ -40,7 +40,7 @@ Easy tutorial. Intended as first polished vertical slice.
 
 ### Level Concept
 
-A cracked spawn arch sits on the upper-left crypt platform, with bats/cobwebs as background ambience. Skeleton minions march right toward a gap. The glowing exit crypt/portal is on a platform to the right, slightly lower or same height. The player must place a blocker before the pit, then assign builders to create a bridge across the gap.
+A cracked spawn arch sits on the upper-left crypt platform, with bats/cobwebs as background ambience. Skeleton minions march right toward a gap. The glowing exit light pillar is on a platform to the right, slightly lower or same height. The player must place a blocker before the pit, then assign builders to create a bridge across the gap.
 
 ### Suggested Parameters
 
@@ -71,7 +71,7 @@ A cracked spawn arch sits on the upper-left crypt platform, with bats/cobwebs as
 Legend:
 
 - `S` spawn arch
-- `E` exit crypt / portal
+- `E` exit light pillar
 - `#` solid terrain
 - `.` air
 - `~` Styx water / underworld loss boundary
@@ -229,7 +229,7 @@ Skeleton minions spawn on a path that loops toward danger or a dead end. The exi
 Legend:
 
 - `D` sideways diggable dirt/crumbly wall
-- `E` exit crypt / portal
+- `E` exit light pillar
 
 ### Intended Solution
 

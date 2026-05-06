@@ -67,7 +67,7 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 ## 2026-05-04 - Crypt theme details
 
 - Will clarified the theme should lean into crumbling crypts, bats, and whatever fits that spooky skeleton-minion world.
-- Updated docs to emphasize crumbling crypts, catacombs, bats, cobwebs, candles, cracked stone, portals, bone piles, crypt traps, and unstable masonry.
+- Updated docs to emphasize crumbling crypts, catacombs, bats, cobwebs, candles, cracked stone, light pillars, bone piles, crypt traps, and unstable masonry.
 - Ambient bats/spiders are currently flavor/background first, not core hazards until mechanics are proven.
 
 
@@ -196,6 +196,13 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Updated Styx deaths so skeletons impact at the water surface, squash slightly, then sink/fade like thick soup while preserving the bone splash.
 - Reduced and redesigned souls: fewer, slower, angled tadpole/garment shapes with fading tails instead of frequent lure-like blobs.
 - Darkened/reworked crypt platforms with cracks, underworld trim, and faint ghost-green sigil accents; kept lighting as fake/procedural glow for now rather than full Godot Light2D.
+
+## 2026-05-06 - Exit pillar direction and non-doctrinal wording
+
+- Replaced the placeholder exit arch/letter with a procedural pillar of light and upward drifting motes.
+- Updated rescue behavior so skeletons entering the exit float upward, glow, shrink/fade, and disappear instead of instantly hiding.
+- Removed the remaining spike object/death check from the object layer; Styx water is now the bottom failure boundary.
+- Updated design docs away from explicit doctrine wording. The tone should stay loosely pop-culture underworld/afterlife inspired without naming doctrine or using explicit belief-system labels.
 
 ## 2026-05-06 - Local Web export feasibility test
 

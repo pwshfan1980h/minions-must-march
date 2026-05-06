@@ -55,15 +55,30 @@ func _physics_process(delta: float) -> void:
 
 	queue_redraw()
 
-func rescue() -> void:
+func rescue(exit_position := Vector2.INF) -> void:
 	if rescued or not alive:
 		return
 	rescued = true
 	alive = false
+	velocity = Vector2.ZERO
+	set_physics_process(false)
+	set_process_input(false)
+	if collision_shape != null:
+		collision_shape.set_deferred("disabled", true)
 	if is_blocker:
 		remove_from_group("blockers")
-	hide()
+
+	var target_x := global_position.x
+	if exit_position != Vector2.INF:
+		target_x = exit_position.x
 	exited.emit(self)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(self, "global_position:x", target_x, 0.20).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "global_position:y", global_position.y - 86.0, 0.82).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(self, "modulate", Color(0.92, 1.0, 0.72, 0.0), 0.82).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_property(self, "scale", Vector2(0.52, 0.52), 0.82).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await tween.finished
 	queue_free()
 
 func become_blocker() -> bool:

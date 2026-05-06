@@ -136,7 +136,7 @@ Early placeholder art:
 
 - Little lanky skeleton minion shapes with skull/limb silhouettes
 - Rectangle/painted terrain chunks: cracked stone, crumbly dirt, crypt blocks
-- SVG-like spawn arch and glowing crypt portal icons
+- SVG-like spawn arch and glowing light pillar icons
 - Clear job icons
 
 ## Testing Plan for Godot

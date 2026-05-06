@@ -38,7 +38,7 @@ Recommended early thresholds:
 - Falls under gravity.
 - Is lost/shattered if fall distance exceeds safe threshold.
 - Is lost to the River Styx if it falls into the bottom underworld-water layer; this uses the same bone-splash feedback plus a short fade/sink treatment.
-- Enters exit if overlapping/standing at the exit portal/safe crypt door.
+- Enters exit if overlapping/standing at the exit light pillar/safe ascent zone.
 
 Recommended prototype numbers:
 
@@ -52,6 +52,17 @@ Design note:
 Lanky skeleton minions support the job fantasy well: they can brace as blockers, carry bone/plank bridge pieces, scrape downward as diggers, tunnel sideways through crumbly soil, and comically fall apart when lost.
 
 
+
+## Exit / Rescue Fantasy
+
+The level exit should be a vertical pillar of soft light leading upward. Motes of light drift slowly upward through and slightly beyond the pillar, then fade out. Skeletons that reach it walk into the light, float upward, glow, and dissolve/disintegrate out of the level.
+
+Design intent:
+
+- The feel is loosely inspired by familiar pop-culture afterlife/underworld imagery, but the game should avoid explicit specific doctrine or real-world belief labels in docs, UI, and level text.
+- The exit should contrast the River Styx: water pulls down and fades skeletons into the underworld; the exit lifts them up and fades them into safety.
+- The pillar must remain readable as the goal at tiny scale. Use motion, light, and motes rather than complex symbols.
+
 ## Death and Hazard Feedback
 
 Deaths should carry a reason so visuals, scoring, audio, and future tutorial text can react correctly. Current implemented/expected death kinds:
@@ -63,7 +74,7 @@ Design intent:
 
 - Keep bone splash as the common comedic failure language.
 - Death audio should start when the death begins, not when cleanup finishes.
-- Let death-specific treatments layer on top: water impact/fade/sink now; crusher flattening, holy ash, acid bubbles, etc. later if needed.
+- Let death-specific treatments layer on top: water impact/fade/sink now; crusher flattening, glimmer ash, acid bubbles, etc. later if needed.
 - Avoid creating many hazards early. The River Styx bottom boundary should carry most first-wave “you failed to bridge/control the crowd” feedback.
 
 ## Job Set
@@ -186,7 +197,7 @@ Primary setting ingredients:
 - Crumbling crypts and catacombs
 - Bats, cobwebs, candles, skull piles, bones, broken coffins
 - Cracked stone, crumbly dirt, collapsed masonry, rusty gates
-- Portals, cursed sigils, ghost light, holy wards
+- Light pillars, cursed sigils, ghost light, cursed light traps
 - River Styx / underworld water as the first bottom-boundary hazard: brownish-black water, pale souls, faint fog, and sink/fade deaths
 
 Use these as flavor and visual cues first. Do not turn ambient bats/spiders into gameplay hazards until the core jobs are proven.
@@ -214,7 +225,7 @@ Other later examples:
 - Spikes, if a sharper trap read is needed later
 - Lava or acid slime
 - Crusher blocks
-- Holy wards/sunbeams
+- Cursed light/sunbeam traps
 - Bottomless pits
 - Crypt traps
 - Crumbling floors
@@ -251,4 +262,4 @@ Current prototype has already started representing bottom hazards as `{"bottom":
 - Failure should be funny, fast, and restartable, not cruel.
 - Timing precision should be low in early levels.
 - Rescue thresholds should allow a few mistakes.
-- Skeleton theme should support the mechanic feel: marching, bracing, building, digging, tunneling, rattling apart, and reaching a safe crypt/portal.
+- Skeleton theme should support the mechanic feel: marching, bracing, building, digging, tunneling, rattling apart, and reaching a safe light pillar.

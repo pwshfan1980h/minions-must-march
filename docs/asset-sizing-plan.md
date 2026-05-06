@@ -60,7 +60,7 @@ Recommendation: **Layout B** for clarity.
 - Tile: 32x32 px
 - Skeleton minion body: roughly 14-18 px wide and 24-30 px tall
 - Entrance: 64x64 px
-- Exit/safe crypt door/portal: 64x64 px
+- Exit/light pillar: 64x64 px
 - Job icon: 48x48 px
 - Hazard tile: 32x32 px
 - Builder step: 16x8 px or tile-aligned stair blocks
@@ -84,8 +84,8 @@ Theme pillars:
 
 - **Crumbling crypts:** cracked blocks, collapsing ledges, broken arches, dusty tomb passages.
 - **Spooky critters:** bats as background motion, rats/spiders as optional ambience, not core mechanics at first.
-- **Necromantic machinery:** portals, sigils, cursed switches, bone elevators/crushers later if useful.
-- **Readable slapstick danger:** River Styx bottom boundary first; spikes, crushers, acid slime, holy wards, unstable floors later only when a level lesson needs them.
+- **Necromantic machinery:** light pillars, sigils, cursed switches, bone elevators/crushers later if useful.
+- **Readable slapstick danger:** River Styx bottom boundary first; spikes, crushers, acid slime, cursed light traps, unstable floors later only when a level lesson needs them.
 
 
 ## Current Art Direction Delta - Underworld/Styx Pass
@@ -141,7 +141,7 @@ Generate from rectangles/tiles first:
 - Stone blocks with cracks and color variation
 - Dirt/diggable tiles with speckles and bone fragments
 - Crumbly crypt wall for tunnelable zones
-- Indestructible black basalt, metal trim, or magic-warded stone
+- Indestructible black basalt, metal trim, or rune-marked stone
 - Background parallax optional later: ruined crypt walls, bat silhouettes, moonlit catacombs, dangling chains, candles, cobwebs
 
 ### Hazards
@@ -152,10 +152,21 @@ SVG/procgen:
 - Spikes: repeated triangles, postponed unless a sharper trap shape is needed
 - Lava/acid slime: bright pool with warning edge
 - Crushers: block with teeth, animation later
-- Holy wards/sunbeams: glowing danger strip
+- Cursed light/sunbeam traps: glowing danger strip
 - Bottomless pits, cursed thorns, unstable crumbling floors if useful
 
 Use shape/pattern strongly so hazards are readable even without color.
+
+
+### Exit Pillar
+
+Current exit direction:
+
+- A soft vertical pillar of light, not a door or explicit symbol.
+- Slow upward motes drift through and slightly past the pillar before fading.
+- Rescue animation: skeleton enters, floats upward, glows warm/pale, shrinks/fades/disintegrates.
+- Keep it pop-culture-afterlife coded but non-doctrinal in labels and docs.
+- Avoid detailed iconography; readability and contrast matter more than lore.
 
 ### UI
 
@@ -169,7 +180,7 @@ Suggested first UI icons:
 - Digger: down arrow + shovel
 - Tunneler: side arrow + cracked wall
 - Restart: circular arrow
-- Rescue: crypt door/portal icon
+- Rescue: light pillar icon
 
 ## Readability Rules
 

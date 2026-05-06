@@ -2,7 +2,7 @@
 
 ## Game Pitch
 
-**Minions Must March** is a Lemmings-inspired 2D puzzle game where a crowd of little lanky skeleton minions marches through crumbling crypts, catacombs, haunted ruins, and underground tunnels. The player assigns limited jobs to redirect, protect, dig, tunnel, build, or modify terrain so enough minions reach the exit crypt/portal.
+**Minions Must March** is a Lemmings-inspired 2D puzzle game where a crowd of little lanky skeleton minions marches through crumbling crypts, catacombs, haunted ruins, and underground tunnels. The player assigns limited jobs to redirect, protect, dig, tunnel, build, or modify terrain so enough minions reach the exit light pillar.
 
 Tone: spooky-cute skeleton minion chaos, light crypt comedy, readable puzzle design, clear hazards, practical UX.
 
@@ -16,7 +16,7 @@ Tone: spooky-cute skeleton minion chaos, light crypt comedy, readable puzzle des
 
 ## Guiding Constraints
 
-- Theme should center on crumbling crypts, catacombs, bats, cobwebs, bones, candles, portals, cracked stone, and spooky-cute undead slapstick.
+- Theme should center on crumbling crypts, catacombs, bats, cobwebs, bones, candles, light pillars, cracked stone, and spooky-cute undead slapstick.
 - Favor SVG, procedural, vector, or simple stylized assets where practical.
 - Build mechanics before content volume.
 - Prove Godot Web export early, before the project accumulates too much content or engine-specific complexity.
@@ -217,7 +217,7 @@ Status: complete.
 
 ### Phase 2 - Core Simulation Prototype
 
-**Goal:** Make skeleton minions march, collide, fall, get lost/removed, and reach an exit crypt/portal in a crude level.
+**Goal:** Make skeleton minions march, collide, fall, get lost/removed, and reach an exit light pillar in a crude level.
 
 MVP mechanics:
 
@@ -414,7 +414,7 @@ Exit criteria:
 Likely additions:
 
 - Refined Digger and Tunneler depending on selected starter levels
-- One additional hazard type only if the River Styx bottom boundary is not enough for the next lessons: spikes, acid slime, crusher blocks, holy wards, crumbling floors, bats-as-ambience, or similar
+- One additional hazard type only if the River Styx bottom boundary is not enough for the next lessons: spikes, acid slime, crusher blocks, cursed light traps, crumbling floors, bats-as-ambience, or similar
 - Optional bone/charm/relic collectible pickup
 - Improved level metadata/data format
 - Better tutorial prompts
