@@ -1,0 +1,15 @@
+{
+  "id": "level-002-bone-basement-shortcut-draft",
+  "name": "Bone Basement Shortcut",
+  "status": "paper-draft",
+  "coreLesson": "Use one Digger on an obvious crumbly floor patch to reach a lower safe corridor.",
+  "spawn": { "direction": "right", "count": 16, "interval": 0.9 },
+  "rescueRequired": 10,
+  "jobs": { "blocker": 1, "builder": 1, "digger": 1 },
+  "mechanicsIntroduced": ["digger_v0", "marked_diggable_floor"],
+  "funBeat": "The apparent top route dead-ends; the crunchy-looking floor is the real path.",
+  "riskNotes": [
+    "Keep the shaft fall within safe-fall limits or land directly on a lower platform.",
+    "Do not require exact pixel placement; make the dig patch wide and visually loud."
+  ]
+}

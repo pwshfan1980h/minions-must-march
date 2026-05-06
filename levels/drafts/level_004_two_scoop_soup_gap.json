@@ -1,0 +1,15 @@
+{
+  "id": "level-004-two-scoop-soup-gap-draft",
+  "name": "Two-Scoop Soup Gap",
+  "status": "paper-draft",
+  "coreLesson": "Chain two short Builder bridges with a safe island between them.",
+  "spawn": { "direction": "right", "count": 20, "interval": 0.85 },
+  "rescueRequired": 14,
+  "jobs": { "blocker": 2, "builder": 2 },
+  "mechanicsPracticed": ["builder_v0", "blocker_release", "island_staging"],
+  "funBeat": "One Builder is not enough; the player has to let a second skeleton start from the middle island.",
+  "riskNotes": [
+    "Keep both gaps short and symmetric while the Builder stair tuning is young.",
+    "Allow a couple of Styx losses without immediate failure."
+  ]
+}

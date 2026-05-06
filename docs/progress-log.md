@@ -346,3 +346,12 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Moved the Builder Demo tutorial label away from the Styx gap/build marker so it no longer covers the playable test area.
 - Simplified the label to one concise instruction line near the upper-left playfield.
 - Verification: local visual screenshot confirms the gap and marker are unobstructed; Builder activation test and Godot headless smoke passed.
+
+## 2026-05-06 - HUD upgrade and next-level design drafts
+
+- Reworked the in-game HUD from one crowded status string into a top parchment/dark-metal panel with separate mission, stats, hint, and large job-card areas.
+- Added runtime UI styling for the HUD panel and job buttons, including clear selected Builder highlighting, disabled Blocker state, larger text, and shorter charge/action copy.
+- Updated the Builder Demo hint to teach the immediate action while keeping restart and F3 hitbox-debug discoverability.
+- Added fresh paper designs for **Bone Basement Shortcut**, **Down to the Uplight**, and **Two-Scoop Soup Gap** under `levels/drafts/`.
+- Expanded the design docs with Digger v0 candidate rules and a **Holy Uplight Draft** rescue/movement zone: a warm upward current that pairs with digging down and contrasts the downward-pulling Styx.
+- Verification: Builder activation smoke test passed; local visual screenshot `tmp/ui-upgrade.png` confirmed the HUD is readable and no longer covers the gap/playfield.

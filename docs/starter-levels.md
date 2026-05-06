@@ -260,6 +260,58 @@ This level should feel like “aha, skeletons can open side passages,” not lik
 - The intended route is not hidden behind unintuitive terrain.
 - Level remains solvable without split-second timing.
 
+
+---
+
+## Fresh Level + Simple Mechanic Ideas
+
+These are lightweight design candidates to explore after Builder Demo #1 feels good. The goal is to find fun with tiny mechanics before building a large content pipeline.
+
+### Level 2 Candidate - Bone Basement Shortcut
+
+**Core joke:** the exit is visibly below the starting path, so the player must dig *down*, not across.
+
+- Jobs: Blocker 1, Digger 1, Builder 1 optional recovery.
+- Teach: one obvious crumbly floor patch, safe shaft depth, crowd resumes into a lower corridor.
+- Fun beat: first few skeletons bonk into a dead-end sign that says the floor is suspiciously crunchy.
+- Failure: digging too early drops the crowd into Styx; digging at the marked patch lands them safely.
+
+### Level 3 Candidate - Holy Uplight Draft
+
+**Core joke:** skeletons are not rescued by a door; they get launched/wafted up by a vertical holy light draft.
+
+- Jobs: Blocker 2, Digger 1, Builder 1.
+- Teach: dig down into a shaft that ends at a soft vertical beam; entering the beam floats skeletons upward into the escape pillar.
+- Mechanic candidate: `holy_uplight_draft` is a non-hazard rescue helper, not a fan trap. It lifts slowly, sparkles/motes upward, and should read as safe by color and sound.
+- Fun beat: build a small rib step to stop the crowd overshooting the dig spot, then open the shaft.
+
+### Level 4 Candidate - Two-Scoop Soup Gap
+
+**Core joke:** one Builder is not enough unless the player uses terrain and blocker timing intelligently.
+
+- Jobs: Blocker 2, Builder 2.
+- Teach: two short gaps with a safe island between them.
+- Fun beat: the first builder makes the island reachable; the second builder must start on the island facing right.
+- Keep it forgiving: rescue threshold allows one or two skeletons to become soup volunteers.
+
+### Level 5 Candidate - Crumbly Plug Detour
+
+**Core joke:** the crowd marches over a breakable-looking plug; digging it opens the better route and avoids a fake obvious gap.
+
+- Jobs: Blocker 1, Digger 1, Tunneler 1 later.
+- Teach: diggable terrain can be used as a switch-like route opener.
+- Fun beat: the “wrong” surface route is theatrical but doomed; the lower route is calmer and brighter.
+
+### Tiny Mechanics Worth Prototyping
+
+- **Digger v0:** remove a fixed-width vertical column through marked diggable terrain; stop at air/indestructible/hazard.
+- **Holy uplight draft:** slow upward rescue/current zone; no damage, obvious warm palette, emits motes; good for vertical levels without full ladders.
+- **Crumbly plugs:** small pre-marked diggable blocks that collapse/remove as a whole; easier than freeform terrain destruction.
+- **One-shot job pips:** show each job charge as a small icon/pip in the HUD so limited resources feel tangible.
+- **Invalid-click bark:** a tiny floating “needs ground” / “no builders left” message near the skeleton, so failed assignments teach instead of silently shrugging.
+
+Recommended next build order: polish Builder Demo #1 UI and click feedback, implement Digger v0 in a tiny sandbox, then try the Holy Uplight Draft level because it gives the game a strong visual identity beyond “bridge over bad soup.”
+
 ---
 
 ## Recommended Build Order

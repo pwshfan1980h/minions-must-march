@@ -1,0 +1,19 @@
+{
+  "id": "level-003-holy-uplight-draft-draft",
+  "name": "Down to the Uplight",
+  "status": "paper-draft",
+  "coreLesson": "Dig downward to reach a warm holy draft that lifts skeletons into the escape light.",
+  "spawn": { "direction": "right", "count": 18, "interval": 0.85 },
+  "rescueRequired": 12,
+  "jobs": { "blocker": 2, "builder": 1, "digger": 1 },
+  "mechanicsIntroduced": ["holy_uplight_draft", "digger_v0"],
+  "levelObjects": [
+    { "type": "holy_uplight_draft", "role": "safe upward current / rescue helper" },
+    { "type": "marked_diggable_floor", "role": "opens shaft into draft chamber" }
+  ],
+  "funBeat": "The correct move feels backwards: go down into the crypt so the holy light can pull everyone up.",
+  "riskNotes": [
+    "Use warm colors and upward motes so the draft reads as safe, not a laser hazard.",
+    "Make the shaft/draft forgiving enough for a marching crowd."
+  ]
+}

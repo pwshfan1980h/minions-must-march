@@ -159,6 +159,16 @@ Purpose:
 
 - Create vertical shafts
 - Access lower routes
+- Set up vertical rescue beats like dropping into a holy uplight draft
+
+#### Digger v0 Candidate Behavior
+
+- Can be assigned only to an alive, grounded, non-blocker skeleton standing on marked diggable terrain.
+- Consumes one Digger charge only on valid assignment.
+- Removes a narrow fixed-width vertical column, one small chunk at a time, so the player can see the shaft forming.
+- Stops when the next chunk would hit air, indestructible terrain, Styx/hazard, level bounds, or a configured max depth.
+- The digger resumes falling/walking according to normal physics after the shaft opens; no teleporting.
+- First implementation should use marked chunks/plugs before attempting full freeform destructible terrain.
 
 Early rule:
 
@@ -227,6 +237,29 @@ Primary setting ingredients:
 - River Styx / underworld water as the first bottom-boundary hazard: brownish-black water, pale souls, faint fog, and sink/fade deaths
 
 Use these as flavor and visual cues first. Do not turn ambient bats/spiders into gameplay hazards until the core jobs are proven.
+
+## Friendly Rescue/Movement Zones
+
+### Holy Uplight Draft
+
+A vertical, warm rescue/current zone that lifts skeletons upward toward the exit fantasy. This is the “dig down to escape upward” mechanic candidate.
+
+Theme:
+
+- Soft gold-white uplight, dust motes, tiny sparks, and an airy chime.
+- Should feel obviously safe and hopeful, not like a cursed beam trap.
+
+Purpose:
+
+- Makes vertical levels fun without needing ladders or player-controlled jumping.
+- Lets Digger create a downward route that still resolves into the established upward rescue fantasy.
+- Visually contrasts the River Styx: Styx pulls down and sinks; holy draft lifts up and dissolves/rescues.
+
+Early rule:
+
+- Skeletons entering the zone slow/freeze horizontal walking, float upward, and count as rescued if they reach the exit light volume.
+- The draft should be forgiving: wide enough for the crowd, not pixel-perfect.
+- Treat it as a level object/rescue helper, not terrain and not a hazard.
 
 ## Terrain Types
 
