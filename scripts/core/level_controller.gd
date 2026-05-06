@@ -4,7 +4,7 @@ signal stats_changed(stats: Dictionary)
 signal level_finished(success: bool, stats: Dictionary)
 signal sfx_requested(sound_id: String)
 
-const LEVEL_WIDTH := 1280
+const LEVEL_WIDTH := 2400
 const PLAYFIELD_HEIGHT := 608
 const TILE_SIZE := 32
 const RESCUE_REQUIRED := 12

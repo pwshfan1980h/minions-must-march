@@ -25,8 +25,8 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 func _build_placeholder_objects() -> void:
-	_add_spawn_marker(Vector2(520, 420))
-	_add_exit(Vector2(584, 448))
+	_add_spawn_marker(Vector2(2180, 420))
+	_add_exit(Vector2(144, 448))
 
 func _add_spawn_marker(pos: Vector2) -> void:
 	var marker := Label.new()

@@ -10,7 +10,7 @@ const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
 
 @export var total_to_spawn := 20
 @export var spawn_interval := 0.65
-@export var spawn_position := Vector2(520, 420)
+@export var spawn_position := Vector2(2180, 420)
 @export var spawn_direction := -1.0
 @export var blockers_available := 2
 

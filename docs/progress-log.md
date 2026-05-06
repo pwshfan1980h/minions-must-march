@@ -227,6 +227,9 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 
 - Captured upper-screen/background ideas in `docs/background-art-ideas.md`.
 - Picked an initial low-clutter implementation slice: crimson upper sky, faint dead treetop silhouettes, distant tower/crypt silhouettes, broken bridge lines, and subtle green/yellow portal glow.
+- Expanded the prototype level width to 2400 px so scrolling can be judged. Spawn moved far right, exit moved left, and the crypt causeway now stretches across the wider map.
+- Added prototype manual camera panning with `A/D`, `Left/Right`, or `Z/X`; camera starts near the spawn side.
+- Added more scroll-visible background set pieces: extra portals, distant towers, broken bridge spans, rib arches, and a faint skull mountain.
 
 ## 2026-05-06 - Skeleton scale, gait, and redraw polish
 

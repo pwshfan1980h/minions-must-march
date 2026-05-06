@@ -27,5 +27,13 @@ Start with atmospheric parallax elements that add mood without gameplay clutter:
 3. Distant underworld tower/crypt silhouettes.
 4. Two or three portal structures with dim green/yellow glow.
 5. A few slow soul motes/wisps, subtle and low contrast.
+6. Wider first-level span with manual camera pan to test scrolling/action readability.
+7. Larger background set pieces across the scroll: skull mountain, rib arches, more portals, and broken bridges.
+
+## Prototype Navigation
+
+- Current test controls: `A/D`, `Left/Right`, or `Z/X` pan the camera horizontally.
+- Start camera near the spawn side so the player sees skeletons enter, then can pan left toward the exit.
+- This is intentionally simple manual camera control; later options include auto-following the skeleton crowd, edge scrolling, drag-to-pan, or snapping between points of interest.
 
 Avoid interactive-looking detail for now. The player should instantly know these are background flavor, not tools or hazards.

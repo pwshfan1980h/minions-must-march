@@ -1,7 +1,7 @@
 extends Node2D
 
 const TILE_SIZE := 32
-const WORLD_WIDTH := 1280
+const WORLD_WIDTH := 2400
 const PLAYFIELD_HEIGHT := 608
 const STYX_WATERLINE_Y := 560.0
 const STYX_DEPTH := 112.0
@@ -26,11 +26,13 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 func _build_level_001_terrain() -> void:
-	# Current prototype layout: minions spawn on the right platform, can be redirected
-	# by a blocker, and the bottom of the world is now River Styx-style death water.
-	_add_solid(Rect2(96, 448, 544, 32), Color("3a3144"))
+	# Wider prototype layout for testing camera scrolling. Minions spawn far right,
+	# march left across a long crypt causeway, and exit near the left edge.
+	_add_solid(Rect2(96, 448, 2144, 32), Color("3a3144"))
 	_add_solid(Rect2(64, 480, 32, 96), Color("2a2432"))
-	_add_solid(Rect2(608, 480, 32, 96), Color("2a2432"))
+	_add_solid(Rect2(2240, 480, 32, 96), Color("2a2432"))
+	_add_solid(Rect2(1024, 480, 96, 32), Color("332b3b"))
+	_add_solid(Rect2(1568, 480, 128, 32), Color("332b3b"))
 
 func _add_solid(rect: Rect2, color: Color) -> void:
 	collision_rects.append(rect)
@@ -165,12 +167,21 @@ func _draw_distant_underworld_background() -> void:
 	_draw_portal_ruin(Vector2(245, 185), 0.92, Color(0.54, 0.86, 0.42, 0.15))
 	_draw_portal_ruin(Vector2(725, 156), 0.72, Color(0.95, 0.78, 0.29, 0.11))
 	_draw_portal_ruin(Vector2(1038, 218), 1.08, Color(0.44, 0.98, 0.60, 0.12))
+	_draw_portal_ruin(Vector2(1475, 178), 0.84, Color(0.87, 0.71, 0.25, 0.12))
+	_draw_portal_ruin(Vector2(1975, 205), 1.02, Color(0.43, 0.92, 0.55, 0.13))
+	_draw_skull_mountain(Vector2(1720, 258), 1.0)
+	_draw_rib_arch(Vector2(1320, 336), 1.0)
+	_draw_rib_arch(Vector2(2135, 354), 0.86)
 
 	_draw_tower_silhouette(Vector2(378, 246), 0.78)
 	_draw_tower_silhouette(Vector2(552, 224), 0.58)
 	_draw_tower_silhouette(Vector2(895, 252), 0.66)
+	_draw_tower_silhouette(Vector2(1245, 238), 0.74)
+	_draw_tower_silhouette(Vector2(1840, 248), 0.62)
 	draw_line(Vector2(430, 265), Vector2(615, 254), Color(0.025, 0.018, 0.026, 0.45), 5.0, true)
 	draw_line(Vector2(620, 253), Vector2(828, 273), Color(0.025, 0.018, 0.026, 0.34), 3.0, true)
+	draw_line(Vector2(1160, 270), Vector2(1395, 256), Color(0.025, 0.018, 0.026, 0.36), 4.0, true)
+	draw_line(Vector2(1810, 272), Vector2(2040, 286), Color(0.025, 0.018, 0.026, 0.34), 3.0, true)
 
 	var tree_color := Color(0.018, 0.014, 0.023, 0.52)
 	draw_rect(Rect2(0, 318, WORLD_WIDTH, 42), tree_color)
@@ -183,6 +194,26 @@ func _draw_distant_underworld_background() -> void:
 			Vector2(i + 43.0, base + 5.0),
 		])
 		draw_colored_polygon(crown, tree_color)
+
+func _draw_skull_mountain(pos: Vector2, scale: float) -> void:
+	var rock := Color(0.028, 0.022, 0.032, 0.36)
+	var glow := Color(0.58, 0.87, 0.42, 0.055)
+	draw_circle(pos + Vector2(-24, -18) * scale, 58.0 * scale, rock)
+	draw_circle(pos + Vector2(28, -16) * scale, 52.0 * scale, rock)
+	draw_rect(Rect2(pos + Vector2(-64, -28) * scale, Vector2(128, 82) * scale), rock)
+	draw_circle(pos + Vector2(-28, -12) * scale, 12.0 * scale, Color(0.008, 0.007, 0.010, 0.34))
+	draw_circle(pos + Vector2(30, -10) * scale, 12.0 * scale, Color(0.008, 0.007, 0.010, 0.34))
+	draw_circle(pos + Vector2(-28, -12) * scale, 24.0 * scale, glow)
+	draw_circle(pos + Vector2(30, -10) * scale, 24.0 * scale, glow)
+	draw_rect(Rect2(pos + Vector2(-18, 18) * scale, Vector2(36, 7) * scale), Color(0.008, 0.007, 0.010, 0.28))
+
+func _draw_rib_arch(pos: Vector2, scale: float) -> void:
+	var color := Color(0.14, 0.12, 0.13, 0.28)
+	for i in 5:
+		var x := pos.x + (-70.0 + i * 35.0) * scale
+		var top := pos.y - (92.0 - absf(i - 2) * 10.0) * scale
+		draw_line(Vector2(x, pos.y), Vector2(x + (i - 2) * 9.0 * scale, top), color, 4.0 * scale, true)
+	draw_arc(pos + Vector2(0, -8) * scale, 82.0 * scale, PI, TAU, 18, color, 4.0 * scale)
 
 func _draw_portal_ruin(pos: Vector2, scale: float, glow: Color) -> void:
 	var pulse := 0.76 + 0.24 * sin(_time * 0.75 + pos.x * 0.01)
