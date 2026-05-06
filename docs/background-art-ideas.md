@@ -12,6 +12,9 @@ The upper screen should feel like a deep underworld space, not empty UI padding.
 - Faint structures with portals and spooky green/yellow light leaking out.
 - Silhouettes of twisted treetops or dead cypress against a crimson sky.
 - Soul motes and ghost wisps drifting upward from the Styx.
+- Rising off-gas columns from cracks/Styx seams instead of flat samey fog bands.
+- Underworld street lights/soul-lanterns with green/yellow flame and small pools of light.
+- Background lighting pockets to frame points of interest and break up the dark midground.
 - Far-off ferryman silhouette or tiny boat shape crossing mist.
 - Giant skull-shaped mountain face or carved judgment arch in the distance.
 - Chained bureaucratic underworld signs: PROCESSING, PIT 7, NO REFUNDS.

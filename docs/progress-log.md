@@ -223,6 +223,12 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added explicit foot/toe bones and a braced side-view blocker stance.
 - Follow-up detail pass added restrained pelvis, clavicle, elbow, and knee hints so the skeletons read better without becoming noisy medical diagrams.
 
+## 2026-05-06 - Atmosphere readability pass
+
+- Reworked the uniform fog into vertical rising/off-gassing mist columns that drift upward from cracks and the Styx line, with varied green-gray and sulfur-yellow tints.
+- Added background light pools to break up the flat darkness and create stronger visual pockets across the wider level.
+- Added underworld street lights/soul-lanterns with dim green/yellow flicker and ground glow.
+
 ## 2026-05-06 - Level 1 teaching puzzle pass
 
 - Reshaped level 1 into **Don't March Into the Soup**: skeletons spawn from a right-side crypt chute, initially march left toward a Styx drop, and need one blocker to turn the crowd back to the exit.

@@ -187,6 +187,8 @@ func _draw_crypt_gradient() -> void:
 	# fake-lighting pass for now; real 2D lights can come after gameplay stabilizes.
 	draw_circle(Vector2(880, 505), 330, Color(0.29, 0.22, 0.34, 0.065))
 	draw_circle(Vector2(220, 530), 280, Color(0.18, 0.30, 0.28, 0.052))
+	draw_circle(Vector2(1540, 500), 360, Color(0.36, 0.19, 0.25, 0.045))
+	draw_circle(Vector2(2050, 510), 300, Color(0.19, 0.30, 0.18, 0.042))
 	draw_circle(Vector2(640, STYX_WATERLINE_Y + 30.0), 420, Color(0.09, 0.19, 0.17, 0.045))
 
 func _draw_distant_underworld_background() -> void:
@@ -205,6 +207,13 @@ func _draw_distant_underworld_background() -> void:
 	_draw_skull_mountain(Vector2(1720, 258), 1.0)
 	_draw_rib_arch(Vector2(1320, 336), 1.0)
 	_draw_rib_arch(Vector2(2135, 354), 0.86)
+	_draw_background_light_pool(Vector2(520, 378), 0.9, Color(0.94, 0.66, 0.25, 0.075))
+	_draw_background_light_pool(Vector2(1080, 360), 0.78, Color(0.48, 0.92, 0.55, 0.070))
+	_draw_background_light_pool(Vector2(1900, 392), 1.0, Color(0.93, 0.72, 0.30, 0.080))
+	_draw_underworld_street_light(Vector2(500, 472), 0.9, Color(0.98, 0.73, 0.32, 0.58))
+	_draw_underworld_street_light(Vector2(1130, 416), 0.75, Color(0.52, 0.98, 0.58, 0.48))
+	_draw_underworld_street_light(Vector2(1510, 500), 0.82, Color(0.93, 0.70, 0.25, 0.50))
+	_draw_underworld_street_light(Vector2(2050, 448), 0.95, Color(0.46, 0.90, 0.54, 0.48))
 
 	_draw_tower_silhouette(Vector2(378, 246), 0.78)
 	_draw_tower_silhouette(Vector2(552, 224), 0.58)
@@ -227,6 +236,30 @@ func _draw_distant_underworld_background() -> void:
 			Vector2(i + 43.0, base + 5.0),
 		])
 		draw_colored_polygon(crown, tree_color)
+
+func _draw_background_light_pool(pos: Vector2, scale: float, color: Color) -> void:
+	var pulse := 0.82 + 0.18 * sin(_time * 0.45 + pos.x * 0.005)
+	var c := Color(color.r, color.g, color.b, color.a * pulse)
+	_draw_soft_ellipse(Rect2(pos.x - 185.0 * scale, pos.y - 46.0 * scale, 370.0 * scale, 92.0 * scale), Color(c.r, c.g, c.b, c.a * 0.48))
+	_draw_soft_ellipse(Rect2(pos.x - 92.0 * scale, pos.y - 26.0 * scale, 184.0 * scale, 52.0 * scale), c)
+
+func _draw_underworld_street_light(pos: Vector2, scale: float, flame: Color) -> void:
+	var pole := Color(0.030, 0.024, 0.034, 0.78)
+	var pulse := 0.72 + 0.28 * sin(_time * 1.25 + pos.x * 0.013)
+	var lit := Color(flame.r, flame.g, flame.b, flame.a * pulse)
+	draw_line(pos, pos + Vector2(0, -86) * scale, pole, 4.0 * scale, true)
+	draw_line(pos + Vector2(-12, -64) * scale, pos + Vector2(0, -78) * scale, pole, 3.0 * scale, true)
+	draw_line(pos + Vector2(12, -64) * scale, pos + Vector2(0, -78) * scale, pole, 3.0 * scale, true)
+	draw_circle(pos + Vector2(0, -91) * scale, 28.0 * scale, Color(lit.r, lit.g, lit.b, lit.a * 0.20))
+	draw_circle(pos + Vector2(0, -91) * scale, 11.0 * scale, Color(lit.r, lit.g, lit.b, lit.a * 0.36))
+	var flame_shape := PackedVector2Array([
+		pos + Vector2(0, -109) * scale,
+		pos + Vector2(9, -92) * scale,
+		pos + Vector2(0, -81) * scale,
+		pos + Vector2(-8, -92) * scale,
+	])
+	draw_colored_polygon(flame_shape, Color(lit.r, lit.g, lit.b, lit.a * 0.72))
+	_draw_soft_ellipse(Rect2(pos.x - 58.0 * scale, pos.y - 13.0 * scale, 116.0 * scale, 26.0 * scale), Color(lit.r, lit.g, lit.b, lit.a * 0.11))
 
 func _draw_skull_mountain(pos: Vector2, scale: float) -> void:
 	var rock := Color(0.028, 0.022, 0.032, 0.36)
@@ -277,19 +310,28 @@ func _draw_tower_silhouette(pos: Vector2, scale: float) -> void:
 		draw_rect(Rect2(pos + Vector2(-3.0 * scale, y), Vector2(6.0, 9.0) * scale), Color(0.56, 0.90, 0.48, 0.055))
 
 func _draw_ground_dust() -> void:
-	for i in 9:
-		var phase := _time * 0.34 + i * 0.81
-		var x := fposmod(i * 151.0 + sin(phase) * 22.0, WORLD_WIDTH)
-		var y := 438.0 + sin(phase * 0.7) * 8.0
-		var width := 115.0 + float(i % 3) * 34.0
-		var alpha := 0.030 + 0.020 * sin(phase + 1.2)
-		_draw_soft_ellipse(Rect2(x - width / 2.0, y - 10.0, width, 20.0), Color(0.58, 0.58, 0.54, alpha))
+	# Rising off-gas instead of a samey horizontal fog band. Columns start near
+	# cracks/waterline, drift upward, thin out, then cycle.
+	for i in 15:
+		var seed := float(i)
+		var base_x := 90.0 + fposmod(seed * 173.0, WORLD_WIDTH - 140.0)
+		var cycle := fposmod(_time * (0.045 + float(i % 4) * 0.009) + seed * 0.137, 1.0)
+		var rise := cycle * (110.0 + float(i % 5) * 18.0)
+		var x := base_x + sin(_time * 0.32 + seed) * (18.0 + float(i % 3) * 9.0)
+		var y := STYX_WATERLINE_Y - 18.0 - rise
+		var width := 34.0 + cycle * (64.0 + float(i % 4) * 20.0)
+		var height := 18.0 + cycle * 32.0
+		var alpha := sin(cycle * PI) * (0.035 + float(i % 3) * 0.010)
+		var color := Color(0.50, 0.62, 0.54, alpha) if i % 3 != 1 else Color(0.72, 0.60, 0.38, alpha * 0.72)
+		_draw_soft_ellipse(Rect2(x - width / 2.0, y - height / 2.0, width, height), color)
+		if i % 4 == 0:
+			_draw_soft_ellipse(Rect2(x - width * 0.22, y - height * 1.05, width * 0.55, height * 0.62), Color(color.r, color.g, color.b, alpha * 0.55))
 
-	for i in 5:
-		var phase := _time * 0.25 + i * 1.12
-		var x := fposmod(i * 271.0 - _time * 9.0, WORLD_WIDTH + 160.0) - 80.0
-		var y := STYX_WATERLINE_Y - 17.0 + sin(phase) * 7.0
-		_draw_soft_ellipse(Rect2(x - 82.0, y - 8.0, 164.0, 16.0), Color(0.47, 0.55, 0.50, 0.037))
+	for i in 6:
+		var phase := _time * 0.22 + i * 1.12
+		var x := fposmod(i * 391.0 - _time * 5.0, WORLD_WIDTH + 160.0) - 80.0
+		var y := STYX_WATERLINE_Y - 12.0 + sin(phase) * 5.0
+		_draw_soft_ellipse(Rect2(x - 70.0, y - 6.0, 140.0, 12.0), Color(0.47, 0.55, 0.50, 0.024))
 
 func _draw_styx_water() -> void:
 	var rect := Rect2(0, STYX_WATERLINE_Y, WORLD_WIDTH, STYX_DEPTH)
