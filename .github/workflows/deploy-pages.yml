@@ -29,6 +29,9 @@ jobs:
           use-dotnet: false
           include-templates: true
 
+      - name: Run Godot smoke test
+        run: godot --headless --path . --quit
+
       - name: Export Web
         run: |
           mkdir -p builds/web
