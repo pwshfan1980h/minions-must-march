@@ -136,6 +136,7 @@ func _build_souls() -> void:
 
 func _draw() -> void:
 	_draw_crypt_gradient()
+	_draw_distant_underworld_background()
 	_draw_ground_dust()
 	_draw_styx_water()
 
@@ -152,6 +153,64 @@ func _draw_crypt_gradient() -> void:
 	draw_circle(Vector2(880, 505), 330, Color(0.29, 0.22, 0.34, 0.065))
 	draw_circle(Vector2(220, 530), 280, Color(0.18, 0.30, 0.28, 0.052))
 	draw_circle(Vector2(640, STYX_WATERLINE_Y + 30.0), 420, Color(0.09, 0.19, 0.17, 0.045))
+
+func _draw_distant_underworld_background() -> void:
+	# Upper-screen mood pass: crimson sky, dead treetops, faint structures, and
+	# sleepy portal glow. Kept low-contrast so it never competes with gameplay.
+	for i in 16:
+		var t := float(i) / 15.0
+		var color := Color(0.105 + t * 0.055, 0.025 + t * 0.020, 0.035 + t * 0.028, 0.24 - t * 0.06)
+		draw_rect(Rect2(0, i * 13.0, WORLD_WIDTH, 15.0), color)
+
+	_draw_portal_ruin(Vector2(245, 185), 0.92, Color(0.54, 0.86, 0.42, 0.15))
+	_draw_portal_ruin(Vector2(725, 156), 0.72, Color(0.95, 0.78, 0.29, 0.11))
+	_draw_portal_ruin(Vector2(1038, 218), 1.08, Color(0.44, 0.98, 0.60, 0.12))
+
+	_draw_tower_silhouette(Vector2(378, 246), 0.78)
+	_draw_tower_silhouette(Vector2(552, 224), 0.58)
+	_draw_tower_silhouette(Vector2(895, 252), 0.66)
+	draw_line(Vector2(430, 265), Vector2(615, 254), Color(0.025, 0.018, 0.026, 0.45), 5.0, true)
+	draw_line(Vector2(620, 253), Vector2(828, 273), Color(0.025, 0.018, 0.026, 0.34), 3.0, true)
+
+	var tree_color := Color(0.018, 0.014, 0.023, 0.52)
+	draw_rect(Rect2(0, 318, WORLD_WIDTH, 42), tree_color)
+	for i in range(0, WORLD_WIDTH + 48, 32):
+		var peak := 248.0 + sin(i * 0.031) * 17.0 + sin(i * 0.009) * 28.0
+		var base := 322.0 + sin(i * 0.017) * 9.0
+		var crown := PackedVector2Array([
+			Vector2(i - 7.0, base + 4.0),
+			Vector2(i + 18.0, peak),
+			Vector2(i + 43.0, base + 5.0),
+		])
+		draw_colored_polygon(crown, tree_color)
+
+func _draw_portal_ruin(pos: Vector2, scale: float, glow: Color) -> void:
+	var pulse := 0.76 + 0.24 * sin(_time * 0.75 + pos.x * 0.01)
+	var stone := Color(0.038, 0.030, 0.045, 0.62)
+	var lit := Color(glow.r, glow.g, glow.b, glow.a * pulse)
+	draw_circle(pos + Vector2(0, 4) * scale, 46.0 * scale, Color(lit.r, lit.g, lit.b, lit.a * 0.33))
+	draw_circle(pos + Vector2(0, 8) * scale, 22.0 * scale, Color(lit.r, lit.g, lit.b, lit.a * 0.45))
+	draw_rect(Rect2(pos + Vector2(-24, -4) * scale, Vector2(8, 52) * scale), stone)
+	draw_rect(Rect2(pos + Vector2(16, -4) * scale, Vector2(8, 52) * scale), stone)
+	draw_line(pos + Vector2(-18, -4) * scale, pos + Vector2(0, -27) * scale, stone, 7.0 * scale, true)
+	draw_line(pos + Vector2(18, -4) * scale, pos + Vector2(0, -27) * scale, stone, 7.0 * scale, true)
+	draw_line(pos + Vector2(-11, 4) * scale, pos + Vector2(11, 4) * scale, lit, 3.0 * scale, true)
+	draw_line(pos + Vector2(-7, 16) * scale, pos + Vector2(7, 16) * scale, Color(lit.r, lit.g, lit.b, lit.a * 0.75), 2.0 * scale, true)
+
+func _draw_tower_silhouette(pos: Vector2, scale: float) -> void:
+	var color := Color(0.020, 0.015, 0.026, 0.58)
+	var w := 34.0 * scale
+	var h := 92.0 * scale
+	draw_rect(Rect2(pos + Vector2(-w / 2.0, -h), Vector2(w, h)), color)
+	var roof := PackedVector2Array([
+		pos + Vector2(-w * 0.65, -h),
+		pos + Vector2(0, -h - 24.0 * scale),
+		pos + Vector2(w * 0.65, -h),
+	])
+	draw_colored_polygon(roof, color)
+	for i in 3:
+		var y := pos.y - h + 18.0 * scale + i * 20.0 * scale
+		draw_rect(Rect2(pos + Vector2(-3.0 * scale, y), Vector2(6.0, 9.0) * scale), Color(0.56, 0.90, 0.48, 0.055))
 
 func _draw_ground_dust() -> void:
 	for i in 9:

@@ -223,6 +223,11 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added explicit foot/toe bones and a braced side-view blocker stance.
 - Follow-up detail pass added restrained pelvis, clavicle, elbow, and knee hints so the skeletons read better without becoming noisy medical diagrams.
 
+## 2026-05-06 - Underworld background direction
+
+- Captured upper-screen/background ideas in `docs/background-art-ideas.md`.
+- Picked an initial low-clutter implementation slice: crimson upper sky, faint dead treetop silhouettes, distant tower/crypt silhouettes, broken bridge lines, and subtle green/yellow portal glow.
+
 ## 2026-05-06 - Skeleton scale, gait, and redraw polish
 
 - Reduced skeleton collision capsule and procedural visual scale so minions read smaller against the same field of view.
