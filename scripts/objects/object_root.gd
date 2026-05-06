@@ -4,10 +4,12 @@ signal minion_entered_exit(minion: Node)
 
 const EXIT_LIGHT_HEIGHT := 210.0
 const EXIT_LIGHT_WIDTH := 68.0
+const EXIT_REDRAW_FPS := 30.0
 
 var exit_area: Area2D
 var exit_position := Vector2.ZERO
 var _time := 0.0
+var _redraw_elapsed := 0.0
 var _mote_specs: Array[Dictionary] = []
 
 func _ready() -> void:
@@ -17,7 +19,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	queue_redraw()
+	_redraw_elapsed += delta
+	if _redraw_elapsed >= 1.0 / EXIT_REDRAW_FPS:
+		_redraw_elapsed = 0.0
+		queue_redraw()
 
 func _build_placeholder_objects() -> void:
 	_add_spawn_marker(Vector2(520, 420))

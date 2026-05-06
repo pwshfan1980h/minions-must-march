@@ -223,6 +223,14 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added explicit foot/toe bones and a braced side-view blocker stance.
 - Follow-up detail pass added restrained pelvis, clavicle, elbow, and knee hints so the skeletons read better without becoming noisy medical diagrams.
 
+## 2026-05-06 - Skeleton scale, gait, and redraw polish
+
+- Reduced skeleton collision capsule and procedural visual scale so minions read smaller against the same field of view.
+- Reworked the leg gait into an explicit two-phase side-view walk: front/back hips, knees, ankles, and feet now share a stable ground line so shin-to-foot connections read cleaner.
+- Simplified the skeleton draw pass slightly: fewer ribs/joint dots and smaller line widths at the new scale.
+- Reduced skeleton redraw rate from every physics frame to animation-frame changes at 14 FPS, which should help when the full roster is on screen.
+- Throttled animated terrain/Styx and exit-pillar redraws to 30 FPS instead of every process frame.
+
 ## 2026-05-06 - Local Web export feasibility test
 
 - Will asked to try a local hosted Web export now that the baseline is playable.

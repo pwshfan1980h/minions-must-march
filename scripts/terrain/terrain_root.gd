@@ -5,9 +5,11 @@ const WORLD_WIDTH := 1280
 const PLAYFIELD_HEIGHT := 608
 const STYX_WATERLINE_Y := 560.0
 const STYX_DEPTH := 112.0
+const TERRAIN_REDRAW_FPS := 30.0
 
 var collision_rects: Array[Rect2] = []
 var _time := 0.0
+var _redraw_elapsed := 0.0
 var _soul_specs: Array[Dictionary] = []
 
 func _ready() -> void:
@@ -18,7 +20,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	queue_redraw()
+	_redraw_elapsed += delta
+	if _redraw_elapsed >= 1.0 / TERRAIN_REDRAW_FPS:
+		_redraw_elapsed = 0.0
+		queue_redraw()
 
 func _build_level_001_terrain() -> void:
 	# Current prototype layout: minions spawn on the right platform, can be redirected

@@ -15,6 +15,8 @@ const WALL_NORMAL_THRESHOLD := 0.65
 const BLOCKER_TURN_DISTANCE := 22.0
 const BLOCKER_VERTICAL_TOLERANCE := 18.0
 const STYX_SURFACE_Y := 560.0
+const VISUAL_SCALE := 0.82
+const WALK_ANIM_FPS := 14.0
 
 var direction := 1.0
 var alive := true
@@ -26,6 +28,7 @@ var _walk_time := 0.0
 var _height_variant := 1.0
 var _spine_variant := 0.0
 var _stride_variant := 1.0
+var _last_anim_frame := -1
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -47,6 +50,10 @@ func _physics_process(delta: float) -> void:
 	velocity.x = 0.0 if is_blocker else WALK_SPEED * direction
 	if is_on_floor() and not is_blocker:
 		_walk_time += delta * 8.8 * _stride_variant
+		var anim_frame := int(_walk_time * WALK_ANIM_FPS)
+		if anim_frame != _last_anim_frame:
+			_last_anim_frame = anim_frame
+			queue_redraw()
 	if not is_blocker:
 		highest_fall_speed = maxf(highest_fall_speed, velocity.y)
 
@@ -63,8 +70,6 @@ func _physics_process(delta: float) -> void:
 
 	if position.y > 760:
 		_die()
-
-	queue_redraw()
 
 func rescue(exit_position := Vector2.INF) -> void:
 	if rescued or not alive:
@@ -164,6 +169,7 @@ func _spawn_bone_splash() -> void:
 
 func _turn_around() -> void:
 	direction *= -1.0
+	queue_redraw()
 
 func _is_blocked_ahead() -> bool:
 	for i in get_slide_collision_count():
@@ -187,123 +193,127 @@ func _input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> vo
 		clicked.emit(self)
 
 func _draw() -> void:
+	# Draw at a smaller in-world scale. This keeps the same level camera/field,
+	# but makes the crowd feel more numerous and less toy-large.
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(VISUAL_SCALE, VISUAL_SCALE))
+
 	var bone := Color("f1e7c8") if is_blocker else Color("e8e0c8") if alive else Color("8c7f91")
 	var shadow := Color("211b2b")
 	var accent := Color("b9a77b")
+	var back_bone := bone.darkened(0.16)
 	var face := signf(direction)
 	if face == 0.0:
 		face = 1.0
 
 	var stride := 0.0 if is_blocker else sin(_walk_time)
-	var counter_stride := 0.0 if is_blocker else sin(_walk_time + PI)
-	var bob := 0.0 if is_blocker else absf(sin(_walk_time)) * 1.5
-	var lean := face * (3.0 + _spine_variant * 10.0 + (0.8 * absf(stride) if not is_blocker else -1.2))
+	var step_up := maxf(0.0, stride)
+	var step_back := maxf(0.0, -stride)
+	var bob := 0.0 if is_blocker else absf(stride) * 1.05
+	var lean := face * (2.8 + _spine_variant * 7.0 + (0.45 * absf(stride) if not is_blocker else -1.0))
 	var h := _height_variant
 
-	var hip := Vector2(-face * 1.0, 4.0 - bob)
-	var chest := Vector2(lean * 0.45, -13.0 * h - bob)
-	var neck := Vector2(lean * 0.78, -20.0 * h - bob)
-	var head := neck + Vector2(face * 4.0, -6.2 * h)
+	var hip := Vector2(-face * 0.8, 3.0 - bob)
+	var chest := Vector2(lean * 0.45, -12.5 * h - bob)
+	var neck := Vector2(lean * 0.78, -19.2 * h - bob)
+	var head := neck + Vector2(face * 4.0, -5.9 * h)
+	var shoulder := chest + Vector2(face * 1.4, -0.8)
 
-	# Spine and rib cage: side profile with a slight forward human-like hunch.
-	_draw_bone_segment(hip, chest, bone, 3.0)
-	for i in 4:
-		var t := float(i) / 3.0
-		var rib_center := chest.lerp(hip + Vector2(face * 0.8, -4.0), t)
-		var rib_width := lerpf(7.2, 4.2, t) * h
-		draw_arc(rib_center, rib_width, -0.75 * PI if face > 0.0 else -0.25 * PI, 0.20 * PI if face > 0.0 else 1.25 * PI, 8, bone, 1.5)
-
+	# Core silhouette first: spine, compact ribs, pelvis. Fewer draw calls than the
+	# earlier anatomy pass, but enough bone landmarks to read at small scale.
+	_draw_bone_segment(hip, chest, bone, 2.6)
+	for i in 3:
+		var t := float(i) / 2.0
+		var rib_center := chest.lerp(hip + Vector2(face * 0.5, -4.5), t)
+		var rib_width := lerpf(6.6, 4.2, t) * h
+		draw_arc(rib_center, rib_width, -0.72 * PI if face > 0.0 else -0.28 * PI, 0.18 * PI if face > 0.0 else 1.22 * PI, 6, bone, 1.35)
 	_draw_pelvis(hip, face, bone.darkened(0.04), h)
+	_draw_clavicles(chest, shoulder, face, bone.darkened(0.02))
 	_draw_side_skull(head, face, bone, shadow)
 
-	var shoulder := chest + Vector2(face * 1.5, -1.0)
-	_draw_clavicles(chest, shoulder, face, bone.darkened(0.02))
-	var elbow_front := shoulder + Vector2(face * (7.0 + counter_stride * 3.2), 8.0 + stride * 1.8)
-	var hand_front := elbow_front + Vector2(face * (5.0 + counter_stride * 2.2), 8.5 - stride * 1.3)
-	var elbow_back := shoulder + Vector2(-face * (5.5 + counter_stride * 2.0), 7.0 - stride * 1.6)
-	var hand_back := elbow_back + Vector2(-face * (5.0 + counter_stride * 2.6), 8.0 + stride * 1.2)
+	# Arms: counter-swing, but subordinate to legs for readability.
+	var arm_swing := -stride
+	var elbow_front := shoulder + Vector2(face * (6.0 + arm_swing * 2.4), 7.2 + stride * 1.2)
+	var hand_front := elbow_front + Vector2(face * (4.8 + arm_swing * 1.5), 7.2 - stride * 0.9)
+	var elbow_back := shoulder + Vector2(-face * (4.8 + arm_swing * 1.6), 6.8 - stride * 1.0)
+	var hand_back := elbow_back + Vector2(-face * (4.4 + arm_swing * 1.6), 7.0 + stride * 0.7)
+
+	# Legs: explicit two-phase side-view gate. Each foot stays near a common ground
+	# line, while the stepping leg lifts only slightly. That avoids the previous
+	# disconnected shin-to-foot look.
+	var ground_y := 25.5 * h
+	var hip_front := hip + Vector2(face * 2.4, 2.4 * h)
+	var hip_back := hip + Vector2(-face * 2.8, 2.6 * h)
+	var ankle_front := Vector2(face * (9.0 + stride * 5.8), ground_y - step_up * 2.8)
+	var ankle_back := Vector2(face * (-8.0 + stride * 5.2), ground_y - step_back * 2.8)
+	var knee_front := Vector2(face * (5.0 + stride * 4.0), lerpf(hip_front.y + 7.2 * h, ankle_front.y - 6.6 * h, 0.58) - step_up * 2.0)
+	var knee_back := Vector2(face * (-4.8 + stride * 3.5), lerpf(hip_back.y + 7.4 * h, ankle_back.y - 6.4 * h, 0.58) - step_back * 2.0)
 
 	if is_blocker:
-		elbow_front = shoulder + Vector2(face * 14.0, 6.0)
-		hand_front = elbow_front + Vector2(face * 8.0, 5.0)
-		elbow_back = shoulder + Vector2(-face * 12.0, 6.0)
-		hand_back = elbow_back + Vector2(-face * 8.0, 5.0)
+		elbow_front = shoulder + Vector2(face * 13.0, 6.0)
+		hand_front = elbow_front + Vector2(face * 7.0, 4.8)
+		elbow_back = shoulder + Vector2(-face * 11.0, 6.0)
+		hand_back = elbow_back + Vector2(-face * 7.0, 4.8)
+		ankle_front = Vector2(face * 17.0, ground_y)
+		ankle_back = Vector2(-face * 17.0, ground_y)
+		knee_front = hip_front + Vector2(face * 7.0, 11.0 * h)
+		knee_back = hip_back + Vector2(-face * 7.0, 11.0 * h)
 
-	_draw_bone_segment(shoulder, elbow_back, bone.darkened(0.10), 2.0)
-	_draw_bone_segment(elbow_back, hand_back, bone.darkened(0.10), 2.0)
-	_draw_joint(elbow_back, bone.darkened(0.18), 1.5)
-	_draw_bone_segment(shoulder, elbow_front, bone, 2.2)
-	_draw_bone_segment(elbow_front, hand_front, bone, 2.0)
-	_draw_joint(elbow_front, bone.darkened(0.08), 1.6)
-	draw_circle(hand_front, 1.8, accent)
-	draw_circle(hand_back, 1.6, accent.darkened(0.15))
+	_draw_bone_segment(shoulder, elbow_back, back_bone, 1.75)
+	_draw_bone_segment(elbow_back, hand_back, back_bone, 1.65)
+	_draw_bone_segment(hip_back, knee_back, back_bone, 1.85)
+	_draw_bone_segment(knee_back, ankle_back, back_bone, 1.85)
+	_draw_foot(ankle_back, face, back_bone, false)
 
-	var knee_front := hip + Vector2(face * (5.0 + stride * 5.5), 13.5 * h - absf(counter_stride) * 1.0)
-	var foot_front := knee_front + Vector2(face * (7.5 + stride * 3.4), 11.5 * h + maxf(0.0, -stride) * 2.0)
-	var knee_back := hip + Vector2(-face * (4.0 + stride * 4.6), 13.0 * h - absf(stride) * 0.8)
-	var foot_back := knee_back + Vector2(-face * (6.5 + stride * 2.8), 11.5 * h + maxf(0.0, stride) * 2.0)
-
-	if is_blocker:
-		knee_front = hip + Vector2(face * 8.0, 13.0 * h)
-		foot_front = knee_front + Vector2(face * 13.0, 8.5 * h)
-		knee_back = hip + Vector2(-face * 8.0, 13.0 * h)
-		foot_back = knee_back + Vector2(-face * 13.0, 8.5 * h)
-
-	_draw_bone_segment(hip, knee_back, bone.darkened(0.12), 2.1)
-	_draw_bone_segment(knee_back, foot_back, bone.darkened(0.12), 2.1)
-	_draw_joint(knee_back, bone.darkened(0.20), 1.7)
-	_draw_foot(foot_back, -face, bone.darkened(0.12))
-	_draw_bone_segment(hip, knee_front, bone, 2.3)
-	_draw_bone_segment(knee_front, foot_front, bone, 2.3)
-	_draw_joint(knee_front, bone.darkened(0.08), 1.9)
-	_draw_foot(foot_front, face, bone)
+	_draw_bone_segment(shoulder, elbow_front, bone, 1.95)
+	_draw_bone_segment(elbow_front, hand_front, bone, 1.75)
+	draw_circle(hand_front, 1.45, accent)
+	_draw_bone_segment(hip_front, knee_front, bone, 2.05)
+	_draw_bone_segment(knee_front, ankle_front, bone, 2.05)
+	_draw_foot(ankle_front, face, bone, true)
 
 	if is_blocker:
-		draw_rect(Rect2(Vector2(-21, -31), Vector2(42, 56)), Color(0.95, 0.76, 0.23, 0.14), false, 2.0)
+		draw_rect(Rect2(Vector2(-20, -30), Vector2(40, 55)), Color(0.95, 0.76, 0.23, 0.13), false, 2.0)
+
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_bone_segment(a: Vector2, b: Vector2, color: Color, width: float) -> void:
 	draw_line(a, b, color, width, true)
-	draw_circle(a, width * 0.54, color)
-	draw_circle(b, width * 0.54, color)
-
-func _draw_joint(pos: Vector2, color: Color, radius: float) -> void:
-	draw_circle(pos, radius, color)
+	draw_circle(a, width * 0.45, color)
+	draw_circle(b, width * 0.45, color)
 
 func _draw_clavicles(chest: Vector2, shoulder: Vector2, face: float, color: Color) -> void:
-	var back_shoulder := chest + Vector2(-face * 5.2, 1.4)
-	_draw_bone_segment(chest + Vector2(0, -1.8), shoulder, color, 1.45)
-	_draw_bone_segment(chest + Vector2(-face * 0.8, -1.2), back_shoulder, color.darkened(0.12), 1.25)
+	_draw_bone_segment(chest + Vector2(0, -1.5), shoulder, color, 1.2)
+	_draw_bone_segment(chest + Vector2(-face * 0.8, -1.0), chest + Vector2(-face * 4.6, 1.2), color.darkened(0.10), 1.05)
 
 func _draw_pelvis(hip: Vector2, face: float, color: Color, h: float) -> void:
-	var rear := hip + Vector2(-face * 5.8, 1.8 * h)
-	var front := hip + Vector2(face * 6.4, 2.2 * h)
-	var pubis := hip + Vector2(face * 1.0, 7.2 * h)
-	_draw_bone_segment(rear, hip + Vector2(-face * 0.6, 5.8 * h), color.darkened(0.08), 1.6)
-	_draw_bone_segment(front, hip + Vector2(face * 0.8, 6.2 * h), color, 1.7)
-	_draw_bone_segment(hip + Vector2(-face * 0.6, 5.8 * h), pubis, color.darkened(0.05), 1.35)
-	_draw_bone_segment(hip + Vector2(face * 0.8, 6.2 * h), pubis, color, 1.35)
-	draw_circle(rear, 1.7, color.darkened(0.10))
-	draw_circle(front, 1.8, color)
+	var rear := hip + Vector2(-face * 4.8, 1.6 * h)
+	var front := hip + Vector2(face * 5.4, 1.9 * h)
+	var pubis := hip + Vector2(face * 0.5, 6.2 * h)
+	_draw_bone_segment(rear, pubis, color.darkened(0.09), 1.35)
+	_draw_bone_segment(front, pubis, color, 1.45)
+	draw_circle(front, 1.45, color)
+	draw_circle(rear, 1.35, color.darkened(0.12))
 
 func _draw_side_skull(center: Vector2, face: float, bone: Color, shadow: Color) -> void:
 	var skull := PackedVector2Array([
-		center + Vector2(-face * 5.5, -5.8),
-		center + Vector2(face * 3.8, -7.2),
-		center + Vector2(face * 9.2, -3.2),
-		center + Vector2(face * 9.8, 1.6),
-		center + Vector2(face * 5.0, 5.6),
-		center + Vector2(-face * 2.8, 5.0),
-		center + Vector2(-face * 6.8, 0.6),
+		center + Vector2(-face * 5.3, -5.7),
+		center + Vector2(face * 3.4, -7.1),
+		center + Vector2(face * 8.7, -3.0),
+		center + Vector2(face * 9.3, 1.3),
+		center + Vector2(face * 4.8, 5.3),
+		center + Vector2(-face * 2.7, 4.8),
+		center + Vector2(-face * 6.4, 0.5),
 	])
 	draw_colored_polygon(skull, bone)
-	# Jaw/cheek block so the head reads more skull-shaped than circular.
-	draw_rect(Rect2(center + Vector2(face * 1.0 - 2.0, 2.2), Vector2(7.0, 4.8)), bone)
-	draw_circle(center + Vector2(face * 3.8, -1.8), 2.0, shadow)
-	draw_line(center + Vector2(face * 7.2, 0.8), center + Vector2(face * 10.8, 1.8), shadow, 1.2)
-	draw_line(center + Vector2(face * 1.5, 6.5), center + Vector2(face * 7.0, 6.6), shadow, 1.0)
+	draw_rect(Rect2(center + Vector2(face * 0.8 - 2.0, 2.0), Vector2(6.5, 4.4)), bone)
+	draw_circle(center + Vector2(face * 3.6, -1.8), 1.85, shadow)
+	draw_line(center + Vector2(face * 6.8, 0.7), center + Vector2(face * 10.0, 1.6), shadow, 1.05)
+	draw_line(center + Vector2(face * 1.4, 6.1), center + Vector2(face * 6.5, 6.2), shadow, 0.95)
 
-func _draw_foot(ankle: Vector2, face: float, color: Color) -> void:
-	var toe := ankle + Vector2(face * 8.0, 2.0)
-	draw_line(ankle, toe, color, 2.2, true)
-	draw_line(toe, toe + Vector2(face * 3.0, -1.3), color, 1.4, true)
-	draw_line(toe + Vector2(-face * 1.5, 0.5), toe + Vector2(face * 2.5, 2.3), color, 1.1, true)
+func _draw_foot(ankle: Vector2, face: float, color: Color, is_front: bool) -> void:
+	var toe_forward := 7.4 if is_front else 6.2
+	var toe := ankle + Vector2(face * toe_forward, 1.6)
+	# Heel-to-toe foot bone connected directly from the ankle; tiny toe strokes only.
+	draw_line(ankle, toe, color, 2.0 if is_front else 1.75, true)
+	draw_line(toe, toe + Vector2(face * 2.6, -1.0), color, 1.15, true)
+	draw_line(toe + Vector2(-face * 1.3, 0.4), toe + Vector2(face * 2.0, 1.8), color, 1.0, true)
