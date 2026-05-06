@@ -104,9 +104,11 @@ Going forward, treat this as the intended Level 1 mood base, not a throwaway pla
 Recommended polish targets:
 
 - Sharpen the waterline so players instantly read it as danger.
-- Add occasional soul faces, bubbles, ripples, or reaching wisps sparingly.
+- Keep souls sparse: slow tadpole/garment silhouettes at varied angles, with heads near full opacity and tails fading toward transparent.
+- Add occasional bubbles, ripples, or reaching wisps sparingly.
 - Add distant crypt arches/chains/candles as faint background silhouettes only after gameplay readability is safe.
-- Keep platforms high-contrast against the gradient and water.
+- Keep platforms high-contrast against the gradient and water; underworld stone should be darker, cracked, and accented with faint ghost-green/blue sigil light rather than flat purple.
+- Use fake/procedural glow for the immediate prototype. Consider real Godot 2D lighting later when there are stable textured assets and we can tune performance for Web.
 - Avoid visual noise behind tiny skeletons.
 
 ## SVG / Procedural Asset Strategy
@@ -146,7 +148,7 @@ Generate from rectangles/tiles first:
 
 SVG/procgen:
 
-- River Styx: dark brown-black animated pool, readable waterline, pale souls/fog, sink/fade death treatment
+- River Styx: dark brown-black animated pool, readable waterline, sparse pale souls/fog, soup-like impact plus sink/fade death treatment
 - Spikes: repeated triangles, postponed unless a sharper trap shape is needed
 - Lava/acid slime: bright pool with warning edge
 - Crushers: block with teeth, animation later

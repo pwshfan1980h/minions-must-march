@@ -2,6 +2,7 @@ extends CharacterBody2D
 
 signal exited(minion: Node)
 signal died(minion: Node)
+signal death_started(minion: Node, death_kind: String)
 signal clicked(minion: Node)
 
 const BoneSplashScene := preload("res://scenes/effects/BoneSplash.tscn")
@@ -13,6 +14,7 @@ const FATAL_FALL_SPEED := 470.0
 const WALL_NORMAL_THRESHOLD := 0.65
 const BLOCKER_TURN_DISTANCE := 22.0
 const BLOCKER_VERTICAL_TOLERANCE := 18.0
+const STYX_SURFACE_Y := 560.0
 
 var direction := 1.0
 var alive := true
@@ -95,6 +97,7 @@ func _die() -> void:
 		return
 	death_kind = "fall" if death_kind.is_empty() else death_kind
 	alive = false
+	death_started.emit(self, death_kind)
 	if is_blocker:
 		remove_from_group("blockers")
 	_spawn_bone_splash()
@@ -102,7 +105,9 @@ func _die() -> void:
 	queue_free()
 
 func _die_in_styx() -> void:
+	global_position.y = minf(global_position.y, STYX_SURFACE_Y + 2.0)
 	alive = false
+	death_started.emit(self, death_kind)
 	velocity = Vector2.ZERO
 	set_physics_process(false)
 	set_process_input(false)
@@ -111,11 +116,18 @@ func _die_in_styx() -> void:
 	if is_blocker:
 		remove_from_group("blockers")
 	_spawn_bone_splash()
-	var tween := create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(self, "modulate:a", 0.0, 0.55)
-	tween.tween_property(self, "position:y", position.y + 24.0, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	await tween.finished
+	var impact := create_tween()
+	impact.set_parallel(true)
+	impact.tween_property(self, "position:y", position.y + 8.0, 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	impact.tween_property(self, "scale", Vector2(1.12, 0.84), 0.12).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	await impact.finished
+
+	var sink := create_tween()
+	sink.set_parallel(true)
+	sink.tween_property(self, "modulate:a", 0.0, 0.78).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	sink.tween_property(self, "position:y", position.y + 44.0, 0.78).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	sink.tween_property(self, "scale", Vector2(0.72, 0.52), 0.78).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await sink.finished
 	died.emit(self)
 	queue_free()
 

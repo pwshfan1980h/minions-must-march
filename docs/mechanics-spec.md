@@ -57,12 +57,13 @@ Lanky skeleton minions support the job fantasy well: they can brace as blockers,
 Deaths should carry a reason so visuals, scoring, audio, and future tutorial text can react correctly. Current implemented/expected death kinds:
 
 - `fall`: generic lethal fall or off-world loss. Spawn bone splash, count lost, remove the skeleton.
-- `styx_water`: bottom River Styx hazard. Spawn bone splash at contact, then fade/sink the skeleton before counting it lost. This should feel like the underworld reclaiming the minion, not like a sharp trap.
+- `styx_water`: bottom River Styx hazard. Trigger death feedback immediately, snap/settle the skeleton to the water surface, spawn bone splash, then squash slightly and fade/sink the skeleton before counting it lost. This should feel like thick underworld soup reclaiming the minion, not like a sharp trap.
 
 Design intent:
 
 - Keep bone splash as the common comedic failure language.
-- Let death-specific treatments layer on top: water fade/sink now; crusher flattening, holy ash, acid bubbles, etc. later if needed.
+- Death audio should start when the death begins, not when cleanup finishes.
+- Let death-specific treatments layer on top: water impact/fade/sink now; crusher flattening, holy ash, acid bubbles, etc. later if needed.
 - Avoid creating many hazards early. The River Styx bottom boundary should carry most first-wave “you failed to bridge/control the crowd” feedback.
 
 ## Job Set

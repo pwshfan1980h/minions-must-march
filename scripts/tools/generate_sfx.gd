@@ -12,6 +12,7 @@ func _init() -> void:
 
 	_write_wav("bone_clack", 0.22, _sample_bone_clack)
 	_write_wav("bone_splash", 0.46, _sample_bone_splash)
+	_write_wav("styx_impact", 0.62, _sample_styx_impact)
 	_write_wav("blocker_brace", 0.28, _sample_blocker_brace)
 	_write_wav("resume_march", 0.24, _sample_resume_march)
 	_write_wav("exit_rescue", 0.55, _sample_exit_rescue)
@@ -61,15 +62,27 @@ func _sample_bone_clack(t: float, _duration: float) -> float:
 	return (hit1 + hit2 * 0.75 + tick * 0.35) * 0.7
 
 func _sample_bone_splash(t: float, duration: float) -> float:
-	var burst := _noise() * _decay(t, 0.13) * 0.55
+	var burst := _noise() * _decay(t, 0.11) * 0.72
 	var clacks := 0.0
-	for n in 6:
-		var at := 0.035 + float(n) * 0.052
+	for n in 7:
+		var at := 0.018 + float(n) * 0.043
 		var lt := t - at
 		if lt >= 0.0:
-			clacks += sin(TAU * (520.0 + n * 85.0) * lt) * _decay(lt, 0.028) * 0.32
-	var tail := sin(TAU * 120.0 * t) * _fade_out(t, duration) * 0.08
-	return burst + clacks + tail
+			clacks += sin(TAU * (410.0 + n * 118.0) * lt) * _decay(lt, 0.024) * 0.42
+	var low_knock := sin(TAU * 72.0 * t) * _decay(t, 0.20) * 0.28
+	var tail := sin(TAU * 118.0 * t) * _fade_out(t, duration) * 0.06
+	return burst + clacks + low_knock + tail
+
+func _sample_styx_impact(t: float, duration: float) -> float:
+	var plop := sin(TAU * 54.0 * t) * _decay(t, 0.16) * 0.85
+	var sludge := _noise() * _decay(t, 0.22) * 0.38
+	var bubbles := 0.0
+	for n in 5:
+		var lt := t - 0.11 - float(n) * 0.07
+		if lt >= 0.0:
+			bubbles += sin(TAU * (180.0 + n * 37.0) * lt) * _decay(lt, 0.045) * 0.18
+	var undertow := sin(TAU * 31.0 * t) * _fade_out(t, duration) * 0.22
+	return plop + sludge + bubbles + undertow
 
 func _sample_blocker_brace(t: float, _duration: float) -> float:
 	var thud := sin(TAU * 96.0 * t) * _decay(t, 0.08) * 0.9
@@ -85,13 +98,14 @@ func _sample_resume_march(t: float, _duration: float) -> float:
 
 func _sample_exit_rescue(t: float, duration: float) -> float:
 	var chime := 0.0
-	var notes := [523.25, 659.25, 783.99]
+	var notes := [392.0, 493.88, 587.33]
 	for n in notes.size():
-		var lt := t - float(n) * 0.085
+		var lt := t - float(n) * 0.11
 		if lt >= 0.0:
-			chime += sin(TAU * notes[n] * lt) * _decay(lt, 0.16) * 0.34
-	var shimmer := sin(TAU * 1567.0 * t) * _fade_out(t, duration) * 0.08
-	return chime + shimmer
+			chime += sin(TAU * notes[n] * lt) * _decay(lt, 0.24) * 0.20
+	var warm_pad := sin(TAU * 196.0 * t) * _fade_out(t, duration) * 0.07
+	var shimmer := sin(TAU * 880.0 * t) * _fade_out(t, duration) * 0.025
+	return chime + warm_pad + shimmer
 
 func _sample_job_select(t: float, _duration: float) -> float:
 	return (_tone(t, 740.0, 0.045) + _tone(maxf(t - 0.035, 0.0), 990.0, 0.040) * 0.7) * _decay(t, 0.08)

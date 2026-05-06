@@ -4,6 +4,7 @@ class_name SfxPlayer
 const STREAMS := {
 	"bone_clack": preload("res://assets/audio/generated/bone_clack.wav"),
 	"bone_splash": preload("res://assets/audio/generated/bone_splash.wav"),
+	"styx_impact": preload("res://assets/audio/generated/styx_impact.wav"),
 	"blocker_brace": preload("res://assets/audio/generated/blocker_brace.wav"),
 	"resume_march": preload("res://assets/audio/generated/resume_march.wav"),
 	"exit_rescue": preload("res://assets/audio/generated/exit_rescue.wav"),

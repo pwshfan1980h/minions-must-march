@@ -56,6 +56,7 @@ func _spawn_minion() -> void:
 	minion.position = spawn_position
 	minion.direction = spawn_direction
 	minion.exited.connect(_on_minion_exited)
+	minion.death_started.connect(_on_minion_death_started)
 	minion.died.connect(_on_minion_died)
 	minion.clicked.connect(_on_minion_clicked)
 	add_child(minion)
@@ -70,10 +71,14 @@ func _on_minion_exited(minion: Node) -> void:
 	sfx_requested.emit("exit_rescue")
 	minion_rescued.emit(minion)
 
+func _on_minion_death_started(_minion: Node, death_kind: String) -> void:
+	if death_kind == "styx_water":
+		sfx_requested.emit("styx_impact")
+	sfx_requested.emit("bone_splash")
+
 func _on_minion_died(minion: Node) -> void:
 	lost_count += 1
 	active_count = max(0, active_count - 1)
-	sfx_requested.emit("bone_splash")
 	minion_lost.emit(minion)
 
 func set_selected_job(job_id: String) -> void:

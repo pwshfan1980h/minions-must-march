@@ -187,6 +187,16 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Updated Level 1 notes/layout to remove the old spike/support-floor mental model and represent the bottom hazard as water.
 - Added near-term polish guidance for waterline readability, souls/fog, and crypt backdrop restraint.
 
+## 2026-05-06 - Styx soup and audio placeholder refinement
+
+- Checked `assets/` for external sound candidates; only generated WAVs are currently present, so better imported SFX can be swapped in later when added.
+- Added a generated `styx_impact.wav` placeholder for sludgy water impact and made `bone_splash.wav` more brittle/death-like for now.
+- Softened `exit_rescue.wav` into a smoother, lower chime so saves feel less sharp.
+- Moved death SFX to a new immediate `death_started` signal so impact/bone sounds play when the death begins, not after water fade completes.
+- Updated Styx deaths so skeletons impact at the water surface, squash slightly, then sink/fade like thick soup while preserving the bone splash.
+- Reduced and redesigned souls: fewer, slower, angled tadpole/garment shapes with fading tails instead of frequent lure-like blobs.
+- Darkened/reworked crypt platforms with cracks, underworld trim, and faint ghost-green sigil accents; kept lighting as fake/procedural glow for now rather than full Godot Light2D.
+
 ## 2026-05-06 - Local Web export feasibility test
 
 - Will asked to try a local hosted Web export now that the baseline is playable.
