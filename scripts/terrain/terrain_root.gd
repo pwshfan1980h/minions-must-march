@@ -11,9 +11,11 @@ var collision_rects: Array[Rect2] = []
 var _time := 0.0
 var _redraw_elapsed := 0.0
 var _soul_specs: Array[Dictionary] = []
+var _hand_specs: Array[Dictionary] = []
 
 func _ready() -> void:
 	_build_souls()
+	_build_hands()
 	_build_level_001_terrain()
 	_add_styx_death_area()
 	queue_redraw()
@@ -165,9 +167,25 @@ func _build_souls() -> void:
 		{"x": 418.0, "y": 627.0, "phase": 2.30, "scale": 0.74, "angle": 0.28, "speed": 3.0},
 		{"x": 725.0, "y": 604.0, "phase": 4.15, "scale": 1.02, "angle": -0.12, "speed": 3.8},
 		{"x": 1055.0, "y": 638.0, "phase": 5.80, "scale": 0.68, "angle": 0.55, "speed": 2.5},
+		{"x": 1375.0, "y": 612.0, "phase": 1.45, "scale": 0.82, "angle": -0.18, "speed": 3.2},
+		{"x": 1660.0, "y": 632.0, "phase": 3.10, "scale": 1.08, "angle": 0.16, "speed": 4.0},
+		{"x": 2035.0, "y": 606.0, "phase": 4.95, "scale": 0.76, "angle": -0.46, "speed": 3.6},
 	]
 	for spec in soul_data:
 		_soul_specs.append(spec)
+
+func _build_hands() -> void:
+	_hand_specs.clear()
+	var hand_data := [
+		{"x": 260.0, "phase": 0.10, "scale": 0.88, "cycle": 4.7, "lean": -0.22},
+		{"x": 620.0, "phase": 1.90, "scale": 1.06, "cycle": 5.6, "lean": 0.18},
+		{"x": 980.0, "phase": 3.20, "scale": 0.74, "cycle": 4.9, "lean": -0.12},
+		{"x": 1325.0, "phase": 2.45, "scale": 0.96, "cycle": 6.2, "lean": 0.28},
+		{"x": 1745.0, "phase": 4.30, "scale": 1.12, "cycle": 5.2, "lean": -0.18},
+		{"x": 2160.0, "phase": 5.40, "scale": 0.82, "cycle": 4.6, "lean": 0.14},
+	]
+	for spec in hand_data:
+		_hand_specs.append(spec)
 
 func _draw() -> void:
 	_draw_crypt_gradient()
@@ -355,19 +373,17 @@ func _draw_mist_wisp(pos: Vector2, height: float, sway: float, color: Color, see
 		draw_polyline(points, Color(color.r, color.g, color.b, a), 1.4 + strand * 0.35, true)
 
 func _draw_torn_smoke_veil(pos: Vector2, width: float, height: float, color: Color, seed: float) -> void:
-	var left := PackedVector2Array()
-	var right := PackedVector2Array()
-	for j in 5:
-		var t := float(j) / 4.0
-		var y := pos.y - height * t
-		left.append(Vector2(pos.x + sin(seed + t * 4.0 + _time * 0.3) * 8.0, y))
-		right.append(Vector2(pos.x + width + sin(seed + 2.0 + t * 3.0 + _time * 0.25) * 11.0, y + sin(t * PI) * 8.0))
-	var poly := PackedVector2Array()
-	for point in left:
-		poly.append(point)
-	for j in range(right.size() - 1, -1, -1):
-		poly.append(right[j])
-	draw_colored_polygon(poly, color)
+	# Use layered strokes instead of filled polygons; Godot's polygon triangulator
+	# hates self-crossing smoky shapes, and strokes read better for wispy vapor.
+	for strand in 4:
+		var points := PackedVector2Array()
+		var x_base := pos.x + width * (float(strand) / 3.0)
+		for j in 6:
+			var t := float(j) / 5.0
+			var curl := sin(seed + float(strand) * 1.4 + t * 4.6 + _time * 0.28) * (5.0 + t * 9.0)
+			points.append(Vector2(x_base + curl, pos.y - height * t))
+		var a := color.a * lerpf(0.78, 0.22, float(strand) / 3.0)
+		draw_polyline(points, Color(color.r, color.g, color.b, a), 1.2, true)
 
 func _draw_light_shards(pos: Vector2, width: float, height: float, color: Color, seed: float) -> void:
 	var half_w := width / 2.0
@@ -384,24 +400,87 @@ func _draw_light_shards(pos: Vector2, width: float, height: float, color: Color,
 
 func _draw_styx_water() -> void:
 	var rect := Rect2(0, STYX_WATERLINE_Y, WORLD_WIDTH, STYX_DEPTH)
-	draw_rect(rect, Color(0.034, 0.020, 0.014, 1.0))
-	draw_rect(Rect2(0, STYX_WATERLINE_Y, WORLD_WIDTH, 19), Color(0.105, 0.074, 0.044, 0.76))
-	draw_rect(Rect2(0, STYX_WATERLINE_Y + 20, WORLD_WIDTH, 18), Color(0.025, 0.016, 0.012, 0.58))
-
-	for band in 4:
-		var y := STYX_WATERLINE_Y + 8.0 + band * 19.0
-		var points := PackedVector2Array()
-		for x in range(-16, WORLD_WIDTH + 33, 16):
-			var wave := sin(float(x) * 0.026 + _time * (0.55 + band * 0.13) + band) * (2.0 + band * 0.8)
-			points.append(Vector2(x, y + wave))
-		var color := Color(0.22, 0.17, 0.10, 0.21 - band * 0.032)
-		draw_polyline(points, color, 2.0, true)
+	draw_rect(rect, Color(0.030, 0.018, 0.014, 1.0))
+	_draw_styx_surface_skin()
+	_draw_styx_currents()
+	_draw_styx_hands()
 
 	for soul in _soul_specs:
 		var phase := _time * 0.44 + float(soul["phase"])
 		var drift := Vector2(cos(float(soul["angle"])), sin(float(soul["angle"]))) * sin(phase * 0.7) * float(soul["speed"])
 		var pos := Vector2(float(soul["x"]), float(soul["y"])) + drift + Vector2(sin(phase) * 10.0, cos(phase * 0.6) * 5.0)
 		_draw_soul(pos, float(soul["scale"]), phase, float(soul["angle"]))
+
+func _draw_styx_surface_skin() -> void:
+	var top := PackedVector2Array()
+	var bottom := PackedVector2Array()
+	for x in range(-24, WORLD_WIDTH + 49, 24):
+		var wave := sin(float(x) * 0.023 + _time * 0.72) * 3.0 + sin(float(x) * 0.011 - _time * 0.38) * 2.1
+		top.append(Vector2(x, STYX_WATERLINE_Y + wave))
+		bottom.append(Vector2(x, STYX_WATERLINE_Y + 24.0 + wave * 0.34))
+	var skin := PackedVector2Array()
+	for point in top:
+		skin.append(point)
+	for i in range(bottom.size() - 1, -1, -1):
+		skin.append(bottom[i])
+	draw_colored_polygon(skin, Color(0.112, 0.078, 0.046, 0.82))
+	draw_rect(Rect2(0, STYX_WATERLINE_Y + 24, WORLD_WIDTH, 32), Color(0.024, 0.015, 0.012, 0.62))
+	draw_rect(Rect2(0, STYX_WATERLINE_Y + 56, WORLD_WIDTH, STYX_DEPTH - 56), Color(0.018, 0.011, 0.010, 0.68))
+
+func _draw_styx_currents() -> void:
+	for band in 7:
+		var y := STYX_WATERLINE_Y + 7.0 + band * 13.0
+		var points := PackedVector2Array()
+		var direction := -1.0 if band % 2 == 0 else 1.0
+		for x in range(-32, WORLD_WIDTH + 65, 16):
+			var fx := float(x)
+			var wave := sin(fx * (0.019 + band * 0.002) + _time * direction * (0.72 + band * 0.08) + band) * (2.2 + band * 0.42)
+			var undertow := sin(fx * 0.006 - _time * 0.36 + band * 1.7) * 1.8
+			points.append(Vector2(fx, y + wave + undertow))
+		var color := Color(0.30, 0.22, 0.12, 0.23 - band * 0.018) if band < 3 else Color(0.10, 0.20, 0.16, 0.12)
+		draw_polyline(points, color, 1.7 + float(band % 3) * 0.35, true)
+
+	# Slow eddies: angular current marks, not oval bubbles.
+	for i in 11:
+		var x := fposmod(float(i) * 229.0 + _time * (18.0 + float(i % 3) * 7.0), WORLD_WIDTH + 120.0) - 60.0
+		var y := STYX_WATERLINE_Y + 18.0 + float((i * 17) % 68)
+		var phase := _time * 0.8 + float(i)
+		var eddy := PackedVector2Array([
+			Vector2(x - 18.0, y + sin(phase) * 2.0),
+			Vector2(x - 4.0, y - 5.0),
+			Vector2(x + 14.0, y - 2.0),
+			Vector2(x + 2.0, y + 6.0),
+		])
+		draw_polyline(eddy, Color(0.53, 0.43, 0.22, 0.070), 1.4, true)
+
+func _draw_styx_hands() -> void:
+	for hand in _hand_specs:
+		var cycle_seconds := float(hand["cycle"])
+		var t := fposmod(_time + float(hand["phase"]), cycle_seconds) / cycle_seconds
+		var emerge := smoothstep(0.04, 0.22, t) * (1.0 - smoothstep(0.58, 0.86, t))
+		if emerge <= 0.01:
+			continue
+		var bob := sin(t * TAU * 1.8) * 2.0
+		var x := float(hand["x"]) + sin(_time * 0.23 + float(hand["phase"])) * 8.0
+		var y := STYX_WATERLINE_Y + 10.0 - emerge * (34.0 * float(hand["scale"])) + bob
+		_draw_grasping_hand(Vector2(x, y), float(hand["scale"]), float(hand["lean"]), emerge)
+
+func _draw_grasping_hand(pos: Vector2, scale: float, lean: float, alpha: float) -> void:
+	var skin := Color(0.50, 0.58, 0.45, 0.34 * alpha)
+	var shadow := Color(0.035, 0.027, 0.020, 0.42 * alpha)
+	var wrist := pos + Vector2(lean * 16.0, 26.0 * scale)
+	var palm := pos + Vector2(lean * 8.0, 5.0 * scale)
+	draw_line(wrist + Vector2(2, 1), palm + Vector2(2, 1), shadow, 8.0 * scale, true)
+	draw_line(wrist, palm, skin, 6.0 * scale, true)
+	for i in 5:
+		var spread := -13.0 + float(i) * 6.5
+		var length := (18.0 + float(i % 2) * 5.0) * scale
+		var curl := sin(_time * 1.1 + pos.x * 0.01 + float(i)) * 4.0 * scale
+		var knuckle := palm + Vector2(spread * scale, -8.0 * scale)
+		var tip := knuckle + Vector2(spread * 0.20 + lean * 7.0, -length + curl)
+		draw_line(knuckle + Vector2(1, 1), tip + Vector2(1, 1), shadow, 3.0 * scale, true)
+		draw_line(knuckle, tip, skin, 2.0 * scale, true)
+	_draw_torn_smoke_veil(pos + Vector2(-16.0 * scale, 23.0 * scale), 34.0 * scale, 28.0 * scale, Color(0.10, 0.08, 0.04, 0.15 * alpha), pos.x * 0.01)
 
 func _draw_soul(pos: Vector2, scale: float, phase: float, angle: float) -> void:
 	var visible_pulse := 0.5 + 0.5 * sin(phase * 0.72)

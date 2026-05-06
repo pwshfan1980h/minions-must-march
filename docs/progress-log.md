@@ -223,6 +223,13 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added explicit foot/toe bones and a braced side-view blocker stance.
 - Follow-up detail pass added restrained pelvis, clavicle, elbow, and knee hints so the skeletons read better without becoming noisy medical diagrams.
 
+## 2026-05-06 - Lake of souls interaction pass
+
+- Searched ClawHub for Godot skills; `openclaw-godot-skill` was flagged suspicious and not installed, so installed/read `godot-dev-guide` instead.
+- Improved Styx death impact: skeletons now create surface ripples and vertical goop jets along with bone fragments when they hit the lake.
+- Reworked the Lake of Souls flow with a wavy surface skin, layered counter-moving current lines, angular eddies, and more souls distributed across the full level width.
+- Added periodic grasping hands emerging from the goop, with staggered cycles so the lake feels alive instead of static.
+
 ## 2026-05-06 - Shape-language cleanup pass
 
 - Replaced many repeated oval/ellipse fog and glow stamps with wispy vertical mist lines, torn smoke veils, irregular polygon light shards, and faceted exit/spawn glow shapes.
