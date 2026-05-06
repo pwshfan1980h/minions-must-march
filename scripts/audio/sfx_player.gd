@@ -26,6 +26,8 @@ func _exit_tree() -> void:
 	_active_players.clear()
 
 func play(sound_id: String, volume_db := 0.0, pitch_jitter := 0.04) -> void:
+	if DisplayServer.get_name() == "headless":
+		return
 	if not STREAMS.has(sound_id):
 		push_warning("Unknown SFX id: %s" % sound_id)
 		return

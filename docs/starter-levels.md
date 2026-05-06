@@ -49,7 +49,7 @@ A cracked spawn arch sits on the upper-left crypt platform, with bats/cobwebs as
 - Jobs:
   - Blocker: 2
   - Builder: 4
-- Hazards: pit, optional spikes at bottom for readability
+- Hazards: pit/drop into River Styx-style underworld water at the bottom of the playfield
 
 ### Rough Layout
 
@@ -73,7 +73,7 @@ Legend:
 - `E` exit crypt / portal
 - `#` solid terrain
 - `.` air
-- `^` spikes/loss pit
+- `^` Styx water / underworld loss pit
 - `>` intended walking direction
 
 ### Intended Solution
@@ -84,6 +84,8 @@ Legend:
 4. Once bridge reaches the far platform, release or route the remaining minions to the exit.
 
 ### Notes
+
+Visual direction note: the bottom hazard should be a pitch brownish-black River Styx layer with subtle wave motion and pale souls drifting in it, not a generic spike floor. Skeletons that fall in should bone-splash, then fade/sink away.
 
 If blocker removal is not implemented, design the blocker placement so it does not permanently trap everyone. Options:
 

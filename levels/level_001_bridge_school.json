@@ -22,5 +22,8 @@
     "blocker": 2,
     "builder": 4
   },
-  "notes": "Current prototype layout is a blocker/ledge-death test: minions spawn on the right side of the platform and march left. Without a blocker they should walk off the platform and die; with a blocker they redirect back toward the exit. This is also the intended core problem for Mission 1."
+  "hazards": {
+    "bottom": "styx_water"
+  },
+  "notes": "Current prototype layout is a blocker/ledge-death test: minions spawn on the right side of the platform and march left. Without a blocker they should walk off the platform and fall into the River Styx underworld water; with a blocker they redirect back toward the exit. This is also the intended core problem for Mission 1."
 }

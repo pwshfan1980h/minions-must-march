@@ -75,7 +75,8 @@ Core feel:
 - Funny, rattly, slightly spooky but not grim
 - Crumbling crypts, cracked stone, dusty catacombs, old tombs, collapsed masonry
 - Bats, candles, cobwebs, loose bones, skull piles, broken coffins, rusty gates
-- Blue-green ghost light, warm candle accents, deep purples/grays, bone-white silhouettes
+- Blue-green ghost light, warm candle accents, deep purples/grays, black-to-grey crypt gradients, bone-white silhouettes
+- Pitch brownish-black underworld water with pale souls/fog as the first bottom hazard, replacing generic spike floors for Level 1 tone
 - Clear danger with a playful tone
 - Tiny undead workers doing questionable civil engineering
 
@@ -148,7 +149,7 @@ Suggested first UI icons:
 ## Readability Rules
 
 - Spawn entrance and exit/safe crypt must be visually distinct.
-- Hazards must be obvious at a glance.
+- Hazards must be obvious at a glance; Styx water should read as a no-go bottom boundary through motion, darkness, and ghost/soul accents.
 - Diggable vs indestructible terrain must differ clearly.
 - Assigned job minions need clear visual state.
 - Do not rely only on color; use shape/pattern too.

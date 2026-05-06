@@ -172,6 +172,14 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Broke the next work into focused sessions: Builder design lock, Builder v0 implementation, Level 1 solvable loop, UX/feedback pass, Web export recheck, and Level 1 polish start.
 - Marked completed/partial phase statuses so future sessions can quickly pick the next useful target without rereading the whole plan.
 
+## 2026-05-06 - Quick Underworld/Styx art pass
+
+- Replaced the plain bottom support/spike-floor direction with a pitch brownish-black River Styx-style water hazard at the bottom of the playfield.
+- Added a simple procedural crypt backdrop: black-to-grey/purple gradient, faint underworld glow, drifting ground fog/dust, animated water wave lines, and pale soul shapes floating in the water.
+- Added a `StyxDeathWater` area so minions can know they died to `styx_water` instead of generic fall death.
+- Updated skeleton death handling so water deaths keep the bone splash and then fade/sink away before being counted lost.
+- Updated mechanics/asset/level docs to make underworld water the first-wave bottom hazard direction.
+
 ## 2026-05-06 - Local Web export feasibility test
 
 - Will asked to try a local hosted Web export now that the baseline is playable.

@@ -19,6 +19,7 @@ var alive := true
 var rescued := false
 var is_blocker := false
 var highest_fall_speed := 0.0
+var death_kind := ""
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -80,13 +81,41 @@ func resume_march() -> bool:
 	queue_redraw()
 	return true
 
+func die_to(kind: String) -> void:
+	if not alive or rescued:
+		return
+	death_kind = kind
+	if kind == "styx_water":
+		_die_in_styx()
+	else:
+		_die()
+
 func _die() -> void:
 	if not alive or rescued:
 		return
+	death_kind = "fall" if death_kind.is_empty() else death_kind
 	alive = false
 	if is_blocker:
 		remove_from_group("blockers")
 	_spawn_bone_splash()
+	died.emit(self)
+	queue_free()
+
+func _die_in_styx() -> void:
+	alive = false
+	velocity = Vector2.ZERO
+	set_physics_process(false)
+	set_process_input(false)
+	if collision_shape != null:
+		collision_shape.set_deferred("disabled", true)
+	if is_blocker:
+		remove_from_group("blockers")
+	_spawn_bone_splash()
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(self, "modulate:a", 0.0, 0.55)
+	tween.tween_property(self, "position:y", position.y + 24.0, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await tween.finished
 	died.emit(self)
 	queue_free()
 

@@ -37,6 +37,7 @@ Recommended early thresholds:
 - Does **not** detect ledges or self-preserve; if terrain ends, it walks off.
 - Falls under gravity.
 - Is lost/shattered if fall distance exceeds safe threshold.
+- Is lost to the River Styx if it falls into the bottom underworld-water layer; this uses the same bone-splash feedback plus a short fade/sink treatment.
 - Enters exit if overlapping/standing at the exit portal/safe crypt door.
 
 Recommended prototype numbers:
@@ -190,9 +191,11 @@ Blocks movement and cannot be modified.
 
 ### Hazard
 
-Shatters/loses minions on contact. Examples:
+Shatters/loses minions on contact. The first visual hazard direction is **River Styx / underworld water** at the bottom of the level: pitch brownish-black animated water with pale souls drifting in it. When skeletons fall in, they spawn the bone-splash effect, then fade/sink away.
 
-- Spikes
+Other later examples:
+
+- Spikes, if a sharper trap read is needed later
 - Lava or acid slime
 - Crusher blocks
 - Holy wards/sunbeams
@@ -201,7 +204,7 @@ Shatters/loses minions on contact. Examples:
 - Crumbling floors
 - Cursed thorns, if visually useful
 
-Use one hazard type at first. Prefer hazards that read clearly at small size.
+Prefer hazards that read clearly at small size and match the underworld crypt tone.
 
 ## Level Data Needs
 
