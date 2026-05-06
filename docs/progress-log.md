@@ -223,6 +223,12 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added explicit foot/toe bones and a braced side-view blocker stance.
 - Follow-up detail pass added restrained pelvis, clavicle, elbow, and knee hints so the skeletons read better without becoming noisy medical diagrams.
 
+## 2026-05-06 - Skeleton fall dynamism pass
+
+- Tuned ledge-fall rotation to be a subtler varied spin instead of a uniform hard tumble.
+- Added light airborne limb flailing so falling skeletons feel loose and dynamic without becoming cartoonish.
+- Added a small sideways drift/sink wobble as bodies disappear into the Lake of Souls.
+
 ## 2026-05-06 - Skeleton ledge tumble pass
 
 - Skeletons now start a visual topple/tumble when they walk off a ledge, rotating while gravity pulls them down instead of staying upright in midair.

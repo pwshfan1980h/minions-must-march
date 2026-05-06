@@ -32,6 +32,8 @@ var _last_anim_frame := -1
 var _is_tumbling := false
 var _visual_tumble_rotation := 0.0
 var _tumble_speed := 0.0
+var _air_time := 0.0
+var _sink_wobble := 0.0
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
@@ -66,8 +68,10 @@ func _physics_process(delta: float) -> void:
 	if not is_blocker:
 		highest_fall_speed = maxf(highest_fall_speed, velocity.y)
 		if _is_tumbling:
-			_visual_tumble_rotation += _tumble_speed * delta
-			_tumble_speed = clampf(_tumble_speed + signf(_tumble_speed) * 0.18 * delta, -5.8, 5.8)
+			_air_time += delta
+			var wobble := sin(_air_time * 8.5 + float(get_instance_id()) * 0.01) * 0.10
+			_visual_tumble_rotation += (_tumble_speed + wobble) * delta
+			_tumble_speed = clampf(_tumble_speed + signf(_tumble_speed) * 0.11 * delta, -4.8, 4.8)
 			queue_redraw()
 
 	move_and_slide()
@@ -182,8 +186,11 @@ func _die_in_styx() -> void:
 	sink.set_parallel(true)
 	sink.tween_property(self, "modulate:a", 0.0, 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	sink.tween_property(self, "position:y", position.y + 58.0, 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	sink.tween_property(self, "position:x", position.x + direction * 6.0, 0.44).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	sink.tween_property(self, "scale", Vector2(0.66, 0.42), 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	sink.tween_property(self, "_visual_tumble_rotation", impact_rotation + signf(impact_rotation if impact_rotation != 0.0 else direction) * 0.28, 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	sink.tween_property(self, "_sink_wobble", signf(direction) * 0.10, 0.44).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	sink.tween_property(self, "_sink_wobble", signf(direction) * -0.07, 0.44).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT).set_delay(0.44)
+	sink.tween_property(self, "_visual_tumble_rotation", impact_rotation + signf(impact_rotation if impact_rotation != 0.0 else direction) * 0.22, 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	sink.tween_callback(queue_redraw).set_delay(0.88)
 	await sink.finished
 	died.emit(self)
@@ -193,9 +200,10 @@ func _start_tumble() -> void:
 	if _is_tumbling or is_blocker:
 		return
 	_is_tumbling = true
-	var variant := 0.86 + fposmod(float(get_instance_id()), 11.0) * 0.018
-	_tumble_speed = direction * (2.65 + variant)
-	_visual_tumble_rotation = direction * 0.10
+	var variant := fposmod(float(get_instance_id()), 13.0) / 13.0
+	_air_time = 0.0
+	_tumble_speed = direction * lerpf(2.05, 3.15, variant)
+	_visual_tumble_rotation = direction * lerpf(0.06, 0.14, variant)
 	queue_redraw()
 
 func _stop_tumble() -> void:
@@ -203,7 +211,9 @@ func _stop_tumble() -> void:
 		return
 	_is_tumbling = false
 	_tumble_speed = 0.0
+	_air_time = 0.0
 	_visual_tumble_rotation = 0.0
+	_sink_wobble = 0.0
 	queue_redraw()
 
 func _spawn_bone_splash() -> void:
@@ -239,7 +249,7 @@ func _input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> vo
 func _draw() -> void:
 	# Draw at a smaller in-world scale. This keeps the same level camera/field,
 	# but makes the crowd feel more numerous and less toy-large.
-	draw_set_transform(Vector2.ZERO, _visual_tumble_rotation, Vector2(VISUAL_SCALE, VISUAL_SCALE))
+	draw_set_transform(Vector2.ZERO, _visual_tumble_rotation + _sink_wobble, Vector2(VISUAL_SCALE, VISUAL_SCALE))
 
 	var bone := Color("f1e7c8") if is_blocker else Color("e8e0c8") if alive else Color("8c7f91")
 	var shadow := Color("211b2b")
@@ -249,13 +259,17 @@ func _draw() -> void:
 	if face == 0.0:
 		face = 1.0
 
-	var stride := 0.0 if is_blocker else sin(_walk_time)
+	var airborne_motion := _is_tumbling or (not alive and not rescued)
+	var fall_phase := _air_time * 9.5 + float(get_instance_id()) * 0.01
+	var stride := sin(fall_phase) * 0.55 if airborne_motion else 0.0 if is_blocker else sin(_walk_time)
 	var leg_front_phase := stride
 	var leg_back_phase := -stride
 	var front_lift := maxf(0.0, leg_front_phase)
 	var back_lift := maxf(0.0, leg_back_phase)
-	var bob := 0.0 if is_blocker else absf(stride) * 1.05
+	var bob := 0.0 if is_blocker else absf(stride) * (0.55 if airborne_motion else 1.05)
 	var lean := face * (2.8 + _spine_variant * 7.0 + (0.45 * absf(stride) if not is_blocker else -1.0))
+	if airborne_motion:
+		lean += sin(fall_phase * 0.74) * 5.0
 	var h := _height_variant
 
 	var hip := Vector2(-face * 0.8, 3.0 - bob)
@@ -282,6 +296,11 @@ func _draw() -> void:
 	var hand_front := elbow_front + Vector2(face * (4.8 + arm_swing * 1.5), 7.2 - stride * 0.9)
 	var elbow_back := shoulder + Vector2(-face * (4.8 + arm_swing * 1.6), 6.8 - stride * 1.0)
 	var hand_back := elbow_back + Vector2(-face * (4.4 + arm_swing * 1.6), 7.0 + stride * 0.7)
+	if airborne_motion:
+		elbow_front += Vector2(face * sin(fall_phase) * 3.8, -5.5 + cos(fall_phase * 0.7) * 2.5)
+		hand_front += Vector2(face * sin(fall_phase + 0.7) * 5.2, -7.5 + cos(fall_phase) * 3.4)
+		elbow_back += Vector2(-face * cos(fall_phase * 0.8) * 3.2, -4.0 + sin(fall_phase * 0.9) * 2.2)
+		hand_back += Vector2(-face * cos(fall_phase + 0.4) * 4.8, -6.8 + sin(fall_phase * 0.8) * 3.0)
 
 	# Legs: explicit two-phase side-view gait. Near/far legs move in opposite
 	# horizontal phases: one plants behind while the other passes forward.
@@ -292,6 +311,11 @@ func _draw() -> void:
 	var ankle_back := Vector2(face * (-8.2 + leg_back_phase * 5.3), ground_y - back_lift * 2.7)
 	var knee_front := Vector2(face * (4.6 + leg_front_phase * 3.7), lerpf(hip_front.y + 7.2 * h, ankle_front.y - 6.6 * h, 0.58) - front_lift * 2.0)
 	var knee_back := Vector2(face * (-4.8 + leg_back_phase * 3.5), lerpf(hip_back.y + 7.4 * h, ankle_back.y - 6.4 * h, 0.58) - back_lift * 1.9)
+	if airborne_motion:
+		ankle_front += Vector2(face * sin(fall_phase * 0.7) * 4.2, -4.2 + cos(fall_phase) * 4.0)
+		ankle_back += Vector2(-face * cos(fall_phase * 0.8) * 4.0, -3.6 + sin(fall_phase * 0.9) * 3.4)
+		knee_front += Vector2(face * sin(fall_phase + 0.6) * 3.0, -2.5)
+		knee_back += Vector2(-face * cos(fall_phase + 0.2) * 2.8, -2.2)
 
 	if is_blocker:
 		elbow_front = shoulder + Vector2(face * 13.0, 6.0)
