@@ -22,12 +22,21 @@ var rescued := false
 var is_blocker := false
 var highest_fall_speed := 0.0
 var death_kind := ""
+var _walk_time := 0.0
+var _height_variant := 1.0
+var _spine_variant := 0.0
+var _stride_variant := 1.0
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
 func _ready() -> void:
 	add_to_group("minions")
 	input_pickable = true
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(get_instance_id())
+	_height_variant = rng.randf_range(0.92, 1.10)
+	_spine_variant = rng.randf_range(-0.10, 0.16)
+	_stride_variant = rng.randf_range(0.88, 1.14)
 	queue_redraw()
 
 func _physics_process(delta: float) -> void:
@@ -36,6 +45,8 @@ func _physics_process(delta: float) -> void:
 
 	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
 	velocity.x = 0.0 if is_blocker else WALK_SPEED * direction
+	if is_on_floor() and not is_blocker:
+		_walk_time += delta * 8.8 * _stride_variant
 	if not is_blocker:
 		highest_fall_speed = maxf(highest_fall_speed, velocity.y)
 
@@ -176,21 +187,98 @@ func _input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> vo
 		clicked.emit(self)
 
 func _draw() -> void:
-	# Tiny lanky skeleton placeholder. Real sprite/animation comes later.
 	var bone := Color("f1e7c8") if is_blocker else Color("e8e0c8") if alive else Color("8c7f91")
 	var shadow := Color("211b2b")
-	draw_circle(Vector2(0, -22), 8, bone)
-	draw_circle(Vector2(-3, -24), 1.8, shadow)
-	draw_circle(Vector2(3, -24), 1.8, shadow)
-	draw_line(Vector2(0, -14), Vector2(0, 2), bone, 3)
+	var accent := Color("b9a77b")
+	var face := signf(direction)
+	if face == 0.0:
+		face = 1.0
+
+	var stride := 0.0 if is_blocker else sin(_walk_time)
+	var counter_stride := 0.0 if is_blocker else sin(_walk_time + PI)
+	var bob := 0.0 if is_blocker else absf(sin(_walk_time)) * 1.5
+	var lean := face * (3.0 + _spine_variant * 10.0 + (0.8 * absf(stride) if not is_blocker else -1.2))
+	var h := _height_variant
+
+	var hip := Vector2(-face * 1.0, 4.0 - bob)
+	var chest := Vector2(lean * 0.45, -13.0 * h - bob)
+	var neck := Vector2(lean * 0.78, -20.0 * h - bob)
+	var head := neck + Vector2(face * 4.0, -6.2 * h)
+
+	# Spine and rib cage: side profile with a slight forward human-like hunch.
+	_draw_bone_segment(hip, chest, bone, 3.0)
+	for i in 4:
+		var t := float(i) / 3.0
+		var rib_center := chest.lerp(hip + Vector2(face * 0.8, -4.0), t)
+		var rib_width := lerpf(7.2, 4.2, t) * h
+		draw_arc(rib_center, rib_width, -0.75 * PI if face > 0.0 else -0.25 * PI, 0.20 * PI if face > 0.0 else 1.25 * PI, 8, bone, 1.5)
+
+	_draw_side_skull(head, face, bone, shadow)
+
+	var shoulder := chest + Vector2(face * 1.5, -1.0)
+	var elbow_front := shoulder + Vector2(face * (7.0 + counter_stride * 3.2), 8.0 + stride * 1.8)
+	var hand_front := elbow_front + Vector2(face * (5.0 + counter_stride * 2.2), 8.5 - stride * 1.3)
+	var elbow_back := shoulder + Vector2(-face * (5.5 + counter_stride * 2.0), 7.0 - stride * 1.6)
+	var hand_back := elbow_back + Vector2(-face * (5.0 + counter_stride * 2.6), 8.0 + stride * 1.2)
+
 	if is_blocker:
-		draw_line(Vector2(-14, -8), Vector2(14, -8), bone, 3)
-		draw_line(Vector2(-10, 12), Vector2(-18, 16), bone, 3)
-		draw_line(Vector2(10, 12), Vector2(18, 16), bone, 3)
-		draw_rect(Rect2(Vector2(-19, -28), Vector2(38, 48)), Color(0.95, 0.76, 0.23, 0.18), false, 2.0)
-	else:
-		draw_line(Vector2(-8, -8), Vector2(8, -8), bone, 2)
-		draw_line(Vector2(-4, 2), Vector2(-8, 14), bone, 2)
-		draw_line(Vector2(4, 2), Vector2(8, 14), bone, 2)
-		draw_line(Vector2(-8, -6), Vector2(-12, 4), bone, 2)
-		draw_line(Vector2(8, -6), Vector2(12, 4), bone, 2)
+		elbow_front = shoulder + Vector2(face * 14.0, 6.0)
+		hand_front = elbow_front + Vector2(face * 8.0, 5.0)
+		elbow_back = shoulder + Vector2(-face * 12.0, 6.0)
+		hand_back = elbow_back + Vector2(-face * 8.0, 5.0)
+
+	_draw_bone_segment(shoulder, elbow_back, bone.darkened(0.10), 2.0)
+	_draw_bone_segment(elbow_back, hand_back, bone.darkened(0.10), 2.0)
+	_draw_bone_segment(shoulder, elbow_front, bone, 2.2)
+	_draw_bone_segment(elbow_front, hand_front, bone, 2.0)
+	draw_circle(hand_front, 1.8, accent)
+	draw_circle(hand_back, 1.6, accent.darkened(0.15))
+
+	var knee_front := hip + Vector2(face * (5.0 + stride * 5.5), 13.5 * h - absf(counter_stride) * 1.0)
+	var foot_front := knee_front + Vector2(face * (7.5 + stride * 3.4), 11.5 * h + maxf(0.0, -stride) * 2.0)
+	var knee_back := hip + Vector2(-face * (4.0 + stride * 4.6), 13.0 * h - absf(stride) * 0.8)
+	var foot_back := knee_back + Vector2(-face * (6.5 + stride * 2.8), 11.5 * h + maxf(0.0, stride) * 2.0)
+
+	if is_blocker:
+		knee_front = hip + Vector2(face * 8.0, 13.0 * h)
+		foot_front = knee_front + Vector2(face * 13.0, 8.5 * h)
+		knee_back = hip + Vector2(-face * 8.0, 13.0 * h)
+		foot_back = knee_back + Vector2(-face * 13.0, 8.5 * h)
+
+	_draw_bone_segment(hip, knee_back, bone.darkened(0.12), 2.1)
+	_draw_bone_segment(knee_back, foot_back, bone.darkened(0.12), 2.1)
+	_draw_foot(foot_back, -face, bone.darkened(0.12))
+	_draw_bone_segment(hip, knee_front, bone, 2.3)
+	_draw_bone_segment(knee_front, foot_front, bone, 2.3)
+	_draw_foot(foot_front, face, bone)
+
+	if is_blocker:
+		draw_rect(Rect2(Vector2(-21, -31), Vector2(42, 56)), Color(0.95, 0.76, 0.23, 0.14), false, 2.0)
+
+func _draw_bone_segment(a: Vector2, b: Vector2, color: Color, width: float) -> void:
+	draw_line(a, b, color, width, true)
+	draw_circle(a, width * 0.54, color)
+	draw_circle(b, width * 0.54, color)
+
+func _draw_side_skull(center: Vector2, face: float, bone: Color, shadow: Color) -> void:
+	var skull := PackedVector2Array([
+		center + Vector2(-face * 5.5, -5.8),
+		center + Vector2(face * 3.8, -7.2),
+		center + Vector2(face * 9.2, -3.2),
+		center + Vector2(face * 9.8, 1.6),
+		center + Vector2(face * 5.0, 5.6),
+		center + Vector2(-face * 2.8, 5.0),
+		center + Vector2(-face * 6.8, 0.6),
+	])
+	draw_colored_polygon(skull, bone)
+	# Jaw/cheek block so the head reads more skull-shaped than circular.
+	draw_rect(Rect2(center + Vector2(face * 1.0 - 2.0, 2.2), Vector2(7.0, 4.8)), bone)
+	draw_circle(center + Vector2(face * 3.8, -1.8), 2.0, shadow)
+	draw_line(center + Vector2(face * 7.2, 0.8), center + Vector2(face * 10.8, 1.8), shadow, 1.2)
+	draw_line(center + Vector2(face * 1.5, 6.5), center + Vector2(face * 7.0, 6.6), shadow, 1.0)
+
+func _draw_foot(ankle: Vector2, face: float, color: Color) -> void:
+	var toe := ankle + Vector2(face * 8.0, 2.0)
+	draw_line(ankle, toe, color, 2.2, true)
+	draw_line(toe, toe + Vector2(face * 3.0, -1.3), color, 1.4, true)
+	draw_line(toe + Vector2(-face * 1.5, 0.5), toe + Vector2(face * 2.5, 2.3), color, 1.1, true)

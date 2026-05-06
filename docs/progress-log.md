@@ -214,6 +214,14 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Updated `SfxPlayer` to use those imported sounds for `bone_splash`, `styx_impact`, and `exit_rescue` with per-sound volume offsets.
 - Kept generated SFX in place as source/fallback material, but the runtime map now tries the better shared candidates first.
 
+## 2026-05-06 - Side-view skeleton animation pass
+
+- Reworked procedural skeleton drawing from front-facing stick placeholders into side-view walking profiles that face left/right based on march direction.
+- Added dynamic walk timing: lanky alternating legs, arm counter-swing, subtle bob, and forward spinal lean while moving.
+- Added small per-skeleton height/posture/stride variation so the crowd feels less cloned.
+- Made heads more skull-shaped with side eye socket, jaw/cheek block, and nose/mouth strokes instead of simple circles.
+- Added explicit foot/toe bones and a braced side-view blocker stance.
+
 ## 2026-05-06 - Local Web export feasibility test
 
 - Will asked to try a local hosted Web export now that the baseline is playable.
