@@ -204,6 +204,16 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Removed the remaining spike object/death check from the object layer; Styx water is now the bottom failure boundary.
 - Updated design docs away from explicit doctrine wording. The tone should stay loosely pop-culture underworld/afterlife inspired without naming doctrine or using explicit belief-system labels.
 
+## 2026-05-06 - Imported shared sound candidates
+
+- Found the shared asset stash under `/Users/devwm8/projects/assets/audio` after Will clarified the parent project assets folder.
+- Imported three candidate sounds into this project:
+  - `assets/audio/imported/death_bone_rattle.wav` from the pixel-combat hit-rattle pack for death/bone splash feedback.
+  - `assets/audio/imported/styx_soup_impact.wav` from the pixel-combat sand-impact pack for thicker Styx impact feedback.
+  - `assets/audio/imported/exit_pillar_soft.wav` from the UI pack for smoother exit/rescue feedback.
+- Updated `SfxPlayer` to use those imported sounds for `bone_splash`, `styx_impact`, and `exit_rescue` with per-sound volume offsets.
+- Kept generated SFX in place as source/fallback material, but the runtime map now tries the better shared candidates first.
+
 ## 2026-05-06 - Local Web export feasibility test
 
 - Will asked to try a local hosted Web export now that the baseline is playable.
