@@ -72,6 +72,14 @@ func become_blocker() -> bool:
 	queue_redraw()
 	return true
 
+func resume_march() -> bool:
+	if not alive or rescued or not is_blocker:
+		return false
+	is_blocker = false
+	remove_from_group("blockers")
+	queue_redraw()
+	return true
+
 func _die() -> void:
 	if not alive or rescued:
 		return

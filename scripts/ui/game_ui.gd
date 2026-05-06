@@ -17,7 +17,7 @@ func _ready() -> void:
 
 func update_stats(stats: Dictionary) -> void:
 	selected_job = stats.get("selected_job", selected_job)
-	status_label.text = "Spawned %d/%d | Active %d | Saved %d/%d | Lost %d | Selected %s | 1: Blocker | R: Restart" % [
+	status_label.text = "Spawned %d/%d | Active %d | Saved %d/%d | Lost %d | Selected %s | 1: Blocker | Click blocker to Resume March | R: Restart" % [
 		stats.get("spawned", 0),
 		stats.get("total", 0),
 		stats.get("active", 0),
@@ -26,7 +26,7 @@ func update_stats(stats: Dictionary) -> void:
 		stats.get("lost", 0),
 		selected_job.capitalize(),
 	]
-	blocker_button.text = "1 BLOCKER x%d" % stats.get("blockers", 0)
+	blocker_button.text = "1 BLOCKER x%d\nClick blocker to Resume March" % stats.get("blockers", 0)
 	_update_job_buttons()
 
 func show_level_finished(success: bool, stats: Dictionary) -> void:

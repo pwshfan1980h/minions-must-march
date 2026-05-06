@@ -79,6 +79,13 @@ func set_selected_job(job_id: String) -> void:
 func _on_minion_clicked(minion: Node) -> void:
 	if selected_job != "blocker":
 		return
+
+	if minion.get("is_blocker") == true and minion.has_method("resume_march"):
+		if minion.resume_march():
+			blockers_remaining = mini(blockers_remaining + 1, blockers_available)
+			minion_spawned.emit(minion)
+		return
+
 	if blockers_remaining <= 0 or not minion.has_method("become_blocker"):
 		return
 	if minion.become_blocker():

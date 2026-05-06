@@ -149,6 +149,14 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added a bottom-bar Blocker button with hotkey `1`; the selected job now flows from `GameUI` -> `GameRoot` -> `LevelController` -> `MinionRoot`.
 - Current behavior is intentionally still only Blocker, but the control path is now ready for future jobs like Builder/Digger without rewriting minion click handling.
 
+## 2026-05-06 - Resume March blocker toggle
+
+- Will noticed blockers could permanently trap the level after doing their job.
+- Added `resume_march()` on skeleton minions so clicking an existing blocker releases it back into walking mode.
+- Updated Blocker click handling to toggle blockers: placing a blocker spends one charge, releasing via Resume March refunds the charge up to the level's blocker cap.
+- Updated the Blocker button/status hint to teach: "Click blocker to Resume March".
+- Verification: Godot headless smoke test and 720-frame fixed-FPS run completed.
+
 ## 2026-05-06 - Local Web export feasibility test
 
 - Will asked to try a local hosted Web export now that the baseline is playable.
