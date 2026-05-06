@@ -61,13 +61,15 @@ func _add_spawn_chute(pos: Vector2) -> void:
 		chute.add_child(bone)
 
 
-func _add_builder_demo_label(pos: Vector2) -> void:
+func _add_builder_demo_label(_pos: Vector2) -> void:
+	# Keep tutorial text out of the playable gap. The level itself should show
+	# the empty Styx gap and gold build marker without labels covering them.
 	var label := Label.new()
 	label.name = "BuilderDemoHint"
-	label.position = pos
-	label.size = Vector2(380, 72)
+	label.position = Vector2(150, 118)
+	label.size = Vector2(520, 52)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.text = "BUILDER DEMO #1\nPress 2, then click a skeleton at the gold line.\nExpected: 6 rib pieces bridge the Styx gap."
+	label.text = "BUILDER DEMO #1 — Press 2, then click a skeleton near the gold line to build the rib bridge."
 	label.add_theme_color_override("font_color", Color(0.94, 0.84, 0.58, 0.88))
 	label.add_theme_font_size_override("font_size", 16)
 	add_child(label)

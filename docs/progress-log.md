@@ -340,3 +340,9 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Kept only a gold build-line marker and small direction chevron so the gap reads as empty until a skeleton actually builds the rib pieces.
 - Updated level JSON notes to state that the bridge should not exist until Builder creates it.
 - Verification: visual screenshot check confirmed the ghost bridge is gone; Builder activation test, Godot headless smoke, and JSON validation passed.
+
+## 2026-05-06 - Move Builder tutorial text off the gap
+
+- Moved the Builder Demo tutorial label away from the Styx gap/build marker so it no longer covers the playable test area.
+- Simplified the label to one concise instruction line near the upper-left playfield.
+- Verification: local visual screenshot confirms the gap and marker are unobstructed; Builder activation test and Godot headless smoke passed.
