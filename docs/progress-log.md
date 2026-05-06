@@ -333,3 +333,10 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Extended the terrain/Styx draw depth to fill the full viewport now that the bottom HUD no longer covers the lower screen.
 - Added `tests/builder_activation_check.gd`, a headless smoke test that spawns the game, assigns Builder to a grounded minion, verifies one charge is consumed, and verifies six `BuilderRibPiece` collision nodes are created.
 - Verification: Builder activation test, Godot headless smoke, JSON validation, Web export pack, and local visual screenshot checks passed.
+
+## 2026-05-06 - Remove Builder ghost bridge scaffolding
+
+- Removed the translucent six-piece ghost bridge from Builder Demo #1 because it looked like an already-built bridge at level spawn.
+- Kept only a gold build-line marker and small direction chevron so the gap reads as empty until a skeleton actually builds the rib pieces.
+- Updated level JSON notes to state that the bridge should not exist until Builder creates it.
+- Verification: visual screenshot check confirmed the ghost bridge is gone; Builder activation test, Godot headless smoke, and JSON validation passed.

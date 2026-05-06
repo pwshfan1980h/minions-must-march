@@ -43,31 +43,28 @@ func _build_level_001_terrain() -> void:
 
 
 func _add_builder_demo_markers() -> void:
-	# Non-colliding visual scaffolding for Builder mechanic #1. It shows where
-	# the first implementation should place its six bridge pieces without
-	# solving the level for the player.
+	# A single non-colliding build marker. Do not show ghost bridge pieces here:
+	# the empty gap needs to read as unbuilt until a Builder creates the ribs.
 	var start := Vector2(760, 440)
 	var marker := Line2D.new()
 	marker.name = "BuilderDemoStartMarker"
-	marker.default_color = Color(0.95, 0.78, 0.28, 0.48)
+	marker.default_color = Color(0.95, 0.78, 0.28, 0.72)
 	marker.width = 3.0
 	marker.points = PackedVector2Array([start + Vector2(0, -34), start + Vector2(0, 18)])
 	add_child(marker)
 
-	for i in 6:
-		var piece_center := start + Vector2(24.0 * float(i + 1), -8.0 * float(i + 1))
-		var ghost := Polygon2D.new()
-		ghost.name = "BuilderDemoGhostPiece%d" % (i + 1)
-		ghost.position = piece_center
-		ghost.color = Color(0.82, 0.72, 0.52, 0.24)
-		ghost.polygon = PackedVector2Array([Vector2(-14, -4), Vector2(14, -4), Vector2(14, 4), Vector2(-14, 4)])
-		add_child(ghost)
-
-		var rib := Line2D.new()
-		rib.default_color = Color(1.0, 0.90, 0.68, 0.46)
-		rib.width = 1.4
-		rib.points = PackedVector2Array([piece_center + Vector2(-11, 0), piece_center + Vector2(11, -1)])
-		add_child(rib)
+	var chevron := Line2D.new()
+	chevron.name = "BuilderDemoDirectionHint"
+	chevron.default_color = Color(0.95, 0.78, 0.28, 0.58)
+	chevron.width = 2.0
+	chevron.points = PackedVector2Array([
+		start + Vector2(10, -14),
+		start + Vector2(26, -14),
+		start + Vector2(19, -21),
+		start + Vector2(26, -14),
+		start + Vector2(19, -7),
+	])
+	add_child(chevron)
 
 func _add_solid(rect: Rect2, color: Color, variant := "crypt") -> void:
 	collision_rects.append(rect)

@@ -27,7 +27,7 @@
     "jobHints": [
       "This is a mechanic demo, not a final puzzle: no blocker is required.",
       "2: Builder should place six small bridge/stair pieces in the skeleton's facing direction, then resume walking.",
-      "The translucent rib ghosts show the expected Builder v0 placement for implementation testing."
+      "The gold line marks the intended Builder test spot; the bridge should not exist until a Builder creates it."
     ],
     "builderV0": {
       "charges": 1,
