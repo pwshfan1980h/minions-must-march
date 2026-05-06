@@ -65,7 +65,9 @@ func _add_builder_demo_label(pos: Vector2) -> void:
 	var label := Label.new()
 	label.name = "BuilderDemoHint"
 	label.position = pos
-	label.text = "BUILDER DEMO #1\nStand near the gold line, select Builder, then click a right-facing skeleton.\nExpected: 6 rib pieces bridge this Styx gap."
+	label.size = Vector2(380, 72)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.text = "BUILDER DEMO #1\nPress 2, then click a skeleton at the gold line.\nExpected: 6 rib pieces bridge the Styx gap."
 	label.add_theme_color_override("font_color", Color(0.94, 0.84, 0.58, 0.88))
 	label.add_theme_font_size_override("font_size", 16)
 	add_child(label)

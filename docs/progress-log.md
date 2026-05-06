@@ -324,3 +324,12 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Clicking a grounded, alive, non-blocker skeleton while Builder is selected now consumes a charge, freezes the skeleton as a gold-tinted builder, and places six 28x8 px rib collision pieces at 0.18s intervals in the facing direction.
 - Builder pieces are simple `StaticBody2D` scene collision blocks with rib-bone visuals; this matches the locked v0 approach and does not touch Styx or terrain bitmap systems.
 - Verification: Godot headless smoke and Web export pack passed after fixing strict GDScript type inference on Builder placement vectors.
+
+## 2026-05-06 - Builder click/UI visual check fixes
+
+- Captured local visual screenshots and found the bottom HUD was hiding the Styx/lower playfield, job-button text was overlapping, and the in-world tutorial label was clipping off-screen.
+- Moved the HUD to the top of the screen, widened the job buttons, clarified that Blocker has zero charges in Builder Demo #1, and shortened/wrapped the in-world Builder instruction label.
+- Fixed skeleton click targets by moving `ClickArea` onto a nonzero collision layer while keeping the physics body collision small.
+- Extended the terrain/Styx draw depth to fill the full viewport now that the bottom HUD no longer covers the lower screen.
+- Added `tests/builder_activation_check.gd`, a headless smoke test that spawns the game, assigns Builder to a grounded minion, verifies one charge is consumed, and verifies six `BuilderRibPiece` collision nodes are created.
+- Verification: Builder activation test, Godot headless smoke, JSON validation, Web export pack, and local visual screenshot checks passed.

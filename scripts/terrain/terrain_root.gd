@@ -2,9 +2,9 @@ extends Node2D
 
 const TILE_SIZE := 32
 const WORLD_WIDTH := 2400
-const PLAYFIELD_HEIGHT := 608
+const PLAYFIELD_HEIGHT := 720
 const STYX_WATERLINE_Y := 560.0
-const STYX_DEPTH := 112.0
+const STYX_DEPTH := 176.0
 const TERRAIN_REDRAW_FPS := 30.0
 
 var collision_rects: Array[Rect2] = []

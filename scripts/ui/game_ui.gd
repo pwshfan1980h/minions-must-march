@@ -9,6 +9,8 @@ signal job_selected(job_id: String)
 @onready var result_label: Label = $ResultLabel
 
 var selected_job := "builder"
+var blockers_remaining := 0
+var builders_remaining := 0
 
 func _ready() -> void:
 	print("GameUI ready")
@@ -30,8 +32,10 @@ func update_stats(stats: Dictionary) -> void:
 		selected_job.capitalize(),
 		debug_text,
 	]
-	blocker_button.text = "1 BLOCKER x%d\nClick blocker to Resume March" % stats.get("blockers", 0)
-	builder_button.text = "2 BUILDER x%d\nClick skeleton to build" % stats.get("builders", 0)
+	blockers_remaining = stats.get("blockers", 0)
+	builders_remaining = stats.get("builders", 0)
+	blocker_button.text = "1 BLOCKER x%d\n%s" % [blockers_remaining, "No blockers in this demo" if blockers_remaining <= 0 else "Click blocker to Resume March"]
+	builder_button.text = "2 BUILDER x%d\n%s" % [builders_remaining, "No builders left" if builders_remaining <= 0 else "Click skeleton to build"]
 	_update_job_buttons()
 
 func show_level_finished(success: bool, stats: Dictionary) -> void:
@@ -55,16 +59,23 @@ func _unhandled_input(event: InputEvent) -> void:
 			_select_builder()
 
 func _select_blocker() -> void:
+	if blockers_remaining <= 0:
+		return
 	selected_job = "blocker"
 	_update_job_buttons()
 	job_selected.emit(selected_job)
 
 func _select_builder() -> void:
+	if builders_remaining <= 0:
+		return
 	selected_job = "builder"
 	_update_job_buttons()
 	job_selected.emit(selected_job)
 
 func _update_job_buttons() -> void:
+	blocker_button.disabled = blockers_remaining <= 0
+	builder_button.disabled = builders_remaining <= 0
+
 	if selected_job == "blocker":
 		blocker_button.add_theme_color_override("font_color", Color("f1e7c8"))
 		blocker_button.add_theme_color_override("font_pressed_color", Color("f1e7c8"))

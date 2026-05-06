@@ -15,3 +15,6 @@ exported/
 # Local environment
 .env
 .env.*
+
+# Local screenshots / scratch
+tmp/
