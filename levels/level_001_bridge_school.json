@@ -1,0 +1,26 @@
+{
+  "id": "level-001",
+  "name": "Bridge School",
+  "size": {
+    "width": 40,
+    "height": 19,
+    "tileSize": 32
+  },
+  "spawn": {
+    "x": 16.25,
+    "y": 13.1,
+    "direction": "left",
+    "count": 20,
+    "interval": 1.0
+  },
+  "exit": {
+    "x": 18.25,
+    "y": 14
+  },
+  "rescueRequired": 12,
+  "jobs": {
+    "blocker": 2,
+    "builder": 4
+  },
+  "notes": "Current prototype layout is a blocker/ledge-death test: minions spawn on the right side of the platform and march left. Without a blocker they should walk off the platform and die; with a blocker they redirect back toward the exit. This is also the intended core problem for Mission 1."
+}

@@ -1,0 +1,17 @@
+# Godot generated/editor state
+.godot/
+
+# Godot exports / local builds
+builds/
+exported/
+*.pck
+*.zip
+
+# OS/editor noise
+.DS_Store
+*.tmp
+*.swp
+
+# Local environment
+.env
+.env.*
