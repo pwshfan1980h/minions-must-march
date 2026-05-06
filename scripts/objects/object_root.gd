@@ -96,9 +96,12 @@ func _draw() -> void:
 func _draw_spawn_chute_dust(pos: Vector2) -> void:
 	for i in 7:
 		var phase := _time * (0.42 + i * 0.035) + i * 0.71
-		var puff_pos := pos + Vector2(8.0 + sin(phase) * 24.0, -28.0 + cos(phase * 0.8) * 12.0)
-		var size := 9.0 + float(i % 3) * 4.0
-		_draw_soft_ellipse(Rect2(puff_pos.x - size, puff_pos.y - size * 0.5, size * 2.0, size), Color(0.46, 0.42, 0.38, 0.035))
+		var origin := pos + Vector2(8.0 + sin(phase) * 24.0, -22.0 + cos(phase * 0.8) * 12.0)
+		var points := PackedVector2Array()
+		for j in 5:
+			var t := float(j) / 4.0
+			points.append(origin + Vector2(sin(phase + t * 4.0) * (5.0 + t * 12.0), -t * (18.0 + float(i % 3) * 5.0)))
+		draw_polyline(points, Color(0.46, 0.42, 0.38, 0.06), 1.4, true)
 
 func _draw_exit_light(pos: Vector2) -> void:
 	var base := pos + Vector2(0, 12)
@@ -126,9 +129,22 @@ func _draw_exit_light(pos: Vector2) -> void:
 		var y := lerpf(base.y, top.y - 18.0, t)
 		var width := lerpf(62.0, 18.0, t)
 		var alpha := lerpf(0.12, 0.025, t)
-		_draw_soft_ellipse(Rect2(pos.x - width / 2.0, y - 5.0, width, 10.0), Color(0.95, 0.95, 0.72, alpha))
+		var shard := PackedVector2Array([
+			Vector2(pos.x - width * 0.42, y),
+			Vector2(pos.x - width * 0.14, y - 7.0),
+			Vector2(pos.x + width * 0.38, y - 3.0),
+			Vector2(pos.x + width * 0.18, y + 6.0),
+		])
+		draw_colored_polygon(shard, Color(0.95, 0.95, 0.72, alpha))
 
-	_draw_soft_ellipse(Rect2(pos.x - 34.0, base.y - 8.0, 68.0, 18.0), Color(0.78, 0.95, 0.70, 0.17))
+	var base_glow := PackedVector2Array([
+		Vector2(pos.x - 42.0, base.y - 7.0),
+		Vector2(pos.x - 10.0, base.y - 18.0),
+		Vector2(pos.x + 36.0, base.y - 4.0),
+		Vector2(pos.x + 18.0, base.y + 8.0),
+		Vector2(pos.x - 30.0, base.y + 6.0),
+	])
+	draw_colored_polygon(base_glow, Color(0.78, 0.95, 0.70, 0.14))
 
 	for spec in _mote_specs:
 		var phase := _time * float(spec["speed"]) + float(spec["phase"])

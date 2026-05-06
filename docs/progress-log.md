@@ -223,6 +223,11 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added explicit foot/toe bones and a braced side-view blocker stance.
 - Follow-up detail pass added restrained pelvis, clavicle, elbow, and knee hints so the skeletons read better without becoming noisy medical diagrams.
 
+## 2026-05-06 - Shape-language cleanup pass
+
+- Replaced many repeated oval/ellipse fog and glow stamps with wispy vertical mist lines, torn smoke veils, irregular polygon light shards, and faceted exit/spawn glow shapes.
+- Reduced the “oblong spheroid everywhere” look while preserving rising off-gas, underworld lighting, and soul-lantern readability.
+
 ## 2026-05-06 - Atmosphere readability pass
 
 - Reworked the uniform fog into vertical rising/off-gassing mist columns that drift upward from cracks and the Styx line, with varied green-gray and sulfur-yellow tints.

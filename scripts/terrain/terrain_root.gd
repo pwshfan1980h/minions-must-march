@@ -240,8 +240,8 @@ func _draw_distant_underworld_background() -> void:
 func _draw_background_light_pool(pos: Vector2, scale: float, color: Color) -> void:
 	var pulse := 0.82 + 0.18 * sin(_time * 0.45 + pos.x * 0.005)
 	var c := Color(color.r, color.g, color.b, color.a * pulse)
-	_draw_soft_ellipse(Rect2(pos.x - 185.0 * scale, pos.y - 46.0 * scale, 370.0 * scale, 92.0 * scale), Color(c.r, c.g, c.b, c.a * 0.48))
-	_draw_soft_ellipse(Rect2(pos.x - 92.0 * scale, pos.y - 26.0 * scale, 184.0 * scale, 52.0 * scale), c)
+	_draw_light_shards(pos, 168.0 * scale, 54.0 * scale, Color(c.r, c.g, c.b, c.a * 0.42), 0.0)
+	_draw_light_shards(pos + Vector2(7, -9) * scale, 76.0 * scale, 28.0 * scale, c, 1.7)
 
 func _draw_underworld_street_light(pos: Vector2, scale: float, flame: Color) -> void:
 	var pole := Color(0.030, 0.024, 0.034, 0.78)
@@ -250,16 +250,24 @@ func _draw_underworld_street_light(pos: Vector2, scale: float, flame: Color) -> 
 	draw_line(pos, pos + Vector2(0, -86) * scale, pole, 4.0 * scale, true)
 	draw_line(pos + Vector2(-12, -64) * scale, pos + Vector2(0, -78) * scale, pole, 3.0 * scale, true)
 	draw_line(pos + Vector2(12, -64) * scale, pos + Vector2(0, -78) * scale, pole, 3.0 * scale, true)
-	draw_circle(pos + Vector2(0, -91) * scale, 28.0 * scale, Color(lit.r, lit.g, lit.b, lit.a * 0.20))
-	draw_circle(pos + Vector2(0, -91) * scale, 11.0 * scale, Color(lit.r, lit.g, lit.b, lit.a * 0.36))
+	var aura := PackedVector2Array([
+		pos + Vector2(0, -125) * scale,
+		pos + Vector2(24, -103) * scale,
+		pos + Vector2(19, -78) * scale,
+		pos + Vector2(-3, -64) * scale,
+		pos + Vector2(-25, -82) * scale,
+		pos + Vector2(-20, -109) * scale,
+	])
+	draw_colored_polygon(aura, Color(lit.r, lit.g, lit.b, lit.a * 0.16))
 	var flame_shape := PackedVector2Array([
-		pos + Vector2(0, -109) * scale,
-		pos + Vector2(9, -92) * scale,
-		pos + Vector2(0, -81) * scale,
-		pos + Vector2(-8, -92) * scale,
+		pos + Vector2(0, -111) * scale,
+		pos + Vector2(10, -95) * scale,
+		pos + Vector2(5, -83) * scale,
+		pos + Vector2(-2, -88) * scale,
+		pos + Vector2(-9, -94) * scale,
 	])
 	draw_colored_polygon(flame_shape, Color(lit.r, lit.g, lit.b, lit.a * 0.72))
-	_draw_soft_ellipse(Rect2(pos.x - 58.0 * scale, pos.y - 13.0 * scale, 116.0 * scale, 26.0 * scale), Color(lit.r, lit.g, lit.b, lit.a * 0.11))
+	_draw_light_shards(pos + Vector2(0, -1) * scale, 54.0 * scale, 12.0 * scale, Color(lit.r, lit.g, lit.b, lit.a * 0.10), pos.x * 0.01)
 
 func _draw_skull_mountain(pos: Vector2, scale: float) -> void:
 	var rock := Color(0.028, 0.022, 0.032, 0.36)
@@ -310,28 +318,69 @@ func _draw_tower_silhouette(pos: Vector2, scale: float) -> void:
 		draw_rect(Rect2(pos + Vector2(-3.0 * scale, y), Vector2(6.0, 9.0) * scale), Color(0.56, 0.90, 0.48, 0.055))
 
 func _draw_ground_dust() -> void:
-	# Rising off-gas instead of a samey horizontal fog band. Columns start near
-	# cracks/waterline, drift upward, thin out, then cycle.
-	for i in 15:
+	# Rising off-gas, now drawn as wispy vertical strands and torn smoke veils
+	# instead of repeated oval stamps. Less potato-cloud, more Styx exhaust.
+	for i in 18:
 		var seed := float(i)
 		var base_x := 90.0 + fposmod(seed * 173.0, WORLD_WIDTH - 140.0)
 		var cycle := fposmod(_time * (0.045 + float(i % 4) * 0.009) + seed * 0.137, 1.0)
-		var rise := cycle * (110.0 + float(i % 5) * 18.0)
+		var rise := cycle * (118.0 + float(i % 5) * 20.0)
 		var x := base_x + sin(_time * 0.32 + seed) * (18.0 + float(i % 3) * 9.0)
-		var y := STYX_WATERLINE_Y - 18.0 - rise
-		var width := 34.0 + cycle * (64.0 + float(i % 4) * 20.0)
-		var height := 18.0 + cycle * 32.0
-		var alpha := sin(cycle * PI) * (0.035 + float(i % 3) * 0.010)
+		var y := STYX_WATERLINE_Y - 10.0 - rise
+		var alpha := sin(cycle * PI) * (0.050 + float(i % 3) * 0.012)
 		var color := Color(0.50, 0.62, 0.54, alpha) if i % 3 != 1 else Color(0.72, 0.60, 0.38, alpha * 0.72)
-		_draw_soft_ellipse(Rect2(x - width / 2.0, y - height / 2.0, width, height), color)
-		if i % 4 == 0:
-			_draw_soft_ellipse(Rect2(x - width * 0.22, y - height * 1.05, width * 0.55, height * 0.62), Color(color.r, color.g, color.b, alpha * 0.55))
+		_draw_mist_wisp(Vector2(x, y), 58.0 + float(i % 4) * 16.0, 14.0 + float(i % 5) * 4.0, color, seed)
+		if i % 5 == 0:
+			_draw_torn_smoke_veil(Vector2(x - 12.0, y + 18.0), 42.0, 70.0, Color(color.r, color.g, color.b, alpha * 0.28), seed + 9.0)
 
-	for i in 6:
+	for i in 8:
 		var phase := _time * 0.22 + i * 1.12
-		var x := fposmod(i * 391.0 - _time * 5.0, WORLD_WIDTH + 160.0) - 80.0
-		var y := STYX_WATERLINE_Y - 12.0 + sin(phase) * 5.0
-		_draw_soft_ellipse(Rect2(x - 70.0, y - 6.0, 140.0, 12.0), Color(0.47, 0.55, 0.50, 0.024))
+		var x := fposmod(i * 307.0 - _time * 5.0, WORLD_WIDTH + 160.0) - 80.0
+		var y := STYX_WATERLINE_Y - 8.0 + sin(phase) * 5.0
+		var points := PackedVector2Array()
+		for j in 7:
+			var t := float(j) / 6.0
+			points.append(Vector2(x + t * 116.0, y + sin(phase + t * 4.2) * 3.8))
+		draw_polyline(points, Color(0.47, 0.55, 0.50, 0.028), 2.0, true)
+
+func _draw_mist_wisp(pos: Vector2, height: float, sway: float, color: Color, seed: float) -> void:
+	for strand in 3:
+		var points := PackedVector2Array()
+		var offset := -8.0 + strand * 8.0
+		for j in 6:
+			var t := float(j) / 5.0
+			var curl := sin(_time * 0.55 + seed + strand * 1.7 + t * 5.4) * sway * (0.35 + t * 0.65)
+			points.append(pos + Vector2(offset + curl, -height * t))
+		var a := color.a * lerpf(0.95, 0.34, float(strand) / 2.0)
+		draw_polyline(points, Color(color.r, color.g, color.b, a), 1.4 + strand * 0.35, true)
+
+func _draw_torn_smoke_veil(pos: Vector2, width: float, height: float, color: Color, seed: float) -> void:
+	var left := PackedVector2Array()
+	var right := PackedVector2Array()
+	for j in 5:
+		var t := float(j) / 4.0
+		var y := pos.y - height * t
+		left.append(Vector2(pos.x + sin(seed + t * 4.0 + _time * 0.3) * 8.0, y))
+		right.append(Vector2(pos.x + width + sin(seed + 2.0 + t * 3.0 + _time * 0.25) * 11.0, y + sin(t * PI) * 8.0))
+	var poly := PackedVector2Array()
+	for point in left:
+		poly.append(point)
+	for j in range(right.size() - 1, -1, -1):
+		poly.append(right[j])
+	draw_colored_polygon(poly, color)
+
+func _draw_light_shards(pos: Vector2, width: float, height: float, color: Color, seed: float) -> void:
+	var half_w := width / 2.0
+	var points := PackedVector2Array([
+		pos + Vector2(-half_w, -height * 0.16 + sin(seed) * 3.0),
+		pos + Vector2(-half_w * 0.42, -height * 0.50 + cos(seed * 1.7) * 4.0),
+		pos + Vector2(half_w * 0.18, -height * 0.38 + sin(seed + 1.2) * 5.0),
+		pos + Vector2(half_w, -height * 0.06 + cos(seed + 0.8) * 4.0),
+		pos + Vector2(half_w * 0.62, height * 0.34 + sin(seed + 2.1) * 4.0),
+		pos + Vector2(-half_w * 0.22, height * 0.50 + cos(seed + 3.4) * 4.0),
+		pos + Vector2(-half_w * 0.74, height * 0.24 + sin(seed + 4.2) * 4.0),
+	])
+	draw_colored_polygon(points, color)
 
 func _draw_styx_water() -> void:
 	var rect := Rect2(0, STYX_WATERLINE_Y, WORLD_WIDTH, STYX_DEPTH)
