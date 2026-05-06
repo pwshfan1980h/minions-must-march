@@ -166,6 +166,12 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added a resource check script to verify all generated WAVs import/load as `AudioStream`s.
 - Verification: generated assets with Godot, imported assets headlessly, loaded all generated AudioStreams, ran Godot headless smoke test, and ran a 720-frame fixed-FPS simulation.
 
+## 2026-05-06 - Roadmap reshaped for small sessions
+
+- Updated `docs/project-plan.md` with a current status snapshot and a small-session roadmap.
+- Broke the next work into focused sessions: Builder design lock, Builder v0 implementation, Level 1 solvable loop, UX/feedback pass, Web export recheck, and Level 1 polish start.
+- Marked completed/partial phase statuses so future sessions can quickly pick the next useful target without rereading the whole plan.
+
 ## 2026-05-06 - Local Web export feasibility test
 
 - Will asked to try a local hosted Web export now that the baseline is playable.

@@ -25,6 +25,124 @@ Tone: spooky-cute skeleton minion chaos, light crypt comedy, readable puzzle des
 - Prefer deterministic puzzle behavior over physics chaos.
 - Use docs as source of truth and update them as implementation changes.
 
+## Current Status Snapshot
+
+Last updated: 2026-05-06
+
+Completed/proven:
+
+- Godot 4 project skeleton with `GameRoot`, `LevelController`, `TerrainRoot`, `MinionRoot`, `ObjectRoot`, and `GameUI`.
+- Core minion loop: spawning, walking, wall/blocker turns, gravity/falling, lethal falls, rescue/loss counters, restart, win/loss state.
+- First Blocker slice, including **Resume March** unblock behavior and charge refunding.
+- Job-selection plumbing from UI through level/minion logic, currently with Blocker only.
+- Procedural SFX pipeline: Godot headless script generates committed WAV assets, imported as `AudioStream`s, wired to key gameplay events.
+- Early local Godot Web export feasibility: exported build runs when served locally; LAN/browser secure-context constraints are documented in the progress log.
+
+Current next target:
+
+- Add the **Builder** job as the next small mechanic slice, then use Blocker + Builder to make Level 1 genuinely solvable.
+
+## Small-Session Roadmap
+
+Use these as bite-sized work packets. Each should be small enough for one focused session and should end with a clear verification command or manual check.
+
+### Session A - Builder Design Lock
+
+Goal: define the smallest Builder that proves the mechanic without over-engineering terrain.
+
+Deliverables:
+
+- Update `docs/mechanics-spec.md` with Builder v0 behavior:
+  - assignment constraints
+  - stair/bridge size
+  - number of steps/segments
+  - when the minion resumes walking
+  - what happens if blocked
+- Decide whether Builder v0 creates scene collision pieces or uses the future terrain API.
+- Add/update `levels/level_001_bridge_school.json` with intended Builder count and tutorial notes.
+
+Gate:
+
+- Builder behavior can be described in one paragraph and implemented without touching unrelated systems.
+
+### Session B - Builder v0 Implementation
+
+Goal: make one clicked skeleton build a deterministic short bridge/stair.
+
+Deliverables:
+
+- Add Builder job selection UI and hotkey `2`.
+- Add Builder charges to stats and level state.
+- Add a builder state on minions.
+- Spawn simple build segments with collision and placeholder visuals.
+- Play generated or placeholder SFX on assignment/build step.
+
+Gate:
+
+- Godot headless smoke test passes.
+- Manual play can assign Builder and see walkable pieces appear.
+
+### Session C - Level 1 Solvable Loop
+
+Goal: make the current prototype winnable using Blocker + Builder.
+
+Deliverables:
+
+- Tune terrain/spawn/exit positions for a single intended solution.
+- Confirm blocker placement redirects traffic while Builder closes the gap.
+- Update tutorial/status hint text for the two-job loop.
+- Update progress log with the intended solution.
+
+Gate:
+
+- Manual desktop playthrough: win once, fail once, restart once.
+- 720-frame fixed-FPS smoke run still passes.
+
+### Session D - First UX/Feedback Pass
+
+Goal: make job assignment feel understandable.
+
+Deliverables:
+
+- Hover/selection readability improvement for minions or buttons.
+- Clear invalid-assignment feedback, at least text or SFX.
+- Distinct selected-job styling for Blocker vs Builder.
+- Maybe pause spawning or slow initial spawn if the tutorial needs breathing room.
+
+Gate:
+
+- A first-time player can tell which job is selected and why a click did/didn’t work.
+
+### Session E - Web Export Recheck
+
+Goal: re-export after Builder and SFX changes to keep web risk contained.
+
+Deliverables:
+
+- Export `builds/web/` again.
+- Serve locally and run one browser playthrough.
+- Confirm audio behavior after first user input.
+- Record any browser/export problems in `docs/progress-log.md`.
+
+Gate:
+
+- Local web build loads and can play through Level 1 or the current mechanic sandbox.
+
+### Session F - Level 1 Polish Slice Start
+
+Goal: make the first playable slice look/sound less like bare scaffolding.
+
+Deliverables:
+
+- Entrance/exit readability pass.
+- Job icon placeholders.
+- One terrain style pass for crypt blocks/platforms.
+- Tune SFX levels or replace the weakest generated sounds.
+
+Gate:
+
+- The slice is showable as an early prototype without explaining every placeholder.
+
 ## Phased Roadmap
 
 ### Phase 0 - Foundation Planning
@@ -50,7 +168,7 @@ Exit criteria:
 
 - Docs clearly describe what we are building first and what we are explicitly postponing.
 
-Status: in progress / mostly complete.
+Status: complete for the current prototype. Keep refining docs as implementation decisions change.
 
 ---
 
@@ -89,6 +207,8 @@ Testing gate:
 Exit criteria:
 
 - A minimal Godot scene runs and gives us a stable place to implement skeleton minion behavior.
+
+Status: complete.
 
 ---
 
@@ -129,6 +249,8 @@ Exit criteria:
 
 - A crude level is winnable, losable, restartable, and understandable with placeholder visuals.
 
+Status: mostly complete for the core minion loop; Level 1 needs Builder before the intended full solution is proven.
+
 ---
 
 ### Phase 3 - First Job Mechanics Slice
@@ -139,7 +261,7 @@ Required jobs:
 
 - **Blocker**
   - Stops/redirects traffic.
-  - Can become a simple permanent state at first.
+  - Implemented with Resume March unblock/refund behavior.
 - **Builder**
   - Creates fixed stair/bridge segments.
   - Should use the same terrain-modification philosophy we will later use for destructible terrain where practical.
@@ -165,6 +287,8 @@ Testing gate:
 Exit criteria:
 
 - Level 1 proves the core “assign jobs to save enough skeleton minions” loop.
+
+Status: in progress. Blocker and job plumbing are done; Builder is next.
 
 ---
 
@@ -205,6 +329,8 @@ Exit criteria:
 
 - We know whether Godot Web export is viable for this project and what constraints it imposes.
 
+Status: partially complete. Local Web export works, and generated audio assets pack into the Web export. Full browser playthrough should be repeated after Builder/Level 1 are implemented.
+
 ---
 
 ### Phase 5 - Level 1 Polish Slice
@@ -218,7 +344,7 @@ Add:
 - Entrance/exit art
 - Job icons
 - Hover/selection feedback
-- Basic sound hooks, even if placeholder
+- Basic sound hooks, even if placeholder (first generated SFX pipeline is implemented)
 - Level intro text or tutorial prompt
 - Clear end screen
 - First pass of web-friendly asset sizes/import settings
