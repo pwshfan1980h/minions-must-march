@@ -22,6 +22,7 @@ var lost_count := 0
 var blockers_remaining := 0
 var _spawn_timer := 0.0
 var _spawning_done := false
+var debug_click_areas := false
 
 func _ready() -> void:
 	reset_spawner()
@@ -59,6 +60,8 @@ func _spawn_minion() -> void:
 	minion.death_started.connect(_on_minion_death_started)
 	minion.died.connect(_on_minion_died)
 	minion.clicked.connect(_on_minion_clicked)
+	if minion.has_method("set_debug_click_area"):
+		minion.set_debug_click_area(debug_click_areas)
 	add_child(minion)
 
 	spawned_count += 1
@@ -80,6 +83,12 @@ func _on_minion_died(minion: Node) -> void:
 	lost_count += 1
 	active_count = max(0, active_count - 1)
 	minion_lost.emit(minion)
+
+func set_debug_click_areas(enabled: bool) -> void:
+	debug_click_areas = enabled
+	for minion in get_tree().get_nodes_in_group("minions"):
+		if minion.has_method("set_debug_click_area"):
+			minion.set_debug_click_area(enabled)
 
 func set_selected_job(job_id: String) -> void:
 	selected_job = job_id

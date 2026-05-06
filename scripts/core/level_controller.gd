@@ -10,6 +10,7 @@ const TILE_SIZE := 32
 const RESCUE_REQUIRED := 8
 
 var finished := false
+var debug_click_areas := false
 
 @onready var minion_root: Node = $MinionRoot
 @onready var object_root: Node = $ObjectRoot
@@ -35,6 +36,13 @@ func set_selected_job(job_id: String) -> void:
 	minion_root.set_selected_job(job_id)
 	_emit_stats()
 
+func toggle_debug_click_areas() -> bool:
+	debug_click_areas = not debug_click_areas
+	if minion_root.has_method("set_debug_click_areas"):
+		minion_root.set_debug_click_areas(debug_click_areas)
+	_emit_stats()
+	return debug_click_areas
+
 func get_stats() -> Dictionary:
 	return {
 		"spawned": minion_root.spawned_count,
@@ -46,6 +54,7 @@ func get_stats() -> Dictionary:
 		"selected_job": minion_root.selected_job,
 		"required": RESCUE_REQUIRED,
 		"finished": finished,
+		"debug_click_areas": debug_click_areas,
 	}
 
 func _on_minion_event(_minion: Node = null) -> void:

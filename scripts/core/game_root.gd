@@ -32,8 +32,12 @@ func _on_job_selected(job_id: String) -> void:
 	level_controller.set_selected_job(job_id)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
-		level_controller.restart_level()
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_R:
+			level_controller.restart_level()
+		elif event.keycode == KEY_F3 and level_controller.has_method("toggle_debug_click_areas"):
+			var enabled: bool = level_controller.toggle_debug_click_areas()
+			print("Click-area debug: %s" % ("ON" if enabled else "OFF"))
 
 func _update_camera_pan(delta: float) -> void:
 	var pan := 0.0

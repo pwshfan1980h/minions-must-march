@@ -34,12 +34,17 @@ var _visual_tumble_rotation := 0.0
 var _tumble_speed := 0.0
 var _air_time := 0.0
 var _sink_wobble := 0.0
+var _debug_click_area := false
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
+@onready var click_area: Area2D = $ClickArea
+@onready var click_shape: CollisionShape2D = $ClickArea/ClickShape
 
 func _ready() -> void:
 	add_to_group("minions")
-	input_pickable = true
+	input_pickable = false
+	if click_area != null:
+		click_area.input_event.connect(_on_click_area_input_event)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(get_instance_id())
 	_height_variant = rng.randf_range(0.92, 1.10)
@@ -101,6 +106,8 @@ func rescue(exit_position := Vector2.INF) -> void:
 	velocity = Vector2.ZERO
 	set_physics_process(false)
 	set_process_input(false)
+	_disable_click_target()
+	_disable_click_target()
 	if collision_shape != null:
 		collision_shape.set_deferred("disabled", true)
 	if is_blocker:
@@ -242,8 +249,24 @@ func _has_blocker_ahead() -> bool:
 				return true
 	return false
 
+func set_debug_click_area(enabled: bool) -> void:
+	_debug_click_area = enabled
+	queue_redraw()
+
+func _disable_click_target() -> void:
+	if click_area != null:
+		click_area.set_deferred("input_pickable", false)
+	if click_shape != null:
+		click_shape.set_deferred("disabled", true)
+
 func _input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	_handle_click_event(event)
+
+func _on_click_area_input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> void:
+	_handle_click_event(event)
+
+func _handle_click_event(event: InputEvent) -> void:
+	if alive and not rescued and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		clicked.emit(self)
 
 func _draw() -> void:
@@ -344,6 +367,25 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2(-20, -30), Vector2(40, 55)), Color(0.95, 0.76, 0.23, 0.13), false, 2.0)
 
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if _debug_click_area:
+		_draw_click_debug()
+
+func _draw_click_debug() -> void:
+	# Mirrors the ClickArea/ClickShape capsule so tuning click fairness is visible in-game.
+	var center := Vector2(0, -8)
+	var radius := 13.0
+	var half_segment := (48.0 - radius * 2.0) * 0.5
+	var top := center + Vector2(0, -half_segment)
+	var bottom := center + Vector2(0, half_segment)
+	var color := Color(0.25, 0.95, 1.0, 0.72)
+	var fill := Color(0.25, 0.95, 1.0, 0.10)
+	draw_rect(Rect2(center.x - radius, top.y, radius * 2.0, half_segment * 2.0), fill)
+	draw_circle(top, radius, fill)
+	draw_circle(bottom, radius, fill)
+	draw_line(Vector2(center.x - radius, top.y), Vector2(center.x - radius, bottom.y), color, 1.5)
+	draw_line(Vector2(center.x + radius, top.y), Vector2(center.x + radius, bottom.y), color, 1.5)
+	draw_arc(top, radius, PI, TAU, 16, color, 1.5)
+	draw_arc(bottom, radius, 0.0, PI, 16, color, 1.5)
 
 func _draw_bone_segment(a: Vector2, b: Vector2, color: Color, width: float) -> void:
 	draw_line(a, b, color, width, true)

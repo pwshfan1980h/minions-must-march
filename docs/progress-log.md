@@ -223,6 +223,13 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added explicit foot/toe bones and a braced side-view blocker stance.
 - Follow-up detail pass added restrained pelvis, clavicle, elbow, and knee hints so the skeletons read better without becoming noisy medical diagrams.
 
+## 2026-05-06 - Click-target debug/fairness pass
+
+- Added a separate, larger minion `ClickArea` so selecting skeletons is easier without inflating their physics collision body.
+- Routed clicks through the new click area and disabled it cleanly during rescue/death animations.
+- Added `F3` debug toggle for click hitboxes; the UI status bar shows whether hitbox debug is on.
+- New minions inherit the current debug-hitbox setting as they spawn.
+
 ## 2026-05-06 - Skeleton fall dynamism pass
 
 - Tuned ledge-fall rotation to be a subtler varied spin instead of a uniform hard tumble.
