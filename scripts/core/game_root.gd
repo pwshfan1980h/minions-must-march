@@ -2,15 +2,21 @@ extends Node2D
 
 @onready var level_controller: Node = $LevelController
 @onready var game_ui: CanvasLayer = $GameUI
+@onready var sfx: Node = $SfxPlayer
 
 func _ready() -> void:
 	print("Minions Must March: GameRoot ready")
 	level_controller.stats_changed.connect(game_ui.update_stats)
 	level_controller.level_finished.connect(game_ui.show_level_finished)
+	level_controller.sfx_requested.connect(sfx.play)
 	game_ui.restart_requested.connect(level_controller.restart_level)
-	game_ui.job_selected.connect(level_controller.set_selected_job)
+	game_ui.job_selected.connect(_on_job_selected)
 	game_ui.update_stats(level_controller.get_stats())
 	_maybe_capture_screenshot()
+
+func _on_job_selected(job_id: String) -> void:
+	sfx.play("job_select")
+	level_controller.set_selected_job(job_id)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:

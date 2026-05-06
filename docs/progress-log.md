@@ -157,6 +157,15 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Updated the Blocker button/status hint to teach: "Click blocker to Resume March".
 - Verification: Godot headless smoke test and 720-frame fixed-FPS run completed.
 
+## 2026-05-06 - Procedural SFX first pass
+
+- Added a Godot headless generation script for deterministic procedural WAV files under `assets/audio/generated/`.
+- Generated eight starter SFX: bone clack, bone splash, blocker brace, resume march, exit rescue, job select, level success, and level fail.
+- Added an `SfxPlayer` node to `GameRoot` and wired sound requests through `MinionRoot` -> `LevelController` -> `GameRoot`.
+- Hooked SFX to blocker assignment/resume, minion rescue/loss, job selection, and level success/fail.
+- Added a resource check script to verify all generated WAVs import/load as `AudioStream`s.
+- Verification: generated assets with Godot, imported assets headlessly, loaded all generated AudioStreams, ran Godot headless smoke test, and ran a 720-frame fixed-FPS simulation.
+
 ## 2026-05-06 - Local Web export feasibility test
 
 - Will asked to try a local hosted Web export now that the baseline is playable.

@@ -4,6 +4,7 @@ signal minion_spawned(minion: Node)
 signal minion_rescued(minion: Node)
 signal minion_lost(minion: Node)
 signal spawn_complete
+signal sfx_requested(sound_id: String)
 
 const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
 
@@ -66,11 +67,13 @@ func _spawn_minion() -> void:
 func _on_minion_exited(minion: Node) -> void:
 	rescued_count += 1
 	active_count = max(0, active_count - 1)
+	sfx_requested.emit("exit_rescue")
 	minion_rescued.emit(minion)
 
 func _on_minion_died(minion: Node) -> void:
 	lost_count += 1
 	active_count = max(0, active_count - 1)
+	sfx_requested.emit("bone_splash")
 	minion_lost.emit(minion)
 
 func set_selected_job(job_id: String) -> void:
@@ -83,6 +86,7 @@ func _on_minion_clicked(minion: Node) -> void:
 	if minion.get("is_blocker") == true and minion.has_method("resume_march"):
 		if minion.resume_march():
 			blockers_remaining = mini(blockers_remaining + 1, blockers_available)
+			sfx_requested.emit("resume_march")
 			minion_spawned.emit(minion)
 		return
 
@@ -90,6 +94,8 @@ func _on_minion_clicked(minion: Node) -> void:
 		return
 	if minion.become_blocker():
 		blockers_remaining -= 1
+		sfx_requested.emit("bone_clack")
+		sfx_requested.emit("blocker_brace")
 		minion_spawned.emit(minion)
 
 func all_done() -> bool:

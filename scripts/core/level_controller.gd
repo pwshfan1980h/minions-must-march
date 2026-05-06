@@ -2,6 +2,7 @@ extends Node2D
 
 signal stats_changed(stats: Dictionary)
 signal level_finished(success: bool, stats: Dictionary)
+signal sfx_requested(sound_id: String)
 
 const LEVEL_WIDTH := 1280
 const PLAYFIELD_HEIGHT := 608
@@ -19,6 +20,7 @@ func _ready() -> void:
 	minion_root.minion_rescued.connect(_on_minion_event)
 	minion_root.minion_lost.connect(_on_minion_event)
 	minion_root.spawn_complete.connect(_on_spawn_complete)
+	minion_root.sfx_requested.connect(_on_sfx_requested)
 	object_root.minion_entered_exit.connect(_on_exit_entered)
 	_emit_stats()
 
@@ -52,6 +54,9 @@ func _on_minion_event(_minion: Node = null) -> void:
 func _on_spawn_complete() -> void:
 	_emit_stats()
 
+func _on_sfx_requested(sound_id: String) -> void:
+	sfx_requested.emit(sound_id)
+
 func _on_exit_entered(_minion: Node) -> void:
 	# Signal exists for future scoring/particles/sound. The minion handles rescue.
 	pass
@@ -63,5 +68,6 @@ func _finish_level(success: bool) -> void:
 	finished = true
 	var stats := get_stats()
 	stats["finished"] = true
+	sfx_requested.emit("level_success" if success else "level_fail")
 	level_finished.emit(success, stats)
 	_emit_stats()
