@@ -206,8 +206,10 @@ func _draw() -> void:
 		face = 1.0
 
 	var stride := 0.0 if is_blocker else sin(_walk_time)
-	var step_up := maxf(0.0, stride)
-	var step_back := maxf(0.0, -stride)
+	var leg_front_phase := stride
+	var leg_back_phase := -stride
+	var front_lift := maxf(0.0, leg_front_phase)
+	var back_lift := maxf(0.0, leg_back_phase)
 	var bob := 0.0 if is_blocker else absf(stride) * 1.05
 	var lean := face * (2.8 + _spine_variant * 7.0 + (0.45 * absf(stride) if not is_blocker else -1.0))
 	var h := _height_variant
@@ -237,16 +239,15 @@ func _draw() -> void:
 	var elbow_back := shoulder + Vector2(-face * (4.8 + arm_swing * 1.6), 6.8 - stride * 1.0)
 	var hand_back := elbow_back + Vector2(-face * (4.4 + arm_swing * 1.6), 7.0 + stride * 0.7)
 
-	# Legs: explicit two-phase side-view gate. Each foot stays near a common ground
-	# line, while the stepping leg lifts only slightly. That avoids the previous
-	# disconnected shin-to-foot look.
+	# Legs: explicit two-phase side-view gait. Near/far legs move in opposite
+	# horizontal phases: one plants behind while the other passes forward.
 	var ground_y := 24.6 * h
 	var hip_front := hip + Vector2(face * 2.4, 2.4 * h)
 	var hip_back := hip + Vector2(-face * 2.8, 2.6 * h)
-	var ankle_front := Vector2(face * (9.0 + stride * 5.8), ground_y - step_up * 2.8)
-	var ankle_back := Vector2(face * (-8.0 + stride * 5.2), ground_y - step_back * 2.8)
-	var knee_front := Vector2(face * (5.0 + stride * 4.0), lerpf(hip_front.y + 7.2 * h, ankle_front.y - 6.6 * h, 0.58) - step_up * 2.0)
-	var knee_back := Vector2(face * (-4.8 + stride * 3.5), lerpf(hip_back.y + 7.4 * h, ankle_back.y - 6.4 * h, 0.58) - step_back * 2.0)
+	var ankle_front := Vector2(face * (8.4 + leg_front_phase * 5.6), ground_y - front_lift * 2.9)
+	var ankle_back := Vector2(face * (-8.2 + leg_back_phase * 5.3), ground_y - back_lift * 2.7)
+	var knee_front := Vector2(face * (4.6 + leg_front_phase * 3.7), lerpf(hip_front.y + 7.2 * h, ankle_front.y - 6.6 * h, 0.58) - front_lift * 2.0)
+	var knee_back := Vector2(face * (-4.8 + leg_back_phase * 3.5), lerpf(hip_back.y + 7.4 * h, ankle_back.y - 6.4 * h, 0.58) - back_lift * 1.9)
 
 	if is_blocker:
 		elbow_front = shoulder + Vector2(face * 13.0, 6.0)

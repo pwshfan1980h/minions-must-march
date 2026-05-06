@@ -231,6 +231,7 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Reduced skeleton redraw rate from every physics frame to animation-frame changes at 14 FPS, which should help when the full roster is on screen.
 - Throttled animated terrain/Styx and exit-pillar redraws to 30 FPS instead of every process frame.
 - Follow-up pass reduced skeletons another notch and changed feet into shorter angled bones, closer to a 45-degree extension from the lower leg instead of long flat feet.
+- Fixed a gait issue where both legs drifted through the same horizontal phase; near/far legs now move opposite each other so one plants while the other passes forward.
 
 ## 2026-05-06 - Local Web export feasibility test
 
