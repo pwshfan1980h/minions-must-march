@@ -11,7 +11,7 @@ const CAMERA_PAN_SPEED := 520.0
 
 func _ready() -> void:
 	print("Minions Must March: GameRoot ready")
-	camera.position.x = WORLD_WIDTH - VIEWPORT_WIDTH / 2.0
+	camera.position.x = VIEWPORT_WIDTH / 2.0
 	camera.limit_left = 0
 	camera.limit_right = int(WORLD_WIDTH)
 	camera.limit_top = 0

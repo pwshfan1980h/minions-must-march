@@ -7,7 +7,7 @@ signal sfx_requested(sound_id: String)
 const LEVEL_WIDTH := 2400
 const PLAYFIELD_HEIGHT := 608
 const TILE_SIZE := 32
-const RESCUE_REQUIRED := 8
+const RESCUE_REQUIRED := 6
 
 var finished := false
 var debug_click_areas := false
@@ -16,7 +16,7 @@ var debug_click_areas := false
 @onready var object_root: Node = $ObjectRoot
 
 func _ready() -> void:
-	print("LevelController ready: Level 1 core loop")
+	print("LevelController ready: Builder Demo 1")
 	minion_root.minion_spawned.connect(_on_minion_event)
 	minion_root.minion_rescued.connect(_on_minion_event)
 	minion_root.minion_lost.connect(_on_minion_event)

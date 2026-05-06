@@ -25,8 +25,9 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 func _build_placeholder_objects() -> void:
-	_add_spawn_chute(Vector2(2180, 420))
-	_add_exit(Vector2(2220, 448))
+	_add_spawn_chute(Vector2(220, 420))
+	_add_builder_demo_label(Vector2(760, 360))
+	_add_exit(Vector2(1210, 400))
 
 func _add_spawn_chute(pos: Vector2) -> void:
 	var chute := Node2D.new()
@@ -59,6 +60,16 @@ func _add_spawn_chute(pos: Vector2) -> void:
 		bone.points = PackedVector2Array([Vector2(-24.0 + i * 2.0, y), Vector2(14.0 + i * 3.0, y + 5.0)])
 		chute.add_child(bone)
 
+
+func _add_builder_demo_label(pos: Vector2) -> void:
+	var label := Label.new()
+	label.name = "BuilderDemoHint"
+	label.position = pos
+	label.text = "BUILDER DEMO #1\nStand near the gold line, select Builder, then click a right-facing skeleton.\nExpected: 6 rib pieces bridge this Styx gap."
+	label.add_theme_color_override("font_color", Color(0.94, 0.84, 0.58, 0.88))
+	label.add_theme_font_size_override("font_size", 16)
+	add_child(label)
+
 func _add_exit(pos: Vector2) -> void:
 	exit_position = pos
 	exit_area = Area2D.new()
@@ -88,7 +99,7 @@ func _build_motes() -> void:
 		})
 
 func _draw() -> void:
-	_draw_spawn_chute_dust(Vector2(2180, 420))
+	_draw_spawn_chute_dust(Vector2(220, 420))
 	if exit_position == Vector2.ZERO:
 		return
 	_draw_exit_light(exit_position)

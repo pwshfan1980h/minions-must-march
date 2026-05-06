@@ -1,38 +1,48 @@
 {
-  "id": "level-001",
-  "name": "Bridge School",
+  "id": "level-001-builder-demo-1",
+  "name": "Builder Demo #1 - First Rib Bridge",
   "size": {
-    "width": 40,
+    "width": 75,
     "height": 19,
     "tileSize": 32
   },
   "spawn": {
-    "x": 16.25,
-    "y": 13.1,
-    "direction": "left",
-    "count": 20,
+    "x": 6.875,
+    "y": 13.125,
+    "direction": "right",
+    "count": 8,
     "interval": 1.0
   },
   "exit": {
-    "x": 18.25,
-    "y": 14
+    "x": 37.8125,
+    "y": 12.5
   },
-  "rescueRequired": 12,
+  "rescueRequired": 6,
   "jobs": {
-    "blocker": 2,
-    "builder": 4
+    "blocker": 0,
+    "builder": 1
   },
   "tutorial": {
-    "primaryLesson": "Use a Blocker to turn the crowd away from the Styx, then assign Builders to create a short rib-bone bridge/stair over the intended gap.",
+    "primaryLesson": "Assign one right-facing Builder at the gold build line to create the first six-piece rib bridge over a narrow Styx gap.",
     "jobHints": [
-      "1: Blocker turns skeleton traffic around; click a blocker again to Resume March.",
-      "2: Builder places six small bridge/stair pieces in the direction the skeleton is facing, then resumes walking."
+      "This is a mechanic demo, not a final puzzle: no blocker is required.",
+      "2: Builder should place six small bridge/stair pieces in the skeleton's facing direction, then resume walking.",
+      "The translucent rib ghosts show the expected Builder v0 placement for implementation testing."
     ],
     "builderV0": {
-      "charges": 4,
+      "charges": 1,
       "pieces": 6,
       "pieceSizePx": { "width": 28, "height": 8 },
       "pieceOffsetPx": { "x": 24, "y": -8 },
+      "intendedStartPx": { "x": 760, "y": 440 },
+      "expectedPieceCentersPx": [
+        { "x": 784, "y": 432 },
+        { "x": 808, "y": 424 },
+        { "x": 832, "y": 416 },
+        { "x": 856, "y": 408 },
+        { "x": 880, "y": 400 },
+        { "x": 904, "y": 392 }
+      ],
       "usesSceneCollisionPieces": true,
       "doesNotModifyStyxOrTerrainBitmap": true
     }
@@ -40,5 +50,5 @@
   "hazards": {
     "bottom": "styx_water"
   },
-  "notes": "Current prototype layout is a blocker/ledge-death test: minions spawn on the right side of the platform and march left. Session B should add Builder v0 using scene collision pieces; Session C should tune the layout into the intended Blocker + Builder solution where the blocker buys time and builders close the route without interacting with the River Styx."
+  "notes": "Current hardcoded prototype layout mirrors this file: spawn at x=220 moving right, left platform ends near x=800, landing begins at x=912, exit at x=1210. This is deliberately small so Builder mechanic #1 can be implemented and tested without blocker timing noise."
 }

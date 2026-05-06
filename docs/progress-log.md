@@ -307,3 +307,12 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Will tested the exported Godot Web build in browser and confirmed it works well when served from `localhost`.
 - LAN IP hosting is reachable after allowing Python through macOS firewall, but Godot Web secure-context requirements mean `http://192.168.x.x` is not sufficient for this build/browser path.
 - Current early-web feasibility result: **pass for local browser testing**. For phone/LAN/external testing later, use HTTPS via local cert (`mkcert`), Cloudflare Tunnel, ngrok, Tailscale Funnel, or real hosting.
+
+## 2026-05-06 - Builder Demo #1 level scaffold
+
+- Replaced the temporary blocker teaching layout with a focused **Builder Demo #1 - First Rib Bridge** scaffold.
+- Minions now spawn on the left, march right, and encounter one narrow Styx gap before the exit; the camera starts on the demo area instead of the old far-right spawn.
+- Tuned the demo to `8` skeletons, `6` required rescues, `0` blockers, and `1` intended Builder charge so Builder mechanic #1 can be tested without blocker timing noise.
+- Added a gold build-line marker plus six translucent rib-bone ghost pieces showing the exact expected Builder v0 placement: 28x8 px pieces at 24 px forward / 8 px upward increments.
+- Updated `levels/level_001_bridge_school.json` to describe the demo geometry and expected piece centers for implementation verification.
+- Verification: `python3 -m json.tool levels/level_001_bridge_school.json`, Godot headless smoke, and Web export pack all passed. Headless screenshot capture is unavailable with Godot's dummy rendering backend.

@@ -8,11 +8,11 @@ signal sfx_requested(sound_id: String)
 
 const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
 
-@export var total_to_spawn := 12
-@export var spawn_interval := 0.75
-@export var spawn_position := Vector2(2180, 420)
-@export var spawn_direction := -1.0
-@export var blockers_available := 1
+@export var total_to_spawn := 8
+@export var spawn_interval := 1.0
+@export var spawn_position := Vector2(220, 420)
+@export var spawn_direction := 1.0
+@export var blockers_available := 0
 
 var selected_job := "blocker"
 var spawned_count := 0

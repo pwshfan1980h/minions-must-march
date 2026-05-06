@@ -28,15 +28,46 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 func _build_level_001_terrain() -> void:
-	# Level 1: "Don't March Into the Soup". Skeletons spill from a crypt
-	# chute on the right, march left toward a Styx drop, and must be turned back
-	# toward the exit beam with one blocker.
-	_add_solid(Rect2(1760, 448, 512, 32), Color("3a3144"), "crypt")
-	_add_solid(Rect2(1728, 480, 32, 96), Color("2a2432"), "skull_end")
-	_add_solid(Rect2(2240, 480, 32, 96), Color("2a2432"), "skull_end")
-	_add_solid(Rect2(1296, 500, 288, 24), Color("4a3d37"), "bone_bridge")
-	_add_solid(Rect2(896, 416, 320, 32), Color("241d2f"), "obsidian")
-	_add_solid(Rect2(360, 472, 352, 32), Color("342b3e"), "chain")
+	# Builder Demo 1: a small, intentionally obvious bridge lab. Skeletons
+	# spawn on the left, march right, and hit one Styx gap before the exit.
+	# The gap is sized so one Builder v0 run should be enough: six 28x8
+	# rib-bone pieces placed 24 px forward / 8 px upward from a right-facing
+	# skeleton near the marked build line.
+	_add_solid(Rect2(160, 448, 640, 32), Color("3a3144"), "crypt")
+	_add_solid(Rect2(128, 480, 32, 96), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(800, 480, 32, 96), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(912, 400, 480, 32), Color("342b3e"), "chain")
+	_add_solid(Rect2(1392, 432, 96, 32), Color("241d2f"), "obsidian")
+	_add_solid(Rect2(500, 500, 184, 24), Color("4a3d37"), "bone_bridge")
+	_add_builder_demo_markers()
+
+
+func _add_builder_demo_markers() -> void:
+	# Non-colliding visual scaffolding for Builder mechanic #1. It shows where
+	# the first implementation should place its six bridge pieces without
+	# solving the level for the player.
+	var start := Vector2(760, 440)
+	var marker := Line2D.new()
+	marker.name = "BuilderDemoStartMarker"
+	marker.default_color = Color(0.95, 0.78, 0.28, 0.48)
+	marker.width = 3.0
+	marker.points = PackedVector2Array([start + Vector2(0, -34), start + Vector2(0, 18)])
+	add_child(marker)
+
+	for i in 6:
+		var piece_center := start + Vector2(24.0 * float(i + 1), -8.0 * float(i + 1))
+		var ghost := Polygon2D.new()
+		ghost.name = "BuilderDemoGhostPiece%d" % (i + 1)
+		ghost.position = piece_center
+		ghost.color = Color(0.82, 0.72, 0.52, 0.24)
+		ghost.polygon = PackedVector2Array([Vector2(-14, -4), Vector2(14, -4), Vector2(14, 4), Vector2(-14, 4)])
+		add_child(ghost)
+
+		var rib := Line2D.new()
+		rib.default_color = Color(1.0, 0.90, 0.68, 0.46)
+		rib.width = 1.4
+		rib.points = PackedVector2Array([piece_center + Vector2(-11, 0), piece_center + Vector2(11, -1)])
+		add_child(rib)
 
 func _add_solid(rect: Rect2, color: Color, variant := "crypt") -> void:
 	collision_rects.append(rect)

@@ -18,7 +18,7 @@ func _ready() -> void:
 func update_stats(stats: Dictionary) -> void:
 	selected_job = stats.get("selected_job", selected_job)
 	var debug_text := " | F3: Hitboxes ON" if stats.get("debug_click_areas", false) else " | F3: Hitboxes"
-	status_label.text = "Spawned %d/%d | Active %d | Saved %d/%d | Lost %d | Selected %s | 1: Blocker | Click blocker to Resume March | R: Restart%s" % [
+	status_label.text = "Builder Demo #1 | Spawned %d/%d | Active %d | Saved %d/%d | Lost %d | Selected %s | 1: Blocker | 2: Builder soon | R: Restart%s" % [
 		stats.get("spawned", 0),
 		stats.get("total", 0),
 		stats.get("active", 0),
