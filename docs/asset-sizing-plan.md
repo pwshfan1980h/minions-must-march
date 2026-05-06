@@ -58,7 +58,7 @@ Recommendation: **Layout B** for clarity.
 ## Prototype Sizing
 
 - Tile: 32x32 px
-- Skeleton minion body: roughly 11-15 px wide and 22-26 px tall in gameplay, so the crowd feels smaller relative to the field of view.
+- Skeleton minion body: roughly 10-13 px wide and 19-23 px tall in gameplay, so the crowd feels smaller relative to the field of view.
 - Entrance: 64x64 px
 - Exit/light pillar: 64x64 px
 - Job icon: 48x48 px
@@ -123,7 +123,7 @@ Start with simple SVG/procedural shapes:
 - Smart anatomy hints only: clavicles, pelvis shape, elbow/knee joints, and foot/toe bones where they improve readability.
 - Diverse skeleton proportions: small height/posture/stride variation so the crowd does not look cloned.
 - Long lanky arms with subtle counter-swing while walking.
-- Long lanky legs with readable alternating stride, stable ankle-to-foot connection, and explicit foot bones/toe bones.
+- Long lanky legs with readable alternating stride, stable ankle-to-foot connection, and small foot bones angled roughly 45 degrees off the lower leg.
 - Slight hunch/bob while walking.
 - Optional jaw chatter/bone rattle effect.
 - Job state overlay: hardhat, sign, plank bundle, shovel/pick, dust trail, cloak glider.

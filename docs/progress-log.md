@@ -230,6 +230,7 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Simplified the skeleton draw pass slightly: fewer ribs/joint dots and smaller line widths at the new scale.
 - Reduced skeleton redraw rate from every physics frame to animation-frame changes at 14 FPS, which should help when the full roster is on screen.
 - Throttled animated terrain/Styx and exit-pillar redraws to 30 FPS instead of every process frame.
+- Follow-up pass reduced skeletons another notch and changed feet into shorter angled bones, closer to a 45-degree extension from the lower leg instead of long flat feet.
 
 ## 2026-05-06 - Local Web export feasibility test
 

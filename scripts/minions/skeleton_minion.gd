@@ -15,7 +15,7 @@ const WALL_NORMAL_THRESHOLD := 0.65
 const BLOCKER_TURN_DISTANCE := 22.0
 const BLOCKER_VERTICAL_TOLERANCE := 18.0
 const STYX_SURFACE_Y := 560.0
-const VISUAL_SCALE := 0.82
+const VISUAL_SCALE := 0.72
 const WALK_ANIM_FPS := 14.0
 
 var direction := 1.0
@@ -240,7 +240,7 @@ func _draw() -> void:
 	# Legs: explicit two-phase side-view gate. Each foot stays near a common ground
 	# line, while the stepping leg lifts only slightly. That avoids the previous
 	# disconnected shin-to-foot look.
-	var ground_y := 25.5 * h
+	var ground_y := 24.6 * h
 	var hip_front := hip + Vector2(face * 2.4, 2.4 * h)
 	var hip_back := hip + Vector2(-face * 2.8, 2.6 * h)
 	var ankle_front := Vector2(face * (9.0 + stride * 5.8), ground_y - step_up * 2.8)
@@ -311,9 +311,8 @@ func _draw_side_skull(center: Vector2, face: float, bone: Color, shadow: Color) 
 	draw_line(center + Vector2(face * 1.4, 6.1), center + Vector2(face * 6.5, 6.2), shadow, 0.95)
 
 func _draw_foot(ankle: Vector2, face: float, color: Color, is_front: bool) -> void:
-	var toe_forward := 7.4 if is_front else 6.2
-	var toe := ankle + Vector2(face * toe_forward, 1.6)
-	# Heel-to-toe foot bone connected directly from the ankle; tiny toe strokes only.
-	draw_line(ankle, toe, color, 2.0 if is_front else 1.75, true)
-	draw_line(toe, toe + Vector2(face * 2.6, -1.0), color, 1.15, true)
-	draw_line(toe + Vector2(-face * 1.3, 0.4), toe + Vector2(face * 2.0, 1.8), color, 1.0, true)
+	# Small angled foot bone: about 45 degrees from the lower leg, not a long flat shoe.
+	var foot_len := 5.1 if is_front else 4.4
+	var toe := ankle + Vector2(face * foot_len, foot_len * 0.55)
+	draw_line(ankle, toe, color, 1.65 if is_front else 1.45, true)
+	draw_line(toe, toe + Vector2(face * 1.8, 0.6), color, 0.9, true)
