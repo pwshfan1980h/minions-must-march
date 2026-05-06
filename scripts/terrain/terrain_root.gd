@@ -26,15 +26,17 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 func _build_level_001_terrain() -> void:
-	# Wider prototype layout for testing camera scrolling. Minions spawn far right,
-	# march left across a long crypt causeway, and exit near the left edge.
-	_add_solid(Rect2(96, 448, 2144, 32), Color("3a3144"))
-	_add_solid(Rect2(64, 480, 32, 96), Color("2a2432"))
-	_add_solid(Rect2(2240, 480, 32, 96), Color("2a2432"))
-	_add_solid(Rect2(1024, 480, 96, 32), Color("332b3b"))
-	_add_solid(Rect2(1568, 480, 128, 32), Color("332b3b"))
+	# Level 1: "Don't March Into the Soup". Skeletons spill from a crypt
+	# chute on the right, march left toward a Styx drop, and must be turned back
+	# toward the exit beam with one blocker.
+	_add_solid(Rect2(1760, 448, 512, 32), Color("3a3144"), "crypt")
+	_add_solid(Rect2(1728, 480, 32, 96), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(2240, 480, 32, 96), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(1296, 500, 288, 24), Color("4a3d37"), "bone_bridge")
+	_add_solid(Rect2(896, 416, 320, 32), Color("241d2f"), "obsidian")
+	_add_solid(Rect2(360, 472, 352, 32), Color("342b3e"), "chain")
 
-func _add_solid(rect: Rect2, color: Color) -> void:
+func _add_solid(rect: Rect2, color: Color, variant := "crypt") -> void:
 	collision_rects.append(rect)
 
 	var body := StaticBody2D.new()
@@ -61,9 +63,9 @@ func _add_solid(rect: Rect2, color: Color) -> void:
 	])
 	body.add_child(visual)
 
-	_add_block_underworld_detail(rect, body)
+	_add_block_underworld_detail(rect, body, variant)
 
-func _add_block_underworld_detail(rect: Rect2, body: Node2D) -> void:
+func _add_block_underworld_detail(rect: Rect2, body: Node2D, variant: String) -> void:
 	var top_line := Line2D.new()
 	top_line.default_color = Color("76637f")
 	top_line.width = 2.0
@@ -105,6 +107,37 @@ func _add_block_underworld_detail(rect: Rect2, body: Node2D) -> void:
 		Vector2(minf(rect.size.x / 2.0 - 10.0, -rect.size.x / 2.0 + 92.0), rect.size.y / 2.0 - 8.0),
 	])
 	body.add_child(sigil)
+
+	if variant == "bone_bridge":
+		for i in range(12, int(rect.size.x), 30):
+			var rib := Line2D.new()
+			rib.default_color = Color(0.76, 0.68, 0.54, 0.42)
+			rib.width = 2.1
+			rib.points = PackedVector2Array([
+				Vector2(-rect.size.x / 2.0 + i, -rect.size.y / 2.0 + 4.0),
+				Vector2(-rect.size.x / 2.0 + i + 12.0, rect.size.y / 2.0 - 5.0),
+			])
+			body.add_child(rib)
+	elif variant == "obsidian":
+		var gleam := Line2D.new()
+		gleam.default_color = Color(0.46, 0.34, 0.72, 0.22)
+		gleam.width = 1.6
+		gleam.points = PackedVector2Array([Vector2(-rect.size.x / 2.0 + 18.0, -8.0), Vector2(rect.size.x / 2.0 - 18.0, -13.0)])
+		body.add_child(gleam)
+	elif variant == "chain":
+		for x in [-rect.size.x / 2.0 + 38.0, rect.size.x / 2.0 - 38.0]:
+			var chain := Line2D.new()
+			chain.default_color = Color(0.12, 0.10, 0.13, 0.78)
+			chain.width = 2.0
+			chain.points = PackedVector2Array([Vector2(x, -rect.size.y / 2.0), Vector2(x, -rect.size.y / 2.0 - 138.0)])
+			body.add_child(chain)
+	elif variant == "skull_end":
+		for y in range(-34, 35, 24):
+			var skull := Polygon2D.new()
+			skull.color = Color(0.72, 0.65, 0.52, 0.18)
+			skull.position = Vector2(0, y)
+			skull.polygon = PackedVector2Array([Vector2(-8,-7), Vector2(8,-7), Vector2(10,3), Vector2(4,10), Vector2(-4,10), Vector2(-10,3)])
+			body.add_child(skull)
 
 func _add_styx_death_area() -> void:
 	var area := Area2D.new()

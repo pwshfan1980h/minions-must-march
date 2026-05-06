@@ -36,4 +36,23 @@ Start with atmospheric parallax elements that add mood without gameplay clutter:
 - Start camera near the spawn side so the player sees skeletons enter, then can pan left toward the exit.
 - This is intentionally simple manual camera control; later options include auto-following the skeleton crowd, edge scrolling, drag-to-pan, or snapping between points of interest.
 
+## Level 1 Puzzle Direction
+
+Working title: **Don't March Into the Soup**.
+
+- Skeletons start from a crypt chute/bone pipe on the far right.
+- Exit beam sits on the same right-side platform, just behind the initial marching direction.
+- Skeletons initially march left toward a Styx drop.
+- Player has one blocker; placing it before the drop turns the crowd back toward the exit.
+- Rescue target is forgiving (`8/12`) so the first puzzle teaches recovery, not perfection.
+- Blocker can remain braced after the wave; the level can still complete once the crowd outcome is settled.
+
+Platform variants now represented in the prototype:
+
+- Crypt stone: normal safe walking ground.
+- Skull endcaps: vertical supports/walls.
+- Bone bridge: rib/plank visual treatment.
+- Obsidian slab: dark glossy hazard-flavored architecture.
+- Chain platform: static suspended platform visual, moving later.
+
 Avoid interactive-looking detail for now. The player should instantly know these are background flavor, not tools or hazards.

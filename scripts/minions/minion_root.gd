@@ -8,11 +8,11 @@ signal sfx_requested(sound_id: String)
 
 const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
 
-@export var total_to_spawn := 20
-@export var spawn_interval := 0.65
+@export var total_to_spawn := 12
+@export var spawn_interval := 0.75
 @export var spawn_position := Vector2(2180, 420)
 @export var spawn_direction := -1.0
-@export var blockers_available := 2
+@export var blockers_available := 1
 
 var selected_job := "blocker"
 var spawned_count := 0
@@ -104,4 +104,7 @@ func _on_minion_clicked(minion: Node) -> void:
 		minion_spawned.emit(minion)
 
 func all_done() -> bool:
-	return _spawning_done and active_count == 0
+	# A placed blocker can remain braced after the crowd is safe; don't let that
+	# strand the tutorial level in a never-ending state.
+	var blockers_alive := get_tree().get_nodes_in_group("blockers").size()
+	return _spawning_done and active_count <= blockers_alive

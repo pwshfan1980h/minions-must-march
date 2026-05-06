@@ -223,6 +223,13 @@ Start implementation with **Level 1: Bridge School** only. Build it crude, test 
 - Added explicit foot/toe bones and a braced side-view blocker stance.
 - Follow-up detail pass added restrained pelvis, clavicle, elbow, and knee hints so the skeletons read better without becoming noisy medical diagrams.
 
+## 2026-05-06 - Level 1 teaching puzzle pass
+
+- Reshaped level 1 into **Don't March Into the Soup**: skeletons spawn from a right-side crypt chute, initially march left toward a Styx drop, and need one blocker to turn the crowd back to the exit.
+- Added a crypt chute/bone-pipe spawn visual with green glow, rim stones, bone slats, and faint dust puffs.
+- Added platform visual variants: crypt stone, skull endcaps, bone bridge, obsidian slab, and chain-suspended platform treatment.
+- Tuned the first level to `12` skeletons, `8` required rescues, and `1` blocker. A braced blocker no longer prevents level completion after the wave resolves.
+
 ## 2026-05-06 - Underworld background direction
 
 - Captured upper-screen/background ideas in `docs/background-art-ideas.md`.
