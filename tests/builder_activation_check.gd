@@ -39,7 +39,7 @@ func _run() -> void:
 	minion_root.set_selected_job("builder")
 	minion_root._on_minion_clicked(minion)
 
-	await create_timer(1.60).timeout
+	await create_timer(3.80).timeout
 
 	if minion_root.builders_remaining != 0:
 		_fail("Builder charge was not consumed")

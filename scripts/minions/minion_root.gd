@@ -33,7 +33,9 @@ const BUILDER_PIECE_SIZE := Vector2(28.0, 8.0)
 const BUILDER_PIECE_SPACING := 24.0
 const BUILDER_STEP_RISE := 8.0
 const BUILDER_SUPPORT_Y_TOLERANCE := 28.0
-const BUILDER_THROW_DURATION := 0.14
+const BUILDER_WINDUP_SECONDS := 0.22
+const BUILDER_THROW_DURATION := 0.24
+const BUILDER_SETTLE_SECONDS := 0.08
 const BUILDER_HAND_OFFSET := Vector2(16.0, -12.0)
 
 func _ready() -> void:
@@ -155,7 +157,6 @@ func _run_builder_sequence(minion: Node) -> void:
 	var start: Vector2 = minion.global_position
 	var anchor := _get_builder_anchor(start, facing)
 	for i in BUILDER_PIECE_COUNT:
-		await get_tree().create_timer(0.12).timeout
 		if not is_instance_valid(minion) or minion.get("alive") != true or minion.get("rescued") == true:
 			return
 		var center := anchor + Vector2(
@@ -163,12 +164,16 @@ func _run_builder_sequence(minion: Node) -> void:
 			-BUILDER_STEP_RISE * float(i)
 		)
 		if minion.has_method("play_builder_build_pulse"):
-			minion.play_builder_build_pulse()
+			minion.play_builder_build_pulse(BUILDER_WINDUP_SECONDS + BUILDER_THROW_DURATION)
+		await get_tree().create_timer(BUILDER_WINDUP_SECONDS).timeout
+		if not is_instance_valid(minion) or minion.get("alive") != true or minion.get("rescued") == true:
+			return
 		await _animate_builder_throw(minion, center, facing, i + 1)
 		if not is_instance_valid(minion) or minion.get("alive") != true or minion.get("rescued") == true:
 			return
 		_add_builder_piece(center, facing, i + 1)
 		sfx_requested.emit("bone_clack")
+		await get_tree().create_timer(BUILDER_SETTLE_SECONDS).timeout
 	if is_instance_valid(minion) and minion.has_method("set_builder_active"):
 		minion.set_builder_active(false)
 		minion_spawned.emit(minion)
@@ -199,8 +204,10 @@ func _animate_builder_throw(minion: Node, target: Vector2, facing: float, index:
 
 	var tween := create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(throw_visual, "global_position", target, BUILDER_THROW_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(throw_visual, "rotation", throw_visual.rotation + facing * 1.3, BUILDER_THROW_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(throw_visual, "global_position", target, BUILDER_THROW_DURATION).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(throw_visual, "rotation", throw_visual.rotation + facing * 2.4, BUILDER_THROW_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(throw_visual, "scale", Vector2(1.25, 1.25), BUILDER_THROW_DURATION * 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(throw_visual, "scale", Vector2(0.92, 0.92), BUILDER_THROW_DURATION * 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN).set_delay(BUILDER_THROW_DURATION * 0.45)
 	tween.tween_property(throw_visual, "modulate", Color(1.0, 1.0, 1.0, 0.25), BUILDER_THROW_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	await tween.finished
 	if is_instance_valid(throw_visual):

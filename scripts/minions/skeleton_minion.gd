@@ -17,12 +17,13 @@ const BLOCKER_VERTICAL_TOLERANCE := 18.0
 const STYX_SURFACE_Y := 560.0
 const VISUAL_SCALE := 0.72
 const WALK_ANIM_FPS := 14.0
-const BUILDER_SWING_FPS := 9.0
+const BUILDER_SWING_FPS := 5.5
+const BUILDER_PULSE_SECONDS := 0.46
 const VAULT_CONTACT_MAX_HEIGHT := 30.0
 const VAULT_FORWARD_DISTANCE := 16.0
 const VAULT_MIN_CLEARANCE := 6.0
-const VAULT_COOLDOWN_SECONDS := 0.08
-const VAULT_ANIM_SECONDS := 0.24
+const VAULT_COOLDOWN_SECONDS := 0.12
+const VAULT_ANIM_SECONDS := 0.34
 const STYX_IMPACT_Y := STYX_SURFACE_Y - 2.0
 
 var direction := 1.0
@@ -173,8 +174,8 @@ func set_builder_active(active: bool) -> void:
 	_stop_tumble()
 	queue_redraw()
 
-func play_builder_build_pulse() -> void:
-	_builder_pulse_time = 0.18
+func play_builder_build_pulse(duration := BUILDER_PULSE_SECONDS) -> void:
+	_builder_pulse_time = duration
 	queue_redraw()
 
 func become_blocker() -> bool:
@@ -315,7 +316,7 @@ func _try_vault_ahead() -> bool:
 		if test_move(global_transform.translated(up), forward):
 			continue
 		global_position += up + forward
-		velocity.y = -45.0
+		velocity.y = -28.0
 		_vault_cooldown = VAULT_COOLDOWN_SECONDS
 		_vault_anim_time = VAULT_ANIM_SECONDS
 		_stop_tumble()
@@ -368,12 +369,15 @@ func _draw() -> void:
 
 	var airborne_motion := _is_tumbling or (not alive and not rescued)
 	var fall_phase := _air_time * 9.5 + float(get_instance_id()) * 0.01
+	var vault_progress := 1.0 - clampf(_vault_anim_time / VAULT_ANIM_SECONDS, 0.0, 1.0)
 	var stride := sin(fall_phase) * 0.55 if airborne_motion else 0.0 if is_blocker or is_builder else sin(_walk_time)
+	if _vault_anim_time > 0.0 and not is_blocker and not is_builder:
+		stride = sin(vault_progress * PI * 1.35) * 0.88
 	var leg_front_phase := stride
 	var leg_back_phase := -stride
 	var front_lift := maxf(0.0, leg_front_phase)
 	var back_lift := maxf(0.0, leg_back_phase)
-	var vault_bob := -sin((_vault_anim_time / VAULT_ANIM_SECONDS) * PI) * 4.6 if _vault_anim_time > 0.0 else 0.0
+	var vault_bob := -sin(vault_progress * PI) * 5.2 if _vault_anim_time > 0.0 else 0.0
 	var bob := 0.0 if is_blocker or is_builder else absf(stride) * (0.55 if airborne_motion else 1.05)
 	bob += vault_bob
 	var lean := face * (2.8 + _spine_variant * 7.0 + (0.45 * absf(stride) if not is_blocker else -1.0))
@@ -437,11 +441,13 @@ func _draw() -> void:
 		knee_back = hip_back + Vector2(-face * 7.0, 11.0 * h)
 		if is_builder:
 			var build_phase := sin(_builder_anim_time * TAU * BUILDER_SWING_FPS)
-			var throw_snap := clampf(_builder_pulse_time / 0.18, 0.0, 1.0)
-			elbow_front = shoulder + Vector2(face * (10.0 + build_phase * 3.0 + throw_snap * 7.0), 5.0 - throw_snap * 4.0)
-			hand_front = elbow_front + Vector2(face * (7.0 + throw_snap * 6.0), 5.5 - throw_snap * 6.0)
-			elbow_back = shoulder + Vector2(-face * (9.0 + build_phase * 2.0), 6.0)
-			hand_back = elbow_back + Vector2(-face * 6.0, 6.5)
+			var throw_snap := clampf(_builder_pulse_time / BUILDER_PULSE_SECONDS, 0.0, 1.0)
+			var windup := sin(throw_snap * PI)
+			var release := pow(throw_snap, 2.2)
+			elbow_front = shoulder + Vector2(face * (8.0 + build_phase * 2.2 + release * 11.0), 7.0 - windup * 5.5)
+			hand_front = elbow_front + Vector2(face * (6.0 + release * 9.0), 6.2 - windup * 8.0)
+			elbow_back = shoulder + Vector2(-face * (8.0 + build_phase * 2.4 + windup * 3.0), 6.0 + windup * 2.0)
+			hand_back = elbow_back + Vector2(-face * (6.0 + windup * 3.5), 6.5 + windup * 2.0)
 
 	_draw_bone_segment(shoulder, elbow_back, back_bone, 1.75)
 	_draw_bone_segment(elbow_back, hand_back, back_bone, 1.65)
@@ -453,7 +459,7 @@ func _draw() -> void:
 	_draw_bone_segment(elbow_front, hand_front, bone, 1.75)
 	draw_circle(hand_front, 1.45, accent)
 	if is_builder:
-		var glow := clampf(_builder_pulse_time / 0.18, 0.0, 1.0)
+		var glow := clampf(_builder_pulse_time / BUILDER_PULSE_SECONDS, 0.0, 1.0)
 		var held_tip := hand_front + Vector2(face * 8.0, -1.5)
 		draw_line(hand_front - Vector2(face * 5.0, -1.0), held_tip, Color(1.0, 0.86, 0.54, 0.95), 2.3, true)
 		if glow > 0.0:
