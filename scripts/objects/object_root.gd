@@ -1,16 +1,21 @@
 extends Node2D
 
 signal minion_entered_exit(minion: Node)
+signal spawn_portal_clicked
 
 const EXIT_LIGHT_HEIGHT := 210.0
 const EXIT_LIGHT_WIDTH := 68.0
 const EXIT_REDRAW_FPS := 30.0
+const SPAWN_PORTAL_POS := Vector2(232, 382)
 
 var exit_area: Area2D
 var exit_position := Vector2.ZERO
 var _time := 0.0
 var _redraw_elapsed := 0.0
 var _mote_specs: Array[Dictionary] = []
+var _spawn_portal_waiting := true
+var _spawn_portal_voom := 0.0
+var _spawn_portal_area: Area2D
 
 func _ready() -> void:
 	_build_motes()
@@ -20,46 +25,48 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_time += delta
 	_redraw_elapsed += delta
+	if _spawn_portal_voom > 0.0:
+		_spawn_portal_voom = maxf(0.0, _spawn_portal_voom - delta * 1.9)
 	if _redraw_elapsed >= 1.0 / EXIT_REDRAW_FPS:
 		_redraw_elapsed = 0.0
 		queue_redraw()
 
 func _build_placeholder_objects() -> void:
-	_add_spawn_chute(Vector2(220, 420))
+	_add_spawn_portal()
 	_add_builder_demo_label(Vector2(760, 360))
 	_add_exit(Vector2(1210, 400))
 
-func _add_spawn_chute(pos: Vector2) -> void:
-	var chute := Node2D.new()
-	chute.name = "CryptChuteSpawn"
-	chute.position = pos + Vector2(12, -38)
-	add_child(chute)
+func _add_spawn_portal() -> void:
+	_spawn_portal_area = Area2D.new()
+	_spawn_portal_area.name = "SpawnPortalClickArea"
+	_spawn_portal_area.position = SPAWN_PORTAL_POS
+	_spawn_portal_area.collision_layer = 4
+	_spawn_portal_area.collision_mask = 0
+	_spawn_portal_area.input_pickable = true
+	_spawn_portal_area.monitoring = false
+	_spawn_portal_area.monitorable = false
+	_spawn_portal_area.input_event.connect(_on_spawn_portal_input_event)
+	add_child(_spawn_portal_area)
 
-	var mouth := Polygon2D.new()
-	mouth.color = Color(0.10, 0.075, 0.12, 0.95)
-	mouth.polygon = PackedVector2Array([Vector2(-42,-30), Vector2(30,-24), Vector2(38,26), Vector2(-34,34)])
-	chute.add_child(mouth)
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(96, 112)
+	shape.shape = rect
+	_spawn_portal_area.add_child(shape)
 
-	var rim := Line2D.new()
-	rim.default_color = Color(0.42, 0.35, 0.45, 0.95)
-	rim.width = 4.0
-	rim.closed = true
-	rim.points = PackedVector2Array([Vector2(-42,-30), Vector2(30,-24), Vector2(38,26), Vector2(-34,34)])
-	chute.add_child(rim)
-
-	var glow := Polygon2D.new()
-	glow.color = Color(0.55, 0.90, 0.42, 0.16)
-	glow.polygon = PackedVector2Array([Vector2(-24,-16), Vector2(18,-12), Vector2(24,18), Vector2(-20,22)])
-	chute.add_child(glow)
-
-	for i in 5:
-		var bone := Line2D.new()
-		bone.default_color = Color(0.80, 0.72, 0.56, 0.42)
-		bone.width = 2.0
-		var y := -16.0 + i * 10.0
-		bone.points = PackedVector2Array([Vector2(-24.0 + i * 2.0, y), Vector2(14.0 + i * 3.0, y + 5.0)])
-		chute.add_child(bone)
-
+func _on_spawn_portal_input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> void:
+	if not _spawn_portal_waiting:
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_spawn_portal_waiting = false
+		_spawn_portal_voom = 1.0
+		if _spawn_portal_area != null:
+			_spawn_portal_area.set_deferred("input_pickable", false)
+			var shape := _spawn_portal_area.get_node_or_null("CollisionShape2D")
+			if shape != null:
+				shape.set_deferred("disabled", true)
+		spawn_portal_clicked.emit()
+		queue_redraw()
 
 func _add_builder_demo_label(_pos: Vector2) -> void:
 	# Keep tutorial text out of the playable gap. The level itself should show
@@ -103,10 +110,44 @@ func _build_motes() -> void:
 		})
 
 func _draw() -> void:
-	_draw_spawn_chute_dust(Vector2(220, 420))
+	_draw_spawn_portal()
 	if exit_position == Vector2.ZERO:
 		return
 	_draw_exit_light(exit_position)
+
+func _draw_spawn_portal() -> void:
+	if not _spawn_portal_waiting and _spawn_portal_voom <= 0.0:
+		return
+	var pulse := 0.5 + sin(_time * 3.6) * 0.5
+	var voom := _spawn_portal_voom
+	var alpha := clampf(1.0 if _spawn_portal_waiting else voom, 0.0, 1.0)
+	var squash := Vector2(1.0 + voom * 0.85, 1.0 - voom * 0.55)
+	var pos := SPAWN_PORTAL_POS + Vector2(voom * 34.0, -voom * 8.0)
+	draw_set_transform(pos, voom * 0.45, squash)
+
+	draw_circle(Vector2.ZERO, 60.0 + pulse * 5.0, Color(0.40, 0.90, 0.38, (0.09 + pulse * 0.06) * alpha))
+	draw_circle(Vector2(0, 4), 42.0 + pulse * 3.0, Color(0.78, 0.95, 0.45, (0.12 + pulse * 0.07) * alpha))
+	_draw_soft_ellipse(Rect2(Vector2(-31, -42), Vector2(62, 84)), Color(0.08, 0.055, 0.11, 0.94 * alpha))
+	_draw_soft_ellipse(Rect2(Vector2(-22, -31), Vector2(44, 62)), Color(0.28, 0.78, 0.34, (0.22 + pulse * 0.09) * alpha))
+	for i in 5:
+		var a := _time * (1.8 + i * 0.18) + float(i) * 1.21
+		var r := 13.0 + float(i) * 5.2 + pulse * 2.0
+		draw_arc(Vector2.ZERO, r, a, a + PI * 0.82, 18, Color(0.78, 1.0, 0.45, (0.26 - i * 0.027) * alpha), 2.0)
+
+	var stones := [Vector2(-35,-38), Vector2(-12,-52), Vector2(16,-50), Vector2(38,-28), Vector2(43,3), Vector2(31,35), Vector2(2,49), Vector2(-29,40), Vector2(-44,8)]
+	for i in stones.size():
+		var stone: Vector2 = stones[i]
+		draw_circle(stone, 7.0 + float(i % 3), Color(0.40, 0.34, 0.44, 0.96 * alpha))
+		draw_circle(stone + Vector2(-1, -1), 4.0 + float(i % 2), Color(0.62, 0.53, 0.56, 0.56 * alpha))
+	for i in 6:
+		var y := -25.0 + i * 10.0
+		draw_line(Vector2(-22.0 + i * 1.4, y), Vector2(20.0 + i * 2.5, y + 5.0), Color(0.86, 0.77, 0.58, 0.42 * alpha), 2.0, true)
+	if _spawn_portal_waiting:
+		var chevron_y := 67.0 + sin(_time * 4.0) * 3.0
+		draw_line(Vector2(-16, chevron_y), Vector2(0, chevron_y + 9), Color(0.95, 0.83, 0.34, 0.62), 2.0)
+		draw_line(Vector2(16, chevron_y), Vector2(0, chevron_y + 9), Color(0.95, 0.83, 0.34, 0.62), 2.0)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	_draw_spawn_chute_dust(SPAWN_PORTAL_POS + Vector2(0, 38))
 
 func _draw_spawn_chute_dust(pos: Vector2) -> void:
 	for i in 7:

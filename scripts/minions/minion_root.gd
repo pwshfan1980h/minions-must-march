@@ -14,6 +14,7 @@ const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
 @export var spawn_direction := 1.0
 @export var blockers_available := 0
 @export var builders_available := 1
+@export var wait_for_start := true
 
 var selected_job := "builder"
 var spawned_count := 0
@@ -24,6 +25,7 @@ var blockers_remaining := 0
 var builders_remaining := 0
 var _spawn_timer := 0.0
 var _spawning_done := false
+var _spawn_started := false
 var debug_click_areas := false
 
 const BUILDER_PIECE_COUNT := 6
@@ -38,7 +40,7 @@ func _ready() -> void:
 	reset_spawner()
 
 func _process(delta: float) -> void:
-	if _spawning_done:
+	if not _spawn_started or _spawning_done:
 		return
 
 	_spawn_timer -= delta
@@ -57,6 +59,13 @@ func reset_spawner() -> void:
 	builders_remaining = builders_available
 	_spawn_timer = 0.1
 	_spawning_done = false
+	_spawn_started = not wait_for_start
+
+func start_spawning() -> void:
+	if _spawn_started:
+		return
+	_spawn_started = true
+	_spawn_timer = 0.0
 
 func _spawn_minion() -> void:
 	if spawned_count >= total_to_spawn:
@@ -253,4 +262,4 @@ func all_done() -> bool:
 	# A placed blocker can remain braced after the crowd is safe; don't let that
 	# strand the tutorial level in a never-ending state.
 	var blockers_alive := get_tree().get_nodes_in_group("blockers").size()
-	return _spawning_done and active_count <= blockers_alive
+	return _spawn_started and _spawning_done and active_count <= blockers_alive

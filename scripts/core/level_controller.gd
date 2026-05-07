@@ -23,6 +23,8 @@ func _ready() -> void:
 	minion_root.spawn_complete.connect(_on_spawn_complete)
 	minion_root.sfx_requested.connect(_on_sfx_requested)
 	object_root.minion_entered_exit.connect(_on_exit_entered)
+	if object_root.has_signal("spawn_portal_clicked"):
+		object_root.spawn_portal_clicked.connect(_on_spawn_portal_clicked)
 	_emit_stats()
 
 func _process(_delta: float) -> void:
@@ -66,6 +68,12 @@ func _on_spawn_complete() -> void:
 
 func _on_sfx_requested(sound_id: String) -> void:
 	sfx_requested.emit(sound_id)
+
+func _on_spawn_portal_clicked() -> void:
+	if minion_root.has_method("start_spawning"):
+		minion_root.start_spawning()
+	sfx_requested.emit("resume_march")
+	_emit_stats()
 
 func _on_exit_entered(_minion: Node) -> void:
 	# Signal exists for future scoring/particles/sound. The minion handles rescue.

@@ -14,6 +14,11 @@ func _run() -> void:
 
 	var level := game_root.get_node("LevelController")
 	var minion_root := level.get_node("MinionRoot")
+	if minion_root.spawned_count != 0:
+		_fail("Minions spawned before the start portal was opened")
+		return
+	minion_root.start_spawning()
+
 	var minion: Node = null
 
 	for _i in 180:
@@ -30,10 +35,11 @@ func _run() -> void:
 		_fail("Spawned minion never reached floor for Builder activation check")
 		return
 
+	var build_origin: Vector2 = minion.global_position
 	minion_root.set_selected_job("builder")
 	minion_root._on_minion_clicked(minion)
 
-	await create_timer(1.35).timeout
+	await create_timer(1.60).timeout
 
 	if minion_root.builders_remaining != 0:
 		_fail("Builder charge was not consumed")
@@ -54,14 +60,16 @@ func _run() -> void:
 	if first_piece == null or last_piece == null:
 		_fail("Could not find first/last Builder rib pieces")
 		return
-	if first_piece.global_position.distance_to(Vector2(814, 444)) > 0.5:
-		_fail("First Builder rib did not snap to source platform lip: %s" % first_piece.global_position)
+	var expected_first := Vector2(build_origin.x + 24.0, 444.0)
+	var expected_last := Vector2(build_origin.x + 144.0, 404.0)
+	if first_piece.global_position.distance_to(expected_first) > 0.5:
+		_fail("First Builder rib did not start from clicked skeleton: %s expected %s" % [first_piece.global_position, expected_first])
 		return
-	if last_piece.global_position.distance_to(Vector2(934, 404)) > 0.5:
-		_fail("Last Builder rib did not climb toward landing platform: %s" % last_piece.global_position)
+	if last_piece.global_position.distance_to(expected_last) > 0.5:
+		_fail("Last Builder rib did not climb from clicked skeleton: %s expected %s" % [last_piece.global_position, expected_last])
 		return
 
-	print("PASS: Builder activation consumed one charge and created six snapped rib pieces")
+	print("PASS: Start gate held spawning; Builder consumed one charge and created six rib pieces from the clicked skeleton")
 	quit(0)
 
 func _fail(message: String) -> void:
