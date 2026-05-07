@@ -18,10 +18,11 @@ const STYX_SURFACE_Y := 560.0
 const VISUAL_SCALE := 0.72
 const WALK_ANIM_FPS := 14.0
 const BUILDER_SWING_FPS := 9.0
-const VAULT_CONTACT_MAX_HEIGHT := 14.0
-const VAULT_FORWARD_DISTANCE := 13.0
-const VAULT_MIN_CLEARANCE := 4.0
-const VAULT_COOLDOWN_SECONDS := 0.22
+const VAULT_CONTACT_MAX_HEIGHT := 30.0
+const VAULT_FORWARD_DISTANCE := 16.0
+const VAULT_MIN_CLEARANCE := 6.0
+const VAULT_COOLDOWN_SECONDS := 0.08
+const VAULT_ANIM_SECONDS := 0.24
 const STYX_IMPACT_Y := STYX_SURFACE_Y - 2.0
 
 var direction := 1.0
@@ -122,7 +123,10 @@ func _physics_process(delta: float) -> void:
 			if _has_blocker_ahead():
 				_turn_around()
 			elif _is_blocked_ahead() and not _try_vault_ahead():
-				_turn_around()
+				# A just-vaulted skeleton may still be settling onto the next step or
+				# platform lip. Do not instantly reverse during that grace window.
+				if _vault_cooldown <= 0.0:
+					_turn_around()
 
 	if position.y > 760:
 		_die()
@@ -303,7 +307,7 @@ func _try_vault_ahead() -> bool:
 	var facing := signf(direction)
 	if facing == 0.0:
 		facing = 1.0
-	for lift in [8.0, 12.0, 16.0, 20.0]:
+	for lift in [6.0, 8.0, 12.0, 16.0, 20.0, 24.0, 28.0, 32.0]:
 		var up := Vector2(0.0, -lift)
 		var forward := Vector2(facing * VAULT_FORWARD_DISTANCE, 0.0)
 		if test_move(global_transform, up):
@@ -311,9 +315,9 @@ func _try_vault_ahead() -> bool:
 		if test_move(global_transform.translated(up), forward):
 			continue
 		global_position += up + forward
-		velocity.y = -70.0
+		velocity.y = -45.0
 		_vault_cooldown = VAULT_COOLDOWN_SECONDS
-		_vault_anim_time = 0.18
+		_vault_anim_time = VAULT_ANIM_SECONDS
 		_stop_tumble()
 		queue_redraw()
 		return true
@@ -369,7 +373,7 @@ func _draw() -> void:
 	var leg_back_phase := -stride
 	var front_lift := maxf(0.0, leg_front_phase)
 	var back_lift := maxf(0.0, leg_back_phase)
-	var vault_bob := -sin((_vault_anim_time / 0.18) * PI) * 3.8 if _vault_anim_time > 0.0 else 0.0
+	var vault_bob := -sin((_vault_anim_time / VAULT_ANIM_SECONDS) * PI) * 4.6 if _vault_anim_time > 0.0 else 0.0
 	var bob := 0.0 if is_blocker or is_builder else absf(stride) * (0.55 if airborne_motion else 1.05)
 	bob += vault_bob
 	var lean := face * (2.8 + _spine_variant * 7.0 + (0.45 * absf(stride) if not is_blocker else -1.0))
