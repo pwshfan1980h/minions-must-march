@@ -10,14 +10,14 @@
     "x": 6.875,
     "y": 13.125,
     "direction": "right",
-    "count": 8,
+    "count": 1,
     "interval": 1.0
   },
   "exit": {
     "x": 37.8125,
     "y": 12.5
   },
-  "rescueRequired": 6,
+  "rescueRequired": 1,
   "jobs": {
     "blocker": 0,
     "builder": 1
@@ -32,16 +32,43 @@
     "builderV0": {
       "charges": 1,
       "pieces": 6,
-      "pieceSizePx": { "width": 28, "height": 8 },
-      "pieceOffsetPx": { "x": 24, "y": -8 },
-      "intendedStartPx": { "x": 760, "y": 440 },
+      "pieceSizePx": {
+        "width": 28,
+        "height": 8
+      },
+      "pieceOffsetPx": {
+        "x": 24,
+        "y": -8
+      },
+      "intendedStartPx": {
+        "x": 800,
+        "y": 448
+      },
       "expectedPieceCentersPx": [
-        { "x": 784, "y": 432 },
-        { "x": 808, "y": 424 },
-        { "x": 832, "y": 416 },
-        { "x": 856, "y": 408 },
-        { "x": 880, "y": 400 },
-        { "x": 904, "y": 392 }
+        {
+          "x": 814,
+          "y": 444
+        },
+        {
+          "x": 838,
+          "y": 436
+        },
+        {
+          "x": 862,
+          "y": 428
+        },
+        {
+          "x": 886,
+          "y": 420
+        },
+        {
+          "x": 910,
+          "y": 412
+        },
+        {
+          "x": 934,
+          "y": 404
+        }
       ],
       "usesSceneCollisionPieces": true,
       "doesNotModifyStyxOrTerrainBitmap": true
@@ -50,5 +77,5 @@
   "hazards": {
     "bottom": "styx_water"
   },
-  "notes": "Current hardcoded prototype layout mirrors this file: spawn at x=220 moving right, left platform ends near x=800, landing begins at x=912, exit at x=1210. This is deliberately small so Builder mechanic #1 can be implemented and tested without blocker timing noise."
+  "notes": "Current hardcoded prototype layout mirrors this file: spawn at x=220 moving right, left platform ends near x=800, landing begins at x=912, exit at x=1210. While Builder v0 is being tuned, the demo spawns one skeleton and the bridge snaps to the source platform lip instead of the skeleton midpoint."
 }

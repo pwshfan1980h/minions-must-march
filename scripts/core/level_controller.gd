@@ -7,7 +7,7 @@ signal sfx_requested(sound_id: String)
 const LEVEL_WIDTH := 2400
 const PLAYFIELD_HEIGHT := 608
 const TILE_SIZE := 32
-const RESCUE_REQUIRED := 6
+const RESCUE_REQUIRED := 1
 
 var finished := false
 var debug_click_areas := false

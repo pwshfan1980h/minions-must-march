@@ -49,7 +49,19 @@ func _run() -> void:
 		_fail("Expected 6 BuilderRibPiece nodes, got %d" % built_pieces)
 		return
 
-	print("PASS: Builder activation consumed one charge and created six rib pieces")
+	var first_piece := terrain.get_node_or_null("BuilderRibPiece1")
+	var last_piece := terrain.get_node_or_null("BuilderRibPiece6")
+	if first_piece == null or last_piece == null:
+		_fail("Could not find first/last Builder rib pieces")
+		return
+	if first_piece.global_position.distance_to(Vector2(814, 444)) > 0.5:
+		_fail("First Builder rib did not snap to source platform lip: %s" % first_piece.global_position)
+		return
+	if last_piece.global_position.distance_to(Vector2(934, 404)) > 0.5:
+		_fail("Last Builder rib did not climb toward landing platform: %s" % last_piece.global_position)
+		return
+
+	print("PASS: Builder activation consumed one charge and created six snapped rib pieces")
 	quit(0)
 
 func _fail(message: String) -> void:

@@ -8,7 +8,7 @@ signal sfx_requested(sound_id: String)
 
 const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
 
-@export var total_to_spawn := 8
+@export var total_to_spawn := 1
 @export var spawn_interval := 1.0
 @export var spawn_position := Vector2(220, 420)
 @export var spawn_direction := 1.0
@@ -25,6 +25,12 @@ var builders_remaining := 0
 var _spawn_timer := 0.0
 var _spawning_done := false
 var debug_click_areas := false
+
+const BUILDER_PIECE_COUNT := 6
+const BUILDER_PIECE_SIZE := Vector2(28.0, 8.0)
+const BUILDER_PIECE_SPACING := 24.0
+const BUILDER_STEP_RISE := 8.0
+const BUILDER_SUPPORT_Y_TOLERANCE := 28.0
 
 func _ready() -> void:
 	reset_spawner()
@@ -136,20 +142,60 @@ func _run_builder_sequence(minion: Node) -> void:
 	if facing == 0.0:
 		facing = 1.0
 	var start: Vector2 = minion.global_position
-	for i in 6:
+	var anchor := _get_builder_anchor(start, facing)
+	for i in BUILDER_PIECE_COUNT:
 		await get_tree().create_timer(0.18).timeout
 		if not is_instance_valid(minion) or minion.get("alive") != true or minion.get("rescued") == true:
 			return
-		var center: Vector2 = start + Vector2(facing * 24.0 * float(i + 1), -8.0 * float(i + 1))
+		var center := anchor + Vector2(
+			facing * BUILDER_PIECE_SPACING * float(i),
+			-BUILDER_STEP_RISE * float(i)
+		)
 		_add_builder_piece(center, facing, i + 1)
 		sfx_requested.emit("bone_clack")
 	if is_instance_valid(minion) and minion.has_method("set_builder_active"):
 		minion.set_builder_active(false)
 		minion_spawned.emit(minion)
 
+func _get_builder_anchor(minion_position: Vector2, facing: float) -> Vector2:
+	# Build from the platform lip, not from the skeleton's body origin. The first
+	# rib sits flush with the source platform top so the skeleton can step onto it.
+	var terrain := get_node_or_null("../TerrainRoot")
+	if terrain != null:
+		var support := _find_support_rect(terrain, minion_position)
+		if support.size != Vector2.ZERO:
+			var edge_x := support.end.x if facing > 0.0 else support.position.x
+			return Vector2(
+				edge_x + facing * (BUILDER_PIECE_SIZE.x * 0.5),
+				support.position.y - (BUILDER_PIECE_SIZE.y * 0.5)
+			)
+
+	# Fallback keeps the old behavior playable if the source platform cannot be
+	# identified, but still anchors to the skeleton's feet instead of its midpoint.
+	return minion_position + Vector2(facing * BUILDER_PIECE_SPACING, BUILDER_PIECE_SIZE.y * 0.5)
+
+func _find_support_rect(terrain: Node, minion_position: Vector2) -> Rect2:
+	var rects: Array = terrain.get("collision_rects")
+	var best := Rect2()
+	var best_y_distance := INF
+	for rect: Rect2 in rects:
+		var within_x := minion_position.x >= rect.position.x - 4.0 and minion_position.x <= rect.end.x + 4.0
+		if not within_x:
+			continue
+		var y_distance := absf(rect.position.y - minion_position.y)
+		if y_distance <= BUILDER_SUPPORT_Y_TOLERANCE and y_distance < best_y_distance:
+			best = rect
+			best_y_distance = y_distance
+	return best
+
 func _add_builder_piece(center: Vector2, facing: float, index: int) -> void:
 	var terrain := get_node_or_null("../TerrainRoot")
 	var parent_node: Node = terrain if terrain != null else self
+	if terrain != null:
+		var built_rect := Rect2(center - BUILDER_PIECE_SIZE / 2.0, BUILDER_PIECE_SIZE)
+		var rects: Array = terrain.get("collision_rects")
+		rects.append(built_rect)
+		terrain.set("collision_rects", rects)
 	var body := StaticBody2D.new()
 	body.name = "BuilderRibPiece%d" % index
 	body.global_position = center
@@ -159,14 +205,19 @@ func _add_builder_piece(center: Vector2, facing: float, index: int) -> void:
 
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
-	rect.size = Vector2(28, 8)
+	rect.size = BUILDER_PIECE_SIZE
 	shape.shape = rect
 	body.add_child(shape)
 
 	var visual := Polygon2D.new()
 	visual.name = "Visual"
 	visual.color = Color(0.78, 0.66, 0.46, 0.96)
-	visual.polygon = PackedVector2Array([Vector2(-14, -4), Vector2(14, -4), Vector2(14, 4), Vector2(-14, 4)])
+	visual.polygon = PackedVector2Array([
+		-BUILDER_PIECE_SIZE / 2.0,
+		Vector2(BUILDER_PIECE_SIZE.x / 2.0, -BUILDER_PIECE_SIZE.y / 2.0),
+		BUILDER_PIECE_SIZE / 2.0,
+		Vector2(-BUILDER_PIECE_SIZE.x / 2.0, BUILDER_PIECE_SIZE.y / 2.0),
+	])
 	body.add_child(visual)
 
 	var rib := Line2D.new()
