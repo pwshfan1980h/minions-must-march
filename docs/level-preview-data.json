@@ -1,0 +1,146 @@
+{
+  "outputDir": "res://docs/level-previews",
+  "tileSize": 16,
+  "world": { "cols": 75, "rows": 19 },
+  "levels": [
+    {
+      "id": "l001-bone-bridge",
+      "name": "Bone Bridge",
+      "biome": "Styx Marsh",
+      "palette": "styx",
+      "tools": { "builder": 1 },
+      "goal": "Save 1 skeleton",
+      "spawn": { "x": 7, "y": 13, "dir": "right" },
+      "exit": { "x": 38, "y": 12 },
+      "terrain": [
+        { "x": 0, "y": 15, "w": 75, "h": 4, "kind": "back" },
+        { "x": 9, "y": 13, "w": 38, "h": 1 },
+        { "x": 53, "y": 12, "w": 22, "h": 1 },
+        { "x": 29, "y": 15, "w": 11, "h": 1, "kind": "support" }
+      ],
+      "hazards": [{ "x": 0, "y": 17, "w": 75, "h": 2, "kind": "styx" }],
+      "markers": [
+        { "x": 47, "y": 13, "kind": "build", "dir": "right" },
+        { "x": 30, "y": 13, "kind": "arrow", "dir": "right" }
+      ]
+    },
+    {
+      "id": "l002-turn-you-fools",
+      "name": "Turn, You Fools",
+      "biome": "Styx Marsh",
+      "palette": "styx",
+      "tools": { "blocker": 1, "builder": 1 },
+      "goal": "Save 5 of 8",
+      "spawn": { "x": 50, "y": 6, "dir": "left" },
+      "exit": { "x": 62, "y": 13 },
+      "terrain": [
+        { "x": 0, "y": 16, "w": 75, "h": 3, "kind": "back" },
+        { "x": 43, "y": 7, "w": 16, "h": 1 },
+        { "x": 35, "y": 9, "w": 8, "h": 1 },
+        { "x": 23, "y": 12, "w": 18, "h": 1 },
+        { "x": 45, "y": 12, "w": 10, "h": 1 },
+        { "x": 59, "y": 12, "w": 16, "h": 1 }
+      ],
+      "hazards": [{ "x": 0, "y": 17, "w": 75, "h": 2, "kind": "styx" }],
+      "markers": [
+        { "x": 25, "y": 11, "kind": "blocker" },
+        { "x": 45, "y": 12, "kind": "build", "dir": "right" },
+        { "x": 35, "y": 11, "kind": "arrow", "dir": "right" }
+      ]
+    },
+    {
+      "id": "l003-rib-ramp",
+      "name": "Rib Ramp",
+      "biome": "Crypt Forge",
+      "palette": "forge",
+      "tools": { "blocker": 1, "builder": 1 },
+      "goal": "Save 7 of 10",
+      "spawn": { "x": 12, "y": 12, "dir": "right" },
+      "exit": { "x": 61, "y": 9 },
+      "terrain": [
+        { "x": 0, "y": 16, "w": 75, "h": 3, "kind": "back" },
+        { "x": 8, "y": 12, "w": 28, "h": 1 },
+        { "x": 45, "y": 9, "w": 30, "h": 1 },
+        { "x": 2, "y": 14, "w": 12, "h": 1, "kind": "support" }
+      ],
+      "hazards": [{ "x": 36, "y": 13, "w": 9, "h": 4, "kind": "lava" }],
+      "markers": [
+        { "x": 31, "y": 11, "kind": "blocker" },
+        { "x": 35, "y": 12, "kind": "build", "dir": "right" },
+        { "x": 43, "y": 10, "kind": "arrow", "dir": "up" }
+      ]
+    },
+    {
+      "id": "l004-grave-slide",
+      "name": "Grave Slide",
+      "biome": "Bone Gardens",
+      "palette": "bone",
+      "tools": { "builder": 1, "blocker": 1 },
+      "goal": "Save 8 of 12",
+      "spawn": { "x": 11, "y": 8, "dir": "right" },
+      "exit": { "x": 61, "y": 13 },
+      "terrain": [
+        { "x": 0, "y": 16, "w": 75, "h": 3, "kind": "back" },
+        { "x": 7, "y": 8, "w": 12, "h": 1 },
+        { "x": 19, "y": 9, "w": 10, "h": 1 },
+        { "x": 29, "y": 10, "w": 11, "h": 1 },
+        { "x": 48, "y": 13, "w": 27, "h": 1 }
+      ],
+      "hazards": [{ "x": 40, "y": 14, "w": 8, "h": 3, "kind": "styx" }],
+      "markers": [
+        { "x": 38, "y": 10, "kind": "build", "dir": "right" },
+        { "x": 22, "y": 9, "kind": "arrow", "dir": "right" }
+      ]
+    },
+    {
+      "id": "l005-two-scoop-soup",
+      "name": "Two-Scoop Soup",
+      "biome": "Styx Marsh",
+      "palette": "styx",
+      "tools": { "builder": 2, "blocker": 1 },
+      "goal": "Save 11 of 16",
+      "spawn": { "x": 9, "y": 12, "dir": "right" },
+      "exit": { "x": 66, "y": 12 },
+      "terrain": [
+        { "x": 0, "y": 16, "w": 75, "h": 3, "kind": "back" },
+        { "x": 7, "y": 12, "w": 25, "h": 1 },
+        { "x": 39, "y": 12, "w": 8, "h": 1 },
+        { "x": 55, "y": 12, "w": 20, "h": 1 }
+      ],
+      "hazards": [{ "x": 32, "y": 14, "w": 7, "h": 3, "kind": "styx" }, { "x": 47, "y": 14, "w": 8, "h": 3, "kind": "styx" }],
+      "markers": [
+        { "x": 29, "y": 11, "kind": "blocker" },
+        { "x": 32, "y": 12, "kind": "build", "dir": "right" },
+        { "x": 47, "y": 12, "kind": "build", "dir": "right" }
+      ]
+    },
+    {
+      "id": "l010-three-ways-across",
+      "name": "Three Ways Across",
+      "biome": "Tuning Sandbox",
+      "palette": "soul",
+      "tools": { "builder": 3, "blocker": 1 },
+      "goal": "Compare down / flat / up bridges",
+      "spawn": { "x": 8, "y": 10, "dir": "right" },
+      "exit": { "x": 67, "y": 10 },
+      "terrain": [
+        { "x": 0, "y": 16, "w": 75, "h": 3, "kind": "back" },
+        { "x": 7, "y": 8, "w": 20, "h": 1 },
+        { "x": 7, "y": 11, "w": 20, "h": 1 },
+        { "x": 7, "y": 14, "w": 20, "h": 1 },
+        { "x": 48, "y": 6, "w": 27, "h": 1 },
+        { "x": 48, "y": 11, "w": 27, "h": 1 },
+        { "x": 48, "y": 15, "w": 27, "h": 1 }
+      ],
+      "hazards": [{ "x": 27, "y": 15, "w": 21, "h": 2, "kind": "styx" }],
+      "markers": [
+        { "x": 26, "y": 8, "kind": "build", "dir": "right" },
+        { "x": 26, "y": 11, "kind": "build", "dir": "right" },
+        { "x": 26, "y": 14, "kind": "build", "dir": "right" },
+        { "x": 34, "y": 7, "kind": "arrow", "dir": "up" },
+        { "x": 34, "y": 11, "kind": "arrow", "dir": "right" },
+        { "x": 34, "y": 14, "kind": "arrow", "dir": "down" }
+      ]
+    }
+  ]
+}

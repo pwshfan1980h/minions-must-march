@@ -8,6 +8,8 @@ A doc-driven planning folder for building **Minions Must March**, a Lemmings-ins
 - [Mechanics Spec](./mechanics-spec.md) - core rules, skeleton minions, jobs, hazards, and interaction model
 - [Asset & Sizing Plan](./asset-sizing-plan.md) - proposed resolution, tile sizes, skeleton visual direction, SVG/procgen strategy
 - [Starter Levels](./starter-levels.md) - first three puzzle designs, with Level 1 prioritized for polish
+- [Level Archetypes](./level-archetypes.md) - reusable challenge atoms, biome palettes, and preview export workflow
+- [Level Cards](./level-cards.md) - first batch of normalized puzzle outlines for review
 - [Tech Stack Decision](./tech-stack-options.md) - Godot 4, web export, and destructible terrain architecture notes
 - [Progress Log](./progress-log.md) - durable implementation notes across sessions
 
