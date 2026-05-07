@@ -31,6 +31,8 @@ const BUILDER_PIECE_SIZE := Vector2(28.0, 8.0)
 const BUILDER_PIECE_SPACING := 24.0
 const BUILDER_STEP_RISE := 8.0
 const BUILDER_SUPPORT_Y_TOLERANCE := 28.0
+const BUILDER_THROW_DURATION := 0.14
+const BUILDER_HAND_OFFSET := Vector2(16.0, -12.0)
 
 func _ready() -> void:
 	reset_spawner()
@@ -144,13 +146,18 @@ func _run_builder_sequence(minion: Node) -> void:
 	var start: Vector2 = minion.global_position
 	var anchor := _get_builder_anchor(start, facing)
 	for i in BUILDER_PIECE_COUNT:
-		await get_tree().create_timer(0.18).timeout
+		await get_tree().create_timer(0.12).timeout
 		if not is_instance_valid(minion) or minion.get("alive") != true or minion.get("rescued") == true:
 			return
 		var center := anchor + Vector2(
 			facing * BUILDER_PIECE_SPACING * float(i),
 			-BUILDER_STEP_RISE * float(i)
 		)
+		if minion.has_method("play_builder_build_pulse"):
+			minion.play_builder_build_pulse()
+		await _animate_builder_throw(minion, center, facing, i + 1)
+		if not is_instance_valid(minion) or minion.get("alive") != true or minion.get("rescued") == true:
+			return
 		_add_builder_piece(center, facing, i + 1)
 		sfx_requested.emit("bone_clack")
 	if is_instance_valid(minion) and minion.has_method("set_builder_active"):
@@ -158,21 +165,37 @@ func _run_builder_sequence(minion: Node) -> void:
 		minion_spawned.emit(minion)
 
 func _get_builder_anchor(minion_position: Vector2, facing: float) -> Vector2:
-	# Build from the platform lip, not from the skeleton's body origin. The first
-	# rib sits flush with the source platform top so the skeleton can step onto it.
+	# Build from the skeleton that was clicked, not from the far platform lip. Keep
+	# the vertical placement on the floor it is standing on so the first rib is
+	# walkable instead of being centered on the skeleton's torso.
+	var y := minion_position.y + BUILDER_PIECE_SIZE.y * 0.5
 	var terrain := get_node_or_null("../TerrainRoot")
 	if terrain != null:
 		var support := _find_support_rect(terrain, minion_position)
 		if support.size != Vector2.ZERO:
-			var edge_x := support.end.x if facing > 0.0 else support.position.x
-			return Vector2(
-				edge_x + facing * (BUILDER_PIECE_SIZE.x * 0.5),
-				support.position.y - (BUILDER_PIECE_SIZE.y * 0.5)
-			)
+			y = support.position.y - (BUILDER_PIECE_SIZE.y * 0.5)
+	return Vector2(minion_position.x + facing * BUILDER_PIECE_SPACING, y)
 
-	# Fallback keeps the old behavior playable if the source platform cannot be
-	# identified, but still anchors to the skeleton's feet instead of its midpoint.
-	return minion_position + Vector2(facing * BUILDER_PIECE_SPACING, BUILDER_PIECE_SIZE.y * 0.5)
+func _animate_builder_throw(minion: Node, target: Vector2, facing: float, index: int) -> void:
+	var terrain := get_node_or_null("../TerrainRoot")
+	var parent_node: Node = terrain if terrain != null else self
+	var throw_visual := Line2D.new()
+	throw_visual.name = "BuilderThrownRib%d" % index
+	throw_visual.default_color = Color(1.0, 0.88, 0.56, 0.92)
+	throw_visual.width = 3.0
+	throw_visual.points = PackedVector2Array([Vector2(-10.0 * facing, 0.0), Vector2(10.0 * facing, -2.0)])
+	throw_visual.global_position = minion.global_position + Vector2(BUILDER_HAND_OFFSET.x * facing, BUILDER_HAND_OFFSET.y)
+	throw_visual.rotation = -0.25 * facing
+	parent_node.add_child(throw_visual)
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(throw_visual, "global_position", target, BUILDER_THROW_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(throw_visual, "rotation", throw_visual.rotation + facing * 1.3, BUILDER_THROW_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(throw_visual, "modulate", Color(1.0, 1.0, 1.0, 0.25), BUILDER_THROW_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	await tween.finished
+	if is_instance_valid(throw_visual):
+		throw_visual.queue_free()
 
 func _find_support_rect(terrain: Node, minion_position: Vector2) -> Rect2:
 	var rects: Array = terrain.get("collision_rects")

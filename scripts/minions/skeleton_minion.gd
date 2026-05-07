@@ -17,6 +17,7 @@ const BLOCKER_VERTICAL_TOLERANCE := 18.0
 const STYX_SURFACE_Y := 560.0
 const VISUAL_SCALE := 0.72
 const WALK_ANIM_FPS := 14.0
+const BUILDER_SWING_FPS := 9.0
 
 var direction := 1.0
 var alive := true
@@ -36,6 +37,8 @@ var _tumble_speed := 0.0
 var _air_time := 0.0
 var _sink_wobble := 0.0
 var _debug_click_area := false
+var _builder_anim_time := 0.0
+var _builder_pulse_time := 0.0
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var click_area: Area2D = $ClickArea
@@ -53,9 +56,13 @@ func _ready() -> void:
 	_stride_variant = rng.randf_range(0.88, 1.14)
 	queue_redraw()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	# Tweened custom draw properties need redraws while the sinking corpse animates.
 	if not alive and not rescued:
+		queue_redraw()
+	if is_builder:
+		_builder_anim_time += delta
+		_builder_pulse_time = maxf(0.0, _builder_pulse_time - delta)
 		queue_redraw()
 
 func _physics_process(delta: float) -> void:
@@ -134,8 +141,15 @@ func set_builder_active(active: bool) -> void:
 	if not alive or rescued or is_blocker:
 		return
 	is_builder = active
+	if active:
+		_builder_anim_time = 0.0
+		_builder_pulse_time = 0.0
 	velocity = Vector2.ZERO
 	_stop_tumble()
+	queue_redraw()
+
+func play_builder_build_pulse() -> void:
+	_builder_pulse_time = 0.18
 	queue_redraw()
 
 func become_blocker() -> bool:
@@ -361,6 +375,13 @@ func _draw() -> void:
 		ankle_back = Vector2(-face * 17.0, ground_y)
 		knee_front = hip_front + Vector2(face * 7.0, 11.0 * h)
 		knee_back = hip_back + Vector2(-face * 7.0, 11.0 * h)
+		if is_builder:
+			var build_phase := sin(_builder_anim_time * TAU * BUILDER_SWING_FPS)
+			var throw_snap := clampf(_builder_pulse_time / 0.18, 0.0, 1.0)
+			elbow_front = shoulder + Vector2(face * (10.0 + build_phase * 3.0 + throw_snap * 7.0), 5.0 - throw_snap * 4.0)
+			hand_front = elbow_front + Vector2(face * (7.0 + throw_snap * 6.0), 5.5 - throw_snap * 6.0)
+			elbow_back = shoulder + Vector2(-face * (9.0 + build_phase * 2.0), 6.0)
+			hand_back = elbow_back + Vector2(-face * 6.0, 6.5)
 
 	_draw_bone_segment(shoulder, elbow_back, back_bone, 1.75)
 	_draw_bone_segment(elbow_back, hand_back, back_bone, 1.65)
@@ -371,6 +392,13 @@ func _draw() -> void:
 	_draw_bone_segment(shoulder, elbow_front, bone, 1.95)
 	_draw_bone_segment(elbow_front, hand_front, bone, 1.75)
 	draw_circle(hand_front, 1.45, accent)
+	if is_builder:
+		var glow := clampf(_builder_pulse_time / 0.18, 0.0, 1.0)
+		var held_tip := hand_front + Vector2(face * 8.0, -1.5)
+		draw_line(hand_front - Vector2(face * 5.0, -1.0), held_tip, Color(1.0, 0.86, 0.54, 0.95), 2.3, true)
+		if glow > 0.0:
+			draw_circle(held_tip, 2.0 + glow * 4.0, Color(1.0, 0.74, 0.24, 0.24 * glow))
+			draw_line(held_tip + Vector2(face * 1.0, -4.0), held_tip + Vector2(face * 5.0, -8.0), Color(1.0, 0.86, 0.45, 0.65 * glow), 1.1)
 	_draw_bone_segment(hip_front, knee_front, bone, 2.05)
 	_draw_bone_segment(knee_front, ankle_front, bone, 2.05)
 	_draw_foot(ankle_front, face, bone, true)
