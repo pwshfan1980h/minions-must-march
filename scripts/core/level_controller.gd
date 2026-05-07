@@ -46,6 +46,7 @@ func toggle_debug_click_areas() -> bool:
 	return debug_click_areas
 
 func get_stats() -> Dictionary:
+	var score := _calculate_score()
 	return {
 		"spawned": minion_root.spawned_count,
 		"total": minion_root.total_to_spawn,
@@ -56,9 +57,18 @@ func get_stats() -> Dictionary:
 		"builders": minion_root.builders_remaining,
 		"selected_job": minion_root.selected_job,
 		"required": RESCUE_REQUIRED,
+		"score": score,
+		"goal_text": "Save %d skeleton%s" % [RESCUE_REQUIRED, "" if RESCUE_REQUIRED == 1 else "s"],
+		"bonus_text": "Bonus: +100 saved, +50 unused bone, -25 lost",
 		"finished": finished,
 		"debug_click_areas": debug_click_areas,
 	}
+
+func _calculate_score() -> int:
+	var score: int = minion_root.rescued_count * 100 - minion_root.lost_count * 25
+	if finished:
+		score += minion_root.builders_remaining * 50 + minion_root.blockers_remaining * 25
+	return max(0, score)
 
 func _on_minion_event(_minion: Node = null) -> void:
 	_emit_stats()

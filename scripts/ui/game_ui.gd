@@ -5,6 +5,8 @@ signal job_selected(job_id: String)
 
 @onready var job_bar: Panel = $JobBar
 @onready var mission_label: Label = $JobBar/MissionLabel
+@onready var goal_label: Label = $JobBar/GoalLabel
+@onready var score_label: Label = $JobBar/ScoreLabel
 @onready var stats_label: Label = $JobBar/StatsLabel
 @onready var hint_label: Label = $JobBar/HintLabel
 @onready var blocker_button: Button = $JobBar/BlockerButton
@@ -15,10 +17,12 @@ var selected_job := "builder"
 var blockers_remaining := 0
 var builders_remaining := 0
 var _last_stats: Dictionary = {}
+var _spooky_font: SystemFont
 
 func _ready() -> void:
 	print("GameUI ready")
 	result_label.hide()
+	_spooky_font = _make_spooky_font()
 	_apply_visual_style()
 	blocker_button.pressed.connect(_select_blocker)
 	builder_button.pressed.connect(_select_builder)
@@ -30,8 +34,10 @@ func update_stats(stats: Dictionary) -> void:
 	blockers_remaining = stats.get("blockers", 0)
 	builders_remaining = stats.get("builders", 0)
 
-	mission_label.text = "BUILDER DEMO #1 — FIRST RIB BRIDGE"
-	stats_label.text = "Spawned %d/%d   •   Active %d   •   Saved %d/%d   •   Lost %d" % [
+	mission_label.text = "BONE BRIDGE"
+	goal_label.text = "☠ %s   ✦ %s" % [stats.get("goal_text", "Save the march"), stats.get("bonus_text", "Bonus: save more, waste less")]
+	score_label.text = "SCORE\n%04d" % stats.get("score", 0)
+	stats_label.text = "SPN %d/%d   ACT %d   SAV %d/%d   LOST %d" % [
 		stats.get("spawned", 0),
 		stats.get("total", 0),
 		stats.get("active", 0),
@@ -40,25 +46,19 @@ func update_stats(stats: Dictionary) -> void:
 		stats.get("lost", 0),
 	]
 
-	blocker_button.text = "1  BLOCKER\nx%d • %s" % [
-		blockers_remaining,
-		"locked here" if blockers_remaining <= 0 else "brace / release",
-	]
-	builder_button.text = "2  BUILDER\nx%d • %s" % [
-		builders_remaining,
-		"spent" if builders_remaining <= 0 else "click skeleton",
-	]
+	blocker_button.text = "1\n⛔\nx%d" % blockers_remaining
+	builder_button.text = "2\n🦴\nx%d" % builders_remaining
 	hint_label.text = _build_hint_text(stats)
 	_update_job_buttons()
 
 func show_level_finished(success: bool, stats: Dictionary) -> void:
 	result_label.show()
 	if success:
-		result_label.text = "CRYPT CLEARED\nSaved %d/%d" % [stats.get("rescued", 0), stats.get("total", 0)]
+		result_label.text = "CRYPT CLEARED\nSaved %d/%d  •  Score %04d" % [stats.get("rescued", 0), stats.get("total", 0), stats.get("score", 0)]
 		result_label.add_theme_color_override("font_color", Color("b5ffbf"))
 	else:
-		result_label.text = "MINIONS SQUANDERED\nSaved %d/%d — need %d" % [
-			stats.get("rescued", 0), stats.get("total", 0), stats.get("required", 0)
+		result_label.text = "MINIONS SQUANDERED\nSaved %d/%d — need %d  •  Score %04d" % [
+			stats.get("rescued", 0), stats.get("total", 0), stats.get("required", 0), stats.get("score", 0)
 		]
 		result_label.add_theme_color_override("font_color", Color("ff9d8f"))
 
@@ -86,14 +86,14 @@ func _select_builder() -> void:
 	job_selected.emit(selected_job)
 
 func _build_hint_text(stats: Dictionary) -> String:
-	var debug_text := "  •  F3 hitbox debug ON" if stats.get("debug_click_areas", false) else "  •  F3 shows click boxes"
+	var debug_text := "  •  F3 hitbox ON" if stats.get("debug_click_areas", false) else "  •  F3 hitboxes"
 	if selected_job == "builder" and builders_remaining > 0:
-		return "Builder selected. Click a grounded skeleton on the gold build line to spend 1 charge and throw a six-rib bridge across the soup." + debug_text
+		return "2 Bone: click a grounded skeleton near the gold mark. It builds from where it stands." + debug_text
 	if builders_remaining <= 0:
-		return "Builder spent. Watch the ribs land, then let the march carry survivors into the holy uplight on the right. R restarts." + debug_text
+		return "Bridge spent. Let the boney bastards march into the uplight. R restarts." + debug_text
 	if selected_job == "blocker" and blockers_remaining > 0:
-		return "Blocker selected. Click a grounded skeleton to brace; click a blocker again to release it. R restarts." + debug_text
-	return "Choose a job, then click an eligible skeleton. R restarts." + debug_text
+		return "1 Block: brace a skeleton; click it again to release." + debug_text
+	return "Click the portal, pick a tool, then click an eligible skeleton. R restarts." + debug_text
 
 func _update_job_buttons() -> void:
 	blocker_button.disabled = blockers_remaining <= 0
@@ -102,27 +102,38 @@ func _update_job_buttons() -> void:
 	_style_job_button(builder_button, selected_job == "builder", builder_button.disabled)
 
 func _apply_visual_style() -> void:
-	job_bar.add_theme_stylebox_override("panel", _panel_box(Color(0.055, 0.045, 0.065, 0.92), Color(0.93, 0.66, 0.22, 0.55), 2, 0))
+	job_bar.add_theme_stylebox_override("panel", _panel_box(Color(0.045, 0.036, 0.055, 0.94), Color(0.93, 0.66, 0.22, 0.55), 2, 0))
 
-	mission_label.add_theme_color_override("font_color", Color("ffd98a"))
-	mission_label.add_theme_font_size_override("font_size", 18)
+	for label in [mission_label, goal_label, score_label, stats_label, hint_label, result_label]:
+		label.add_theme_font_override("font", _spooky_font)
+		label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.86))
+		label.add_theme_constant_override("shadow_offset_x", 2)
+		label.add_theme_constant_override("shadow_offset_y", 2)
+
+	mission_label.add_theme_color_override("font_color", Color("ffd36f"))
+	mission_label.add_theme_font_size_override("font_size", 24)
+	goal_label.add_theme_color_override("font_color", Color("e8d7a9"))
+	goal_label.add_theme_font_size_override("font_size", 14)
+	score_label.add_theme_color_override("font_color", Color("aef5a4"))
+	score_label.add_theme_font_size_override("font_size", 17)
 	stats_label.add_theme_color_override("font_color", Color("d9ccae"))
-	stats_label.add_theme_font_size_override("font_size", 15)
+	stats_label.add_theme_font_size_override("font_size", 14)
 	hint_label.add_theme_color_override("font_color", Color("f1e7c8"))
-	hint_label.add_theme_font_size_override("font_size", 14)
+	hint_label.add_theme_font_size_override("font_size", 13)
 
 	result_label.add_theme_font_size_override("font_size", 30)
-	result_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
 	result_label.add_theme_constant_override("shadow_offset_x", 3)
 	result_label.add_theme_constant_override("shadow_offset_y", 3)
 
 	for button in [blocker_button, builder_button]:
-		button.add_theme_font_size_override("font_size", 17)
+		button.add_theme_font_override("font", _spooky_font)
+		button.add_theme_font_size_override("font_size", 18)
 		button.add_theme_color_override("font_disabled_color", Color(0.50, 0.47, 0.43, 0.9))
 		button.add_theme_color_override("font_color", Color("f0e2bf"))
 		button.add_theme_color_override("font_hover_color", Color("fff1c4"))
 		button.add_theme_color_override("font_pressed_color", Color("fff1c4"))
 		button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 func _style_job_button(button: Button, selected: bool, disabled: bool) -> void:
 	var fill := Color(0.15, 0.12, 0.11, 0.96)
@@ -155,3 +166,9 @@ func _panel_box(fill: Color, border: Color, border_width: int, corner_radius: in
 	box.content_margin_right = 8
 	box.content_margin_bottom = 6
 	return box
+
+func _make_spooky_font() -> SystemFont:
+	var font := SystemFont.new()
+	font.font_names = PackedStringArray(["Papyrus", "Chalkduster", "Marker Felt", "Georgia", "Times New Roman"])
+	font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+	return font

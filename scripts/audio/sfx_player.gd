@@ -1,6 +1,8 @@
 extends Node
 class_name SfxPlayer
 
+const MUSIC_PATH := "res://assets/audio/generated/crypt_march_loop.wav"
+
 const STREAMS := {
 	"bone_clack": preload("res://assets/audio/generated/bone_clack.wav"),
 	"bone_splash": preload("res://assets/audio/imported/death_bone_rattle.wav"),
@@ -21,11 +23,29 @@ const VOLUME_OFFSETS_DB := {
 
 var _rng := RandomNumberGenerator.new()
 var _active_players: Array[AudioStreamPlayer] = []
+var _music_player: AudioStreamPlayer
 
 func _ready() -> void:
 	_rng.randomize()
+	_start_music()
+
+func _start_music() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	_music_player = AudioStreamPlayer.new()
+	var stream := AudioStreamWAV.load_from_file(MUSIC_PATH)
+	if stream == null:
+		push_warning("Music skipped: could not load %s" % MUSIC_PATH)
+		return
+	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	_music_player.stream = stream
+	_music_player.volume_db = -18.0
+	add_child(_music_player)
+	_music_player.play()
 
 func _exit_tree() -> void:
+	if _music_player != null and is_instance_valid(_music_player):
+		_music_player.stop()
 	for player in _active_players:
 		if is_instance_valid(player):
 			player.stop()
