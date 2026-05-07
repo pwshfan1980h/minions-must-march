@@ -34,6 +34,7 @@ Recommended early thresholds:
 - Little, lanky skeleton body; readable silhouette matters more than anatomy.
 - Walks horizontally at constant speed.
 - Turns around when hitting solid wall or blocker.
+- Can vault up forgiving low/mid-leg obstructions, especially small builder ribs/steps. Higher impacts remain walls and make it turn around.
 - Does **not** detect ledges or self-preserve; if terrain ends, it walks off.
 - Falls under gravity.
 - Is lost/shattered if fall distance exceeds safe threshold.
@@ -68,7 +69,7 @@ Design intent:
 Deaths should carry a reason so visuals, scoring, audio, and future tutorial text can react correctly. Current implemented/expected death kinds:
 
 - `fall`: generic lethal fall or off-world loss. Spawn bone splash, count lost, remove the skeleton.
-- `styx_water`: bottom River Styx hazard. Trigger death feedback immediately, snap/settle the skeleton to the water surface, spawn bone splash, then squash slightly and fade/sink the skeleton before counting it lost. This should feel like thick underworld soup reclaiming the minion, not like a sharp trap.
+- `styx_water`: bottom River Styx hazard. Trigger death feedback immediately at the visible soup surface, normalize the body to that surface, spawn one bone/goop splash, then squash slightly and fade/sink the skeleton below the dark layer before counting it lost. This should feel like thick underworld soup reclaiming the minion like a soggy cracker, not like a sharp trap or repeated falling splash.
 
 Design intent:
 
@@ -226,6 +227,28 @@ Purpose:
 
 Postponed. Use carefully because sacrifice mechanics can make puzzles feel mean or timing-heavy.
 
+### Thrower
+
+Picks up skeletons on contact and throws them in the direction they are already moving.
+
+Theme options:
+
+- Big bony launcher minion
+- Crypt springboard / rib catapult
+- Underworld imp/troll that hucks skeletons with slapstick precision
+
+Purpose:
+
+- Create predictable ballistic route beats without giving the player direct jump control.
+- Let levels ask for timing/flow setup around a known throw arc.
+- Add comedy and motion variety once the core walking/building/digging tools are solid.
+
+Early rule candidate:
+
+- Throw direction follows the skeleton's current movement direction.
+- Throw arc should be deterministic and visibly telegraphed.
+- Start as a level object or future job prototype; do not mix into early Bridge School until bridge traversal feels reliable.
+
 ## Theme Palette
 
 Primary setting ingredients:
@@ -266,6 +289,8 @@ Early rule:
 ### Solid
 
 Blocks movement and supports minions.
+
+Future test: angled/tilted solids or ramp-like platforms. Current early terrain is mostly flat rectangles; later prototypes should test whether skeletons can walk, vault, build onto, and read platforms that are not always perfectly horizontal.
 
 ### Diggable
 

@@ -18,6 +18,11 @@ const STYX_SURFACE_Y := 560.0
 const VISUAL_SCALE := 0.72
 const WALK_ANIM_FPS := 14.0
 const BUILDER_SWING_FPS := 9.0
+const VAULT_CONTACT_MAX_HEIGHT := 14.0
+const VAULT_FORWARD_DISTANCE := 13.0
+const VAULT_MIN_CLEARANCE := 4.0
+const VAULT_COOLDOWN_SECONDS := 0.22
+const STYX_IMPACT_Y := STYX_SURFACE_Y - 2.0
 
 var direction := 1.0
 var alive := true
@@ -39,6 +44,9 @@ var _sink_wobble := 0.0
 var _debug_click_area := false
 var _builder_anim_time := 0.0
 var _builder_pulse_time := 0.0
+var _vault_cooldown := 0.0
+var _vault_anim_time := 0.0
+var _styx_death_started := false
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var click_area: Area2D = $ClickArea
@@ -64,10 +72,16 @@ func _process(delta: float) -> void:
 		_builder_anim_time += delta
 		_builder_pulse_time = maxf(0.0, _builder_pulse_time - delta)
 		queue_redraw()
+	if _vault_anim_time > 0.0:
+		_vault_anim_time = maxf(0.0, _vault_anim_time - delta)
+		queue_redraw()
 
 func _physics_process(delta: float) -> void:
 	if not alive or rescued:
 		return
+
+	if _vault_cooldown > 0.0:
+		_vault_cooldown = maxf(0.0, _vault_cooldown - delta)
 
 	var was_on_floor := is_on_floor()
 	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
@@ -89,6 +103,10 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
+	if global_position.y >= STYX_IMPACT_Y and velocity.y > 0.0:
+		die_to("styx_water")
+		return
+
 	var on_floor := is_on_floor()
 	if not is_blocker and not is_builder and was_on_floor and not on_floor and velocity.y > 0.0:
 		_start_tumble()
@@ -100,8 +118,11 @@ func _physics_process(delta: float) -> void:
 			highest_fall_speed = 0.0
 			_stop_tumble()
 
-		if not is_blocker and not is_builder and (_is_blocked_ahead() or _has_blocker_ahead()):
-			_turn_around()
+		if not is_blocker and not is_builder:
+			if _has_blocker_ahead():
+				_turn_around()
+			elif _is_blocked_ahead() and not _try_vault_ahead():
+				_turn_around()
 
 	if position.y > 760:
 		_die()
@@ -171,7 +192,7 @@ func resume_march() -> bool:
 	return true
 
 func die_to(kind: String) -> void:
-	if not alive or rescued:
+	if not alive or rescued or _styx_death_started:
 		return
 	death_kind = kind
 	if kind == "styx_water":
@@ -192,24 +213,26 @@ func _die() -> void:
 	queue_free()
 
 func _die_in_styx() -> void:
-	# Snap the visual body to the surface when the Area2D catches it, then let the
-	# falling rotation carry into the impact. This makes ledge failures read as:
-	# topple -> gravity fall -> goop hit -> sink.
-	global_position.y = STYX_SURFACE_Y + 2.0
+	# Normalize all river deaths to one surface impact. Whether the Area2D or the
+	# proactive physics check catches the fall first, the skeleton hits the soup
+	# line once, then sinks out of view like a soggy cracker.
+	_styx_death_started = true
+	global_position.y = STYX_SURFACE_Y - 2.0
 	alive = false
 	death_started.emit(self, death_kind)
 	velocity = Vector2.ZERO
 	set_physics_process(false)
 	set_process_input(false)
+	_disable_click_target()
 	if collision_shape != null:
-		collision_shape.set_deferred("disabled", true)
+		collision_shape.disabled = true
 	if is_blocker:
 		remove_from_group("blockers")
-	_spawn_bone_splash()
+	_spawn_bone_splash(Vector2(global_position.x, STYX_SURFACE_Y))
 	var impact_rotation := _visual_tumble_rotation + signf(_tumble_speed if _tumble_speed != 0.0 else direction) * 0.38
 	var impact := create_tween()
 	impact.set_parallel(true)
-	impact.tween_property(self, "position:y", position.y + 10.0, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	impact.tween_property(self, "position:y", position.y + 8.0, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	impact.tween_property(self, "scale", Vector2(1.16, 0.78), 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	impact.tween_property(self, "_visual_tumble_rotation", impact_rotation, 0.14).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	impact.tween_callback(queue_redraw).set_delay(0.14)
@@ -217,10 +240,10 @@ func _die_in_styx() -> void:
 
 	var sink := create_tween()
 	sink.set_parallel(true)
-	sink.tween_property(self, "modulate:a", 0.0, 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	sink.tween_property(self, "position:y", position.y + 58.0, 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	sink.tween_property(self, "modulate:a", 0.0, 1.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	sink.tween_property(self, "position:y", position.y + 86.0, 1.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	sink.tween_property(self, "position:x", position.x + direction * 6.0, 0.44).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	sink.tween_property(self, "scale", Vector2(0.66, 0.42), 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	sink.tween_property(self, "scale", Vector2(0.58, 0.34), 1.05).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	sink.tween_property(self, "_sink_wobble", signf(direction) * 0.10, 0.44).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	sink.tween_property(self, "_sink_wobble", signf(direction) * -0.07, 0.44).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT).set_delay(0.44)
 	sink.tween_property(self, "_visual_tumble_rotation", impact_rotation + signf(impact_rotation if impact_rotation != 0.0 else direction) * 0.22, 0.88).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
@@ -249,9 +272,9 @@ func _stop_tumble() -> void:
 	_sink_wobble = 0.0
 	queue_redraw()
 
-func _spawn_bone_splash() -> void:
+func _spawn_bone_splash(spawn_position := Vector2.INF) -> void:
 	var splash := BoneSplashScene.instantiate()
-	splash.global_position = global_position
+	splash.global_position = global_position if spawn_position == Vector2.INF else spawn_position
 	get_parent().add_child(splash)
 
 func _turn_around() -> void:
@@ -259,10 +282,41 @@ func _turn_around() -> void:
 	queue_redraw()
 
 func _is_blocked_ahead() -> bool:
+	return _get_wall_collision_ahead() != null
+
+func _get_wall_collision_ahead() -> KinematicCollision2D:
 	for i in get_slide_collision_count():
 		var collision := get_slide_collision(i)
 		if absf(collision.get_normal().x) > WALL_NORMAL_THRESHOLD:
-			return true
+			return collision
+	return null
+
+func _try_vault_ahead() -> bool:
+	if _vault_cooldown > 0.0 or not is_on_floor():
+		return false
+	var collision := _get_wall_collision_ahead()
+	if collision == null:
+		return false
+	var contact_height := global_position.y - collision.get_position().y
+	if contact_height < -VAULT_MIN_CLEARANCE or contact_height > VAULT_CONTACT_MAX_HEIGHT:
+		return false
+	var facing := signf(direction)
+	if facing == 0.0:
+		facing = 1.0
+	for lift in [8.0, 12.0, 16.0, 20.0]:
+		var up := Vector2(0.0, -lift)
+		var forward := Vector2(facing * VAULT_FORWARD_DISTANCE, 0.0)
+		if test_move(global_transform, up):
+			continue
+		if test_move(global_transform.translated(up), forward):
+			continue
+		global_position += up + forward
+		velocity.y = -70.0
+		_vault_cooldown = VAULT_COOLDOWN_SECONDS
+		_vault_anim_time = 0.18
+		_stop_tumble()
+		queue_redraw()
+		return true
 	return false
 
 func _has_blocker_ahead() -> bool:
@@ -315,7 +369,9 @@ func _draw() -> void:
 	var leg_back_phase := -stride
 	var front_lift := maxf(0.0, leg_front_phase)
 	var back_lift := maxf(0.0, leg_back_phase)
+	var vault_bob := -sin((_vault_anim_time / 0.18) * PI) * 3.8 if _vault_anim_time > 0.0 else 0.0
 	var bob := 0.0 if is_blocker or is_builder else absf(stride) * (0.55 if airborne_motion else 1.05)
+	bob += vault_bob
 	var lean := face * (2.8 + _spine_variant * 7.0 + (0.45 * absf(stride) if not is_blocker else -1.0))
 	if airborne_motion:
 		lean += sin(fall_phase * 0.74) * 5.0
