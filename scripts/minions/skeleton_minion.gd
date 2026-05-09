@@ -25,6 +25,8 @@ const VAULT_MIN_CLEARANCE := 6.0
 const VAULT_COOLDOWN_SECONDS := 0.12
 const VAULT_ANIM_SECONDS := 0.34
 const STYX_IMPACT_Y := STYX_SURFACE_Y - 2.0
+const STANCE_FRACTION := 0.6
+const FOOT_NEUTRAL_PITCH := 0.46
 
 var direction := 1.0
 var alive := true
@@ -420,15 +422,38 @@ func _draw() -> void:
 	var ground_y := 24.6 * h
 	var hip_front := hip + Vector2(face * 2.4, 2.4 * h)
 	var hip_back := hip + Vector2(-face * 2.8, 2.6 * h)
-	var ankle_front := Vector2(face * (8.4 + leg_front_phase * 5.6), ground_y - front_lift * 2.9)
-	var ankle_back := Vector2(face * (-8.2 + leg_back_phase * 5.3), ground_y - back_lift * 2.7)
-	var knee_front := Vector2(face * (4.6 + leg_front_phase * 3.7), lerpf(hip_front.y + 7.2 * h, ankle_front.y - 6.6 * h, 0.58) - front_lift * 2.0)
-	var knee_back := Vector2(face * (-4.8 + leg_back_phase * 3.5), lerpf(hip_back.y + 7.4 * h, ankle_back.y - 6.4 * h, 0.58) - back_lift * 1.9)
+	var ankle_front: Vector2
+	var ankle_back: Vector2
+	var knee_front: Vector2
+	var knee_back: Vector2
+	var foot_angle_front := 0.0
+	var foot_angle_back := 0.0
+	var use_walk_gait := not airborne_motion and not is_blocker and not is_builder and _vault_anim_time <= 0.0
+	if use_walk_gait:
+		var phase_front := fposmod(_walk_time / TAU, 1.0)
+		var phase_back := fposmod(phase_front + 0.5, 1.0)
+		var cycle_speed := 8.8 * _stride_variant
+		var stance_slide := WALK_SPEED * STANCE_FRACTION * TAU / cycle_speed
+		var pose_front := _walk_leg_pose(phase_front, hip_front, face, h, stance_slide)
+		var pose_back := _walk_leg_pose(phase_back, hip_back, face, h, stance_slide)
+		ankle_front = pose_front["ankle"]
+		knee_front = pose_front["knee"]
+		foot_angle_front = pose_front["foot_angle"]
+		ankle_back = pose_back["ankle"]
+		knee_back = pose_back["knee"]
+		foot_angle_back = pose_back["foot_angle"]
+	else:
+		ankle_front = Vector2(face * (8.4 + leg_front_phase * 5.6), ground_y - front_lift * 2.9)
+		ankle_back = Vector2(face * (-8.2 + leg_back_phase * 5.3), ground_y - back_lift * 2.7)
+		knee_front = Vector2(face * (4.6 + leg_front_phase * 3.7), lerpf(hip_front.y + 7.2 * h, ankle_front.y - 6.6 * h, 0.58) - front_lift * 2.0)
+		knee_back = Vector2(face * (-4.8 + leg_back_phase * 3.5), lerpf(hip_back.y + 7.4 * h, ankle_back.y - 6.4 * h, 0.58) - back_lift * 1.9)
 	if airborne_motion:
 		ankle_front += Vector2(face * sin(fall_phase * 0.7) * 4.2, -4.2 + cos(fall_phase) * 4.0)
 		ankle_back += Vector2(-face * cos(fall_phase * 0.8) * 4.0, -3.6 + sin(fall_phase * 0.9) * 3.4)
 		knee_front += Vector2(face * sin(fall_phase + 0.6) * 3.0, -2.5)
 		knee_back += Vector2(-face * cos(fall_phase + 0.2) * 2.8, -2.2)
+		foot_angle_front = sin(fall_phase + 0.3) * 0.4
+		foot_angle_back = sin(fall_phase + 1.7) * 0.4
 
 	if is_blocker or is_builder:
 		elbow_front = shoulder + Vector2(face * 13.0, 6.0)
@@ -453,7 +478,7 @@ func _draw() -> void:
 	_draw_bone_segment(elbow_back, hand_back, back_bone, 1.65)
 	_draw_bone_segment(hip_back, knee_back, back_bone, 1.85)
 	_draw_bone_segment(knee_back, ankle_back, back_bone, 1.85)
-	_draw_foot(ankle_back, face, back_bone, false)
+	_draw_foot(ankle_back, face, back_bone, foot_angle_back, false)
 
 	_draw_bone_segment(shoulder, elbow_front, bone, 1.95)
 	_draw_bone_segment(elbow_front, hand_front, bone, 1.75)
@@ -467,7 +492,7 @@ func _draw() -> void:
 			draw_line(held_tip + Vector2(face * 1.0, -4.0), held_tip + Vector2(face * 5.0, -8.0), Color(1.0, 0.86, 0.45, 0.65 * glow), 1.1)
 	_draw_bone_segment(hip_front, knee_front, bone, 2.05)
 	_draw_bone_segment(knee_front, ankle_front, bone, 2.05)
-	_draw_foot(ankle_front, face, bone, true)
+	_draw_foot(ankle_front, face, bone, foot_angle_front, true)
 
 	if is_blocker or is_builder:
 		var outline_color := Color(0.95, 0.76, 0.23, 0.18) if is_builder else Color(0.95, 0.76, 0.23, 0.13)
@@ -528,9 +553,52 @@ func _draw_side_skull(center: Vector2, face: float, bone: Color, shadow: Color) 
 	draw_line(center + Vector2(face * 6.8, 0.7), center + Vector2(face * 10.0, 1.6), shadow, 1.05)
 	draw_line(center + Vector2(face * 1.4, 6.1), center + Vector2(face * 6.5, 6.2), shadow, 0.95)
 
-func _draw_foot(ankle: Vector2, face: float, color: Color, is_front: bool) -> void:
-	# Small angled foot bone: about 45 degrees from the lower leg, not a long flat shoe.
-	var foot_len := 5.1 if is_front else 4.4
-	var toe := ankle + Vector2(face * foot_len, foot_len * 0.55)
-	draw_line(ankle, toe, color, 1.65 if is_front else 1.45, true)
-	draw_line(toe, toe + Vector2(face * 1.8, 0.6), color, 0.9, true)
+func _draw_foot(ankle: Vector2, face: float, color: Color, foot_angle: float, is_front: bool) -> void:
+	# Articulated foot wedge. foot_angle in radians: positive rotates the toe upward
+	# (dorsiflexion), negative rotates the toe downward (plantarflexion / toe-off push).
+	var foot_len := 5.6 if is_front else 4.8
+	var thickness := 1.6 if is_front else 1.35
+	var pitch := FOOT_NEUTRAL_PITCH - foot_angle
+	var forward := Vector2(face * cos(pitch), sin(pitch))
+	var up := Vector2(forward.y * face, -forward.x * face)
+	var heel_back := ankle - forward * 0.8 + up * 0.2
+	var heel_sole := ankle - forward * 0.5 - up * (thickness * 0.85)
+	var toe_sole := ankle + forward * (foot_len * 0.92) - up * (thickness * 0.45)
+	var toe_tip := ankle + forward * foot_len - up * 0.1
+	var top_arch := ankle + forward * (foot_len * 0.42) + up * (thickness * 0.7)
+	var poly := PackedVector2Array([heel_back, top_arch, toe_tip, toe_sole, heel_sole])
+	draw_colored_polygon(poly, color)
+	draw_line(heel_back, top_arch, color.darkened(0.18), 0.6, true)
+	draw_line(top_arch, toe_tip, color.darkened(0.18), 0.6, true)
+
+func _walk_leg_pose(phase: float, hip: Vector2, face: float, h: float, stance_slide: float) -> Dictionary:
+	# Stance/swing leg pose. phase in [0,1) within one gait cycle: stance occupies
+	# [0, STANCE_FRACTION), swing the rest. During stance the planted foot slides
+	# backward at body speed so it appears glued to the ground while the body passes
+	# over it. During swing the foot lifts and arcs forward, knee bends sharply.
+	var ground_y := 24.6 * h
+	var heel_strike_x := face * stance_slide * 0.5
+	var toe_off_x := -face * stance_slide * 0.5
+	var ankle: Vector2
+	var swing_progress := 0.0
+	var foot_angle := 0.0
+	if phase < STANCE_FRACTION:
+		var t := phase / STANCE_FRACTION
+		ankle = Vector2(lerpf(heel_strike_x, toe_off_x, t), ground_y)
+		if t < 0.18:
+			foot_angle = lerpf(0.18, 0.0, t / 0.18)
+		elif t > 0.7:
+			foot_angle = lerpf(0.0, -0.55, (t - 0.7) / 0.3)
+	else:
+		var t := (phase - STANCE_FRACTION) / (1.0 - STANCE_FRACTION)
+		swing_progress = sin(t * PI)
+		var ease := smoothstep(0.0, 1.0, t)
+		ankle = Vector2(lerpf(toe_off_x, heel_strike_x, ease), ground_y - swing_progress * 4.6)
+		if t < 0.35:
+			foot_angle = lerpf(-0.55, 0.55, t / 0.35)
+		else:
+			foot_angle = lerpf(0.55, 0.18, (t - 0.35) / 0.65)
+	var midpoint := (hip + ankle) * 0.5
+	var bend := 1.5 + swing_progress * 3.6
+	var knee := midpoint + Vector2(face * bend, -0.6 - swing_progress * 1.5)
+	return {"ankle": ankle, "knee": knee, "foot_angle": foot_angle}
