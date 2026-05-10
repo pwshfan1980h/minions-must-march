@@ -6,8 +6,8 @@ signal spawn_portal_clicked
 const EXIT_LIGHT_HEIGHT := 210.0
 const EXIT_LIGHT_WIDTH := 68.0
 const EXIT_REDRAW_FPS := 30.0
-const SPAWN_PORTAL_POS := Vector2(232, 382)
 
+var spawn_portal_pos := Vector2(232, 382)
 var exit_area: Area2D
 var exit_position := Vector2.ZERO
 var _time := 0.0
@@ -32,13 +32,19 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 func _build_placeholder_objects() -> void:
+	var cfg: Dictionary = LevelState.config()
+	# Portal sits slightly above and behind the minion spawn point so skeletons
+	# tumble out of it onto the platform below.
+	var spawn_pos: Vector2 = cfg.get("spawn_position", Vector2(220, 420))
+	var spawn_dir: float = float(cfg.get("spawn_direction", 1))
+	spawn_portal_pos = spawn_pos + Vector2(-spawn_dir * 12.0, -38.0)
 	_add_spawn_portal()
-	_add_exit(Vector2(1210, 400))
+	_add_exit(cfg.get("exit_position", Vector2(1210, 400)))
 
 func _add_spawn_portal() -> void:
 	_spawn_portal_area = Area2D.new()
 	_spawn_portal_area.name = "SpawnPortalClickArea"
-	_spawn_portal_area.position = SPAWN_PORTAL_POS
+	_spawn_portal_area.position = spawn_portal_pos
 	_spawn_portal_area.collision_layer = 4
 	_spawn_portal_area.collision_mask = 0
 	_spawn_portal_area.input_pickable = true
@@ -121,7 +127,7 @@ func _draw_spawn_portal() -> void:
 	var voom := _spawn_portal_voom
 	var alpha := clampf(1.0 if _spawn_portal_waiting else voom, 0.0, 1.0)
 	var squash := Vector2(1.0 + voom * 0.85, 1.0 - voom * 0.55)
-	var pos := SPAWN_PORTAL_POS + Vector2(voom * 34.0, -voom * 8.0)
+	var pos := spawn_portal_pos + Vector2(voom * 34.0, -voom * 8.0)
 	draw_set_transform(pos, voom * 0.45, squash)
 
 	draw_circle(Vector2.ZERO, 60.0 + pulse * 5.0, Color(0.40, 0.90, 0.38, (0.09 + pulse * 0.06) * alpha))
@@ -146,7 +152,7 @@ func _draw_spawn_portal() -> void:
 		draw_line(Vector2(-16, chevron_y), Vector2(0, chevron_y + 9), Color(0.95, 0.83, 0.34, 0.62), 2.0)
 		draw_line(Vector2(16, chevron_y), Vector2(0, chevron_y + 9), Color(0.95, 0.83, 0.34, 0.62), 2.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	_draw_spawn_chute_dust(SPAWN_PORTAL_POS + Vector2(0, 38))
+	_draw_spawn_chute_dust(spawn_portal_pos + Vector2(0, 38))
 
 func _draw_spawn_chute_dust(pos: Vector2) -> void:
 	for i in 7:

@@ -7,8 +7,10 @@ signal sfx_requested(sound_id: String)
 const LEVEL_WIDTH := 2400
 const PLAYFIELD_HEIGHT := 608
 const TILE_SIZE := 32
-const RESCUE_REQUIRED := 16
+const NEXT_LEVEL_DELAY := 2.4
 
+var rescue_required := 16
+var level_name := "Bone Bridge"
 var finished := false
 var debug_click_areas := false
 
@@ -16,7 +18,10 @@ var debug_click_areas := false
 @onready var object_root: Node = $ObjectRoot
 
 func _ready() -> void:
-	print("LevelController ready: Builder Demo 1")
+	var cfg: Dictionary = LevelState.config()
+	rescue_required = int(cfg.get("rescue_required", rescue_required))
+	level_name = String(cfg.get("name", level_name))
+	print("LevelController ready: L%03d %s" % [LevelState.current_level, level_name])
 	minion_root.minion_spawned.connect(_on_minion_event)
 	minion_root.minion_rescued.connect(_on_minion_event)
 	minion_root.minion_lost.connect(_on_minion_event)
@@ -29,7 +34,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if not finished and minion_root.all_done():
-		_finish_level(minion_root.rescued_count >= RESCUE_REQUIRED)
+		_finish_level(minion_root.rescued_count >= rescue_required)
 
 func restart_level() -> void:
 	get_tree().reload_current_scene()
@@ -56,9 +61,11 @@ func get_stats() -> Dictionary:
 		"blockers": minion_root.blockers_remaining,
 		"builders": minion_root.builders_remaining,
 		"selected_job": minion_root.selected_job,
-		"required": RESCUE_REQUIRED,
+		"required": rescue_required,
 		"score": score,
-		"goal_text": "Save %d skeleton%s" % [RESCUE_REQUIRED, "" if RESCUE_REQUIRED == 1 else "s"],
+		"level_name": level_name,
+		"level_number": LevelState.current_level,
+		"goal_text": "Save %d skeleton%s" % [rescue_required, "" if rescue_required == 1 else "s"],
 		"bonus_text": "Bonus: +100 saved, +50 unused bone, -25 lost",
 		"finished": finished,
 		"debug_click_areas": debug_click_areas,
@@ -99,3 +106,7 @@ func _finish_level(success: bool) -> void:
 	sfx_requested.emit("level_success" if success else "level_fail")
 	level_finished.emit(success, stats)
 	_emit_stats()
+	if success and LevelState.has_next_level():
+		await get_tree().create_timer(NEXT_LEVEL_DELAY).timeout
+		LevelState.advance()
+		get_tree().reload_current_scene()

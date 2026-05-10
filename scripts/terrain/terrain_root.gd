@@ -19,7 +19,13 @@ var _crumbling_sections: Array[Dictionary] = []
 func _ready() -> void:
 	_build_souls()
 	_build_hands()
-	_build_level_001_terrain()
+	var terrain_id: String = LevelState.config().get("terrain", "level_001")
+	match terrain_id:
+		"level_001": _build_level_001_terrain()
+		"level_002": _build_level_002_terrain()
+		"level_003": _build_level_003_terrain()
+		"level_004": _build_level_004_terrain()
+		_: _build_level_001_terrain()
 	_add_styx_death_area()
 	queue_redraw()
 
@@ -55,6 +61,55 @@ func _build_level_001_terrain() -> void:
 	_add_solid(Rect2(500, 500, 184, 24), Color("4a3d37"), "bone_bridge")
 	_add_builder_demo_markers()
 
+
+func _build_level_002_terrain() -> void:
+	# Crumblepath: same overall shape as L001 (left platform + Styx gap + right
+	# platform with exit), but the right platform is broken into three crumbling
+	# chunks separated by short solid sections. Once the leader steps onto the
+	# right side, three fuses start in cascade and the crowd has to keep moving.
+	_add_solid(Rect2(160, 448, 640, 32), Color("3a3144"), "crypt")
+	_add_solid(Rect2(128, 480, 32, 96), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(800, 480, 32, 96), Color("2a2432"), "skull_end")
+	# Right side: solid landing, then crumbler-solid-crumbler-solid-crumbler-solid.
+	_add_solid(Rect2(912, 400, 64, 32), Color("342b3e"), "chain")
+	_add_crumbling_solid(Rect2(976, 400, 72, 32), Color("342b3e"))
+	_add_solid(Rect2(1048, 400, 56, 32), Color("342b3e"), "chain")
+	_add_crumbling_solid(Rect2(1104, 400, 72, 32), Color("342b3e"))
+	_add_solid(Rect2(1160, 400, 56, 32), Color("342b3e"), "chain")
+	_add_crumbling_solid(Rect2(1216, 400, 72, 32), Color("342b3e"))
+	_add_solid(Rect2(1288, 400, 104, 32), Color("342b3e"), "chain")
+	# Pillars under the right platform.
+	_add_solid(Rect2(912, 432, 32, 144), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(1360, 432, 32, 144), Color("2a2432"), "skull_end")
+	# Decorative bone bridge below for atmosphere.
+	_add_solid(Rect2(500, 500, 184, 24), Color("4a3d37"), "bone_bridge")
+
+func _build_level_003_terrain() -> void:
+	# Turn, You Fools: a single long platform. Spawn faces LEFT toward an open
+	# Styx drop. Player must place a blocker before the cliff, redirecting the
+	# crowd to the exit on the far right. No bridges needed.
+	_add_solid(Rect2(160, 448, 1232, 32), Color("3a3144"), "crypt")
+	_add_solid(Rect2(128, 480, 32, 96), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(1392, 480, 32, 96), Color("2a2432"), "skull_end")
+	# Mid-platform skull pillar for visual rhythm on the long span.
+	_add_solid(Rect2(760, 480, 32, 96), Color("2a2432"), "skull_end")
+
+func _build_level_004_terrain() -> void:
+	# Two-Bridge Bypass: a three-tier staircase with two gaps. Each gap is 112px
+	# wide with a 48px elevation step — the rib bridge's natural rise/run, so a
+	# clean build from the lip of each lower platform lands flush on the next.
+	# Left platform (lowest): top y=480
+	_add_solid(Rect2(160, 480, 240, 32), Color("3a3144"), "crypt")
+	_add_solid(Rect2(128, 512, 32, 64), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(400, 512, 32, 64), Color("2a2432"), "skull_end")
+	# Mid platform (middle tier): top y=432
+	_add_solid(Rect2(512, 432, 168, 32), Color("342b3e"), "chain")
+	_add_solid(Rect2(512, 464, 32, 112), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(680, 464, 32, 112), Color("2a2432"), "skull_end")
+	# Right platform (top tier, with exit): top y=384
+	_add_solid(Rect2(792, 384, 448, 32), Color("241d2f"), "obsidian")
+	_add_solid(Rect2(792, 416, 32, 160), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(1240, 416, 32, 160), Color("2a2432"), "skull_end")
 
 func _add_builder_demo_markers() -> void:
 	# A single non-colliding build marker. Do not show ghost bridge pieces here:
@@ -440,50 +495,81 @@ func _draw_crypt_gradient() -> void:
 	draw_circle(Vector2(640, STYX_WATERLINE_Y + 30.0), 420, Color(0.09, 0.19, 0.17, 0.045))
 
 func _draw_distant_underworld_background() -> void:
-	# Upper-screen mood pass: crimson sky, dead treetops, faint structures, and
-	# sleepy portal glow. Kept low-contrast so it never competes with gameplay.
-	for i in 16:
-		var t := float(i) / 15.0
-		var color := Color(0.105 + t * 0.055, 0.025 + t * 0.020, 0.035 + t * 0.028, 0.24 - t * 0.06)
-		draw_rect(Rect2(0, i * 13.0, WORLD_WIDTH, 15.0), color)
+	# Single coherent atmospheric pass: a low-contrast crimson dawn band
+	# bleeding into the crypt gradient, a far horizon of jagged crypt towers,
+	# a tighter tree silhouette layer, and a few breathing lantern flames.
+	# Designed to read as ONE distant skyline, not a stack of competing motifs.
+	_draw_horizon_haze()
+	_draw_far_skyline()
+	_draw_near_tree_line()
+	_draw_horizon_lanterns()
 
-	_draw_portal_ruin(Vector2(245, 185), 0.92, Color(0.54, 0.86, 0.42, 0.15))
-	_draw_portal_ruin(Vector2(725, 156), 0.72, Color(0.95, 0.78, 0.29, 0.11))
-	_draw_portal_ruin(Vector2(1038, 218), 1.08, Color(0.44, 0.98, 0.60, 0.12))
-	_draw_portal_ruin(Vector2(1475, 178), 0.84, Color(0.87, 0.71, 0.25, 0.12))
-	_draw_portal_ruin(Vector2(1975, 205), 1.02, Color(0.43, 0.92, 0.55, 0.13))
-	_draw_skull_mountain(Vector2(1720, 258), 1.0)
-	_draw_rib_arch(Vector2(1320, 336), 1.0)
-	_draw_rib_arch(Vector2(2135, 354), 0.86)
-	_draw_background_light_pool(Vector2(520, 378), 0.9, Color(0.94, 0.66, 0.25, 0.075))
-	_draw_background_light_pool(Vector2(1080, 360), 0.78, Color(0.48, 0.92, 0.55, 0.070))
-	_draw_background_light_pool(Vector2(1900, 392), 1.0, Color(0.93, 0.72, 0.30, 0.080))
-	_draw_underworld_street_light(Vector2(500, 472), 0.9, Color(0.98, 0.73, 0.32, 0.58))
-	_draw_underworld_street_light(Vector2(1130, 416), 0.75, Color(0.52, 0.98, 0.58, 0.48))
-	_draw_underworld_street_light(Vector2(1510, 500), 0.82, Color(0.93, 0.70, 0.25, 0.50))
-	_draw_underworld_street_light(Vector2(2050, 448), 0.95, Color(0.46, 0.90, 0.54, 0.48))
+func _draw_horizon_haze() -> void:
+	# Soft crimson-to-dark gradient band, kept low-saturation so the playable
+	# layer always has more visual weight.
+	for i in 22:
+		var t := float(i) / 21.0
+		var color := Color(
+			0.085 + t * 0.040,
+			0.022 + t * 0.014,
+			0.032 + t * 0.020,
+			0.20 - t * 0.080
+		)
+		draw_rect(Rect2(0, 80.0 + i * 11.5, WORLD_WIDTH, 13.0), color)
 
-	_draw_tower_silhouette(Vector2(378, 246), 0.78)
-	_draw_tower_silhouette(Vector2(552, 224), 0.58)
-	_draw_tower_silhouette(Vector2(895, 252), 0.66)
-	_draw_tower_silhouette(Vector2(1245, 238), 0.74)
-	_draw_tower_silhouette(Vector2(1840, 248), 0.62)
-	draw_line(Vector2(430, 265), Vector2(615, 254), Color(0.025, 0.018, 0.026, 0.45), 5.0, true)
-	draw_line(Vector2(620, 253), Vector2(828, 273), Color(0.025, 0.018, 0.026, 0.34), 3.0, true)
-	draw_line(Vector2(1160, 270), Vector2(1395, 256), Color(0.025, 0.018, 0.026, 0.36), 4.0, true)
-	draw_line(Vector2(1810, 272), Vector2(2040, 286), Color(0.025, 0.018, 0.026, 0.34), 3.0, true)
+func _draw_far_skyline() -> void:
+	# A continuous, slightly-uneven skyline of distant crypt towers. Heights
+	# follow a low-frequency sine so the silhouette feels like a city skyline
+	# rather than a row of identical pieces.
+	var skyline_color := Color(0.025, 0.020, 0.032, 0.62)
+	var base_y := 295.0
+	var points := PackedVector2Array()
+	points.append(Vector2(0, base_y + 60.0))
+	for x in range(0, WORLD_WIDTH + 24, 24):
+		var fx := float(x)
+		# Mix three sines for a non-repeating profile.
+		var h := 28.0 \
+			+ sin(fx * 0.0061) * 18.0 \
+			+ sin(fx * 0.0143 + 1.2) * 12.0 \
+			+ sin(fx * 0.0319 + 0.7) * 5.0
+		# Occasional taller spire — every ~5th step, controlled by a slow sine.
+		if sin(fx * 0.011 + 2.4) > 0.78:
+			h += 28.0
+		points.append(Vector2(fx, base_y - h))
+	points.append(Vector2(WORLD_WIDTH, base_y + 60.0))
+	draw_colored_polygon(points, skyline_color)
 
-	var tree_color := Color(0.018, 0.014, 0.023, 0.52)
-	draw_rect(Rect2(0, 318, WORLD_WIDTH, 42), tree_color)
-	for i in range(0, WORLD_WIDTH + 48, 32):
-		var peak := 248.0 + sin(i * 0.031) * 17.0 + sin(i * 0.009) * 28.0
-		var base := 322.0 + sin(i * 0.017) * 9.0
-		var crown := PackedVector2Array([
-			Vector2(i - 7.0, base + 4.0),
-			Vector2(i + 18.0, peak),
-			Vector2(i + 43.0, base + 5.0),
-		])
-		draw_colored_polygon(crown, tree_color)
+func _draw_near_tree_line() -> void:
+	# Mid-distance dead-tree silhouette layer in front of the skyline. Smaller
+	# and darker than the towers behind, sitting just above the play floor.
+	var tree_color := Color(0.014, 0.010, 0.020, 0.58)
+	var base_y := 358.0
+	var points := PackedVector2Array()
+	points.append(Vector2(0, base_y + 60.0))
+	for x in range(0, WORLD_WIDTH + 16, 16):
+		var fx := float(x)
+		var h := 14.0 + absf(sin(fx * 0.024 + 0.4)) * 12.0 + sin(fx * 0.071 + 1.9) * 4.0
+		points.append(Vector2(fx, base_y - h))
+	points.append(Vector2(WORLD_WIDTH, base_y + 60.0))
+	draw_colored_polygon(points, tree_color)
+
+func _draw_horizon_lanterns() -> void:
+	# Three lit windows / brazier dots sprinkled along the skyline. Slow pulse,
+	# warm color. Replaces the prior cluttered light-pool / portal-ruin /
+	# rib-arch layers with a single tiny detail per spot.
+	var spots := [
+		{"pos": Vector2(345.0, 252.0), "warm": true},
+		{"pos": Vector2(910.0, 230.0), "warm": false},
+		{"pos": Vector2(1480.0, 248.0), "warm": true},
+		{"pos": Vector2(2030.0, 236.0), "warm": false},
+	]
+	for spot in spots:
+		var pos: Vector2 = spot["pos"]
+		var warm: bool = spot["warm"]
+		var pulse := 0.55 + 0.45 * (0.5 + 0.5 * sin(_time * 1.4 + pos.x * 0.013))
+		var color := Color(0.96, 0.74, 0.32, 0.55 * pulse) if warm else Color(0.52, 0.92, 0.58, 0.42 * pulse)
+		draw_circle(pos, 9.0, Color(color.r, color.g, color.b, color.a * 0.20))
+		draw_circle(pos, 3.4, color)
 
 func _draw_background_light_pool(pos: Vector2, scale: float, color: Color) -> void:
 	var pulse := 0.82 + 0.18 * sin(_time * 0.45 + pos.x * 0.005)

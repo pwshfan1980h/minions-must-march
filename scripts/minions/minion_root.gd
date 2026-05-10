@@ -42,6 +42,13 @@ const BUILDER_PIECE_COLOR := Color(0.78, 0.66, 0.46, 0.96)
 const BUILDER_THROW_COLOR := Color(1.00, 0.88, 0.56, 0.95)
 
 func _ready() -> void:
+	var cfg: Dictionary = LevelState.config()
+	total_to_spawn = int(cfg.get("minions", total_to_spawn))
+	spawn_interval = float(cfg.get("spawn_interval", spawn_interval))
+	blockers_available = int(cfg.get("blockers", blockers_available))
+	builders_available = int(cfg.get("builders", builders_available))
+	spawn_position = cfg.get("spawn_position", spawn_position)
+	spawn_direction = float(cfg.get("spawn_direction", spawn_direction))
 	reset_spawner()
 
 func _process(delta: float) -> void:
