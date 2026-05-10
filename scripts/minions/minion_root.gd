@@ -37,6 +37,9 @@ const BUILDER_WINDUP_SECONDS := 0.22
 const BUILDER_THROW_DURATION := 0.24
 const BUILDER_SETTLE_SECONDS := 0.08
 const BUILDER_HAND_OFFSET := Vector2(16.0, -12.0)
+const BUILDER_CROSSFADE_SECONDS := 0.12
+const BUILDER_PIECE_COLOR := Color(0.78, 0.66, 0.46, 0.96)
+const BUILDER_THROW_COLOR := Color(1.00, 0.88, 0.56, 0.95)
 
 func _ready() -> void:
 	reset_spawner()
@@ -168,10 +171,13 @@ func _run_builder_sequence(minion: Node) -> void:
 		await get_tree().create_timer(BUILDER_WINDUP_SECONDS).timeout
 		if not is_instance_valid(minion) or minion.get("alive") != true or minion.get("rescued") == true:
 			return
-		await _animate_builder_throw(minion, center, facing, i + 1)
+		var throw_visual: Polygon2D = await _animate_builder_throw(minion, center, facing, i + 1)
 		if not is_instance_valid(minion) or minion.get("alive") != true or minion.get("rescued") == true:
+			if is_instance_valid(throw_visual):
+				throw_visual.queue_free()
 			return
-		_add_builder_piece(center, facing, i + 1)
+		var piece := _add_builder_piece(center, facing, i + 1)
+		_crossfade_to_piece(throw_visual, piece)
 		sfx_requested.emit("bone_clack")
 		await get_tree().create_timer(BUILDER_SETTLE_SECONDS).timeout
 	if is_instance_valid(minion) and minion.has_method("set_builder_active"):
@@ -190,28 +196,34 @@ func _get_builder_anchor(minion_position: Vector2, facing: float) -> Vector2:
 			y = support.position.y - (BUILDER_PIECE_SIZE.y * 0.5)
 	return Vector2(minion_position.x + facing * BUILDER_PIECE_SPACING, y)
 
-func _animate_builder_throw(minion: Node, target: Vector2, facing: float, index: int) -> void:
+func _animate_builder_throw(minion: Node, target: Vector2, facing: float, index: int) -> Polygon2D:
+	# The thrown rib is the same polygon shape as the placed piece. Starts small at
+	# the builder's hand and grows to full size mid-air; the placed piece then
+	# cross-fades in at the same position so the silhouette never pops.
 	var terrain := get_node_or_null("../TerrainRoot")
 	var parent_node: Node = terrain if terrain != null else self
-	var throw_visual := Line2D.new()
+	var throw_visual := Polygon2D.new()
 	throw_visual.name = "BuilderThrownRib%d" % index
-	throw_visual.default_color = Color(1.0, 0.88, 0.56, 0.92)
-	throw_visual.width = 3.0
-	throw_visual.points = PackedVector2Array([Vector2(-10.0 * facing, 0.0), Vector2(10.0 * facing, -2.0)])
+	throw_visual.color = BUILDER_THROW_COLOR
+	var half := BUILDER_PIECE_SIZE * 0.5
+	throw_visual.polygon = PackedVector2Array([
+		Vector2(-facing * half.x, half.y),
+		Vector2(-facing * half.x + facing * BUILDER_PIECE_SPACING, -half.y),
+		Vector2(facing * half.x, -half.y),
+		Vector2(facing * half.x, half.y),
+	])
 	throw_visual.global_position = minion.global_position + Vector2(BUILDER_HAND_OFFSET.x * facing, BUILDER_HAND_OFFSET.y)
-	throw_visual.rotation = -0.25 * facing
+	throw_visual.rotation = -0.45 * facing
+	throw_visual.scale = Vector2(0.45, 0.45)
 	parent_node.add_child(throw_visual)
 
 	var tween := create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(throw_visual, "global_position", target, BUILDER_THROW_DURATION).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(throw_visual, "rotation", throw_visual.rotation + facing * 2.4, BUILDER_THROW_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(throw_visual, "scale", Vector2(1.25, 1.25), BUILDER_THROW_DURATION * 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_property(throw_visual, "scale", Vector2(0.92, 0.92), BUILDER_THROW_DURATION * 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN).set_delay(BUILDER_THROW_DURATION * 0.45)
-	tween.tween_property(throw_visual, "modulate", Color(1.0, 1.0, 1.0, 0.25), BUILDER_THROW_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_property(throw_visual, "rotation", 0.0, BUILDER_THROW_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(throw_visual, "scale", Vector2.ONE, BUILDER_THROW_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	await tween.finished
-	if is_instance_valid(throw_visual):
-		throw_visual.queue_free()
+	return throw_visual
 
 func _find_support_rect(terrain: Node, minion_position: Vector2) -> Rect2:
 	var rects: Array = terrain.get("collision_rects")
@@ -227,11 +239,23 @@ func _find_support_rect(terrain: Node, minion_position: Vector2) -> Rect2:
 			best_y_distance = y_distance
 	return best
 
-func _add_builder_piece(center: Vector2, facing: float, index: int) -> void:
+func _add_builder_piece(center: Vector2, facing: float, index: int) -> StaticBody2D:
+	# Each piece is a parallelogram whose near-side edge slopes at the bridge's
+	# overall pitch (BUILDER_STEP_RISE rise per BUILDER_PIECE_SPACING run). Stacked
+	# end-to-end, the pieces' near-edges form one continuous slope, so a skeleton
+	# walks up the bridge as if on a ramp instead of vaulting up each step.
+	var half := BUILDER_PIECE_SIZE * 0.5
+	var slope_run := BUILDER_PIECE_SPACING
+	var poly_points := PackedVector2Array([
+		Vector2(-facing * half.x, half.y),
+		Vector2(-facing * half.x + facing * slope_run, -half.y),
+		Vector2(facing * half.x, -half.y),
+		Vector2(facing * half.x, half.y),
+	])
 	var terrain := get_node_or_null("../TerrainRoot")
 	var parent_node: Node = terrain if terrain != null else self
 	if terrain != null:
-		var built_rect := Rect2(center - BUILDER_PIECE_SIZE / 2.0, BUILDER_PIECE_SIZE)
+		var built_rect := Rect2(center - half, BUILDER_PIECE_SIZE)
 		var rects: Array = terrain.get("collision_rects")
 		rects.append(built_rect)
 		terrain.set("collision_rects", rects)
@@ -240,30 +264,39 @@ func _add_builder_piece(center: Vector2, facing: float, index: int) -> void:
 	body.global_position = center
 	body.collision_layer = 1
 	body.collision_mask = 0
+	body.modulate.a = 0.0
 	parent_node.add_child(body)
 
-	var shape := CollisionShape2D.new()
-	var rect := RectangleShape2D.new()
-	rect.size = BUILDER_PIECE_SIZE
-	shape.shape = rect
+	var shape := CollisionPolygon2D.new()
+	shape.polygon = poly_points
 	body.add_child(shape)
 
 	var visual := Polygon2D.new()
 	visual.name = "Visual"
-	visual.color = Color(0.78, 0.66, 0.46, 0.96)
-	visual.polygon = PackedVector2Array([
-		-BUILDER_PIECE_SIZE / 2.0,
-		Vector2(BUILDER_PIECE_SIZE.x / 2.0, -BUILDER_PIECE_SIZE.y / 2.0),
-		BUILDER_PIECE_SIZE / 2.0,
-		Vector2(-BUILDER_PIECE_SIZE.x / 2.0, BUILDER_PIECE_SIZE.y / 2.0),
-	])
+	visual.color = BUILDER_PIECE_COLOR
+	visual.polygon = poly_points
 	body.add_child(visual)
 
 	var rib := Line2D.new()
 	rib.default_color = Color(1.0, 0.90, 0.68, 0.86)
 	rib.width = 2.0
-	rib.points = PackedVector2Array([Vector2(-11.0 * facing, 0), Vector2(11.0 * facing, -1)])
+	rib.points = PackedVector2Array([Vector2(-facing * 9.0, 2.5), Vector2(facing * 10.0, -2.5)])
 	body.add_child(rib)
+	return body
+
+func _crossfade_to_piece(throw_visual: Polygon2D, piece: StaticBody2D) -> void:
+	# Hand the airborne rib off to its placed counterpart by alpha-swapping in
+	# place — same shape, same position, just a quick brightness settle from the
+	# warm thrown color to the duller structural color. Avoids the silhouette
+	# pop that happens when one node disappears and another appears in a frame.
+	if not is_instance_valid(throw_visual) or not is_instance_valid(piece):
+		return
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(throw_visual, "modulate:a", 0.0, BUILDER_CROSSFADE_SECONDS).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_property(piece, "modulate:a", 1.0, BUILDER_CROSSFADE_SECONDS).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.chain().tween_callback(throw_visual.queue_free)
+
 
 func all_done() -> bool:
 	# A placed blocker can remain braced after the crowd is safe; don't let that
