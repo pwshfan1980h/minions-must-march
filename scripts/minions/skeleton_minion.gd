@@ -7,7 +7,7 @@ signal clicked(minion: Node)
 
 const BoneSplashScene := preload("res://scenes/effects/BoneSplash.tscn")
 
-const WALK_SPEED := 42.0
+const WALK_SPEED := 34.0
 const GRAVITY := 760.0
 const MAX_FALL_SPEED := 520.0
 const FATAL_FALL_SPEED := 470.0
@@ -16,7 +16,7 @@ const BLOCKER_TURN_DISTANCE := 22.0
 const BLOCKER_VERTICAL_TOLERANCE := 18.0
 const STYX_SURFACE_Y := 560.0
 const VISUAL_SCALE := 0.72
-const WALK_ANIM_FPS := 14.0
+const WALK_ANIM_FPS := 10.0
 const BUILDER_SWING_FPS := 5.5
 const BUILDER_PULSE_SECONDS := 0.46
 const VAULT_CONTACT_MAX_HEIGHT := 30.0
@@ -27,6 +27,9 @@ const VAULT_ANIM_SECONDS := 0.34
 const STYX_IMPACT_Y := STYX_SURFACE_Y - 2.0
 const STANCE_FRACTION := 0.6
 const FOOT_NEUTRAL_PITCH := 0.46
+const VISUAL_REDRAW_FPS := 24.0
+const OFFSCREEN_REDRAW_FPS := 8.0
+const BLOCKER_CHECK_INTERVAL := 0.08
 
 # Three body archetypes — each minion picks one at spawn. Within an archetype
 # we add small jitter so duplicates don't look copy-pasted, but the silhouette
@@ -89,16 +92,26 @@ var _builder_pulse_time := 0.0
 var _vault_cooldown := 0.0
 var _vault_anim_time := 0.0
 var _styx_death_started := false
+var _visual_redraw_timer := 0.0
+var _visual_redraw_requested := false
+var _is_on_screen := true
+var _blocker_check_timer := 0.0
+var _blocker_ahead_cached := false
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var click_area: Area2D = $ClickArea
 @onready var click_shape: CollisionShape2D = $ClickArea/ClickShape
+@onready var screen_notifier: VisibleOnScreenNotifier2D = $VisibleOnScreenNotifier2D
 
 func _ready() -> void:
 	add_to_group("minions")
 	input_pickable = false
 	if click_area != null:
 		click_area.input_event.connect(_on_click_area_input_event)
+	if screen_notifier != null:
+		_is_on_screen = screen_notifier.is_on_screen()
+		screen_notifier.screen_entered.connect(_on_screen_entered)
+		screen_notifier.screen_exited.connect(_on_screen_exited)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(get_instance_id())
 	var type_keys := BODY_TYPES.keys()
@@ -111,19 +124,21 @@ func _ready() -> void:
 	_bob_scale = float(bt["bob_scale"])
 	_stride_variant = float(bt["stride_speed"]) * rng.randf_range(0.95, 1.05)
 	_spine_variant = float(bt["spine_bias"]) + rng.randf_range(-0.05, 0.05)
-	queue_redraw()
+	_request_visual_redraw(true)
 
 func _process(delta: float) -> void:
+	_visual_redraw_timer += delta
 	# Tweened custom draw properties need redraws while the sinking corpse animates.
 	if not alive and not rescued:
-		queue_redraw()
+		_request_visual_redraw()
 	if is_builder:
 		_builder_anim_time += delta
 		_builder_pulse_time = maxf(0.0, _builder_pulse_time - delta)
-		queue_redraw()
+		_request_visual_redraw()
 	if _vault_anim_time > 0.0:
 		_vault_anim_time = maxf(0.0, _vault_anim_time - delta)
-		queue_redraw()
+		_request_visual_redraw()
+	_flush_visual_redraw_if_due()
 
 func _physics_process(delta: float) -> void:
 	if not alive or rescued:
@@ -140,7 +155,7 @@ func _physics_process(delta: float) -> void:
 		var anim_frame := int(_walk_time * WALK_ANIM_FPS)
 		if anim_frame != _last_anim_frame:
 			_last_anim_frame = anim_frame
-			queue_redraw()
+			_request_visual_redraw()
 	if not is_blocker and not is_builder:
 		highest_fall_speed = maxf(highest_fall_speed, velocity.y)
 		if _is_tumbling:
@@ -148,7 +163,7 @@ func _physics_process(delta: float) -> void:
 			var wobble := sin(_air_time * 8.5 + float(get_instance_id()) * 0.01) * 0.10
 			_visual_tumble_rotation += (_tumble_speed + wobble) * delta
 			_tumble_speed = clampf(_tumble_speed + signf(_tumble_speed) * 0.11 * delta, -4.8, 4.8)
-			queue_redraw()
+			_request_visual_redraw()
 
 	move_and_slide()
 
@@ -168,7 +183,7 @@ func _physics_process(delta: float) -> void:
 			_stop_tumble()
 
 		if not is_blocker and not is_builder:
-			if _has_blocker_ahead():
+			if _has_blocker_ahead(delta):
 				_turn_around()
 			elif _is_blocked_ahead() and not _try_vault_ahead():
 				# A just-vaulted skeleton may still be settling onto the next step or
@@ -219,11 +234,11 @@ func set_builder_active(active: bool) -> void:
 		_builder_pulse_time = 0.0
 	velocity = Vector2.ZERO
 	_stop_tumble()
-	queue_redraw()
+	_request_visual_redraw(true)
 
 func play_builder_build_pulse(duration := BUILDER_PULSE_SECONDS) -> void:
 	_builder_pulse_time = duration
-	queue_redraw()
+	_request_visual_redraw(true)
 
 func become_blocker() -> bool:
 	if not alive or rescued or is_blocker or not is_on_floor():
@@ -232,7 +247,7 @@ func become_blocker() -> bool:
 	_stop_tumble()
 	velocity = Vector2.ZERO
 	add_to_group("blockers")
-	queue_redraw()
+	_request_visual_redraw(true)
 	return true
 
 func resume_march() -> bool:
@@ -240,7 +255,7 @@ func resume_march() -> bool:
 		return false
 	is_blocker = false
 	remove_from_group("blockers")
-	queue_redraw()
+	_request_visual_redraw(true)
 	return true
 
 func die_to(kind: String) -> void:
@@ -312,7 +327,7 @@ func _start_tumble() -> void:
 	_air_time = 0.0
 	_tumble_speed = direction * lerpf(2.05, 3.15, variant)
 	_visual_tumble_rotation = direction * lerpf(0.06, 0.14, variant)
-	queue_redraw()
+	_request_visual_redraw(true)
 
 func _stop_tumble() -> void:
 	if not _is_tumbling and absf(_visual_tumble_rotation) < 0.001:
@@ -322,7 +337,7 @@ func _stop_tumble() -> void:
 	_air_time = 0.0
 	_visual_tumble_rotation = 0.0
 	_sink_wobble = 0.0
-	queue_redraw()
+	_request_visual_redraw(true)
 
 func _spawn_bone_splash(spawn_position := Vector2.INF) -> void:
 	var splash := BoneSplashScene.instantiate()
@@ -331,7 +346,7 @@ func _spawn_bone_splash(spawn_position := Vector2.INF) -> void:
 
 func _turn_around() -> void:
 	direction *= -1.0
-	queue_redraw()
+	_request_visual_redraw(true)
 
 func _is_blocked_ahead() -> bool:
 	return _get_wall_collision_ahead() != null
@@ -367,23 +382,54 @@ func _try_vault_ahead() -> bool:
 		_vault_cooldown = VAULT_COOLDOWN_SECONDS
 		_vault_anim_time = VAULT_ANIM_SECONDS
 		_stop_tumble()
-		queue_redraw()
+		_request_visual_redraw(true)
 		return true
 	return false
 
-func _has_blocker_ahead() -> bool:
+func _has_blocker_ahead(delta: float) -> bool:
+	_blocker_check_timer -= delta
+	if _blocker_check_timer > 0.0:
+		return _blocker_ahead_cached
+	_blocker_check_timer = BLOCKER_CHECK_INTERVAL
+	_blocker_ahead_cached = false
 	for blocker in get_tree().get_nodes_in_group("blockers"):
 		if blocker == self or not is_instance_valid(blocker):
 			continue
 		var blocker_offset: Vector2 = blocker.global_position - global_position
 		if absf(blocker_offset.y) <= BLOCKER_VERTICAL_TOLERANCE and signf(blocker_offset.x) == signf(direction):
 			if absf(blocker_offset.x) <= BLOCKER_TURN_DISTANCE:
+				_blocker_ahead_cached = true
 				return true
-	return false
+	return _blocker_ahead_cached
 
 func set_debug_click_area(enabled: bool) -> void:
 	_debug_click_area = enabled
+	_request_visual_redraw(true)
+
+func _request_visual_redraw(force := false) -> void:
+	if force:
+		_visual_redraw_requested = false
+		_visual_redraw_timer = 0.0
+		queue_redraw()
+		return
+	_visual_redraw_requested = true
+
+func _flush_visual_redraw_if_due() -> void:
+	if not _visual_redraw_requested:
+		return
+	var fps := VISUAL_REDRAW_FPS if _is_on_screen else OFFSCREEN_REDRAW_FPS
+	if _visual_redraw_timer < 1.0 / fps:
+		return
+	_visual_redraw_requested = false
+	_visual_redraw_timer = 0.0
 	queue_redraw()
+
+func _on_screen_entered() -> void:
+	_is_on_screen = true
+	_request_visual_redraw(true)
+
+func _on_screen_exited() -> void:
+	_is_on_screen = false
 
 func _disable_click_target() -> void:
 	if click_area != null:

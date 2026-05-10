@@ -1,15 +1,17 @@
 extends Node2D
 
-const FRAGMENT_COUNT := 10
-const RIPPLE_COUNT := 5
+const FRAGMENT_COUNT := 6
+const RIPPLE_COUNT := 3
 const LIFE_SECONDS := 0.85
 const GRAVITY := 620.0
 const STYX_SURFACE_Y := 560.0
+const REDRAW_FPS := 30.0
 
 var _age := 0.0
 var _fragments: Array[Dictionary] = []
 var _ripples: Array[Dictionary] = []
 var _goop_jets: Array[Dictionary] = []
+var _redraw_timer := 0.0
 
 func _ready() -> void:
 	_build_fragments()
@@ -18,6 +20,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_age += delta
+	_redraw_timer += delta
 	for fragment in _fragments:
 		fragment["velocity"].y += GRAVITY * delta
 		fragment["position"] += fragment["velocity"] * delta
@@ -27,7 +30,9 @@ func _process(delta: float) -> void:
 		queue_free()
 		return
 
-	queue_redraw()
+	if _redraw_timer >= 1.0 / REDRAW_FPS:
+		_redraw_timer = 0.0
+		queue_redraw()
 
 func _build_fragments() -> void:
 	var rng := RandomNumberGenerator.new()
@@ -55,7 +60,7 @@ func _build_styx_impact() -> void:
 			"offset": rng.randf_range(-14.0, 14.0),
 			"phase": rng.randf_range(0.0, TAU),
 		})
-	for i in 8:
+	for i in 5:
 		_goop_jets.append({
 			"x": rng.randf_range(-24.0, 24.0),
 			"height": rng.randf_range(16.0, 42.0),

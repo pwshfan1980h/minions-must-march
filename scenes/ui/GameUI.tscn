@@ -77,3 +77,11 @@ offset_bottom = 96.0
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "CRYPT CLEARED"
+
+[node name="PerfLabel" type="Label" parent="."]
+visible = false
+offset_left = 16.0
+offset_top = 116.0
+offset_right = 420.0
+offset_bottom = 144.0
+text = "FPS 0   ACT 0   SPN 0/0   NODES 0"

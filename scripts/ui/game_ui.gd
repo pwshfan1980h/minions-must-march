@@ -12,16 +12,20 @@ signal job_selected(job_id: String)
 @onready var blocker_button: Button = $JobBar/BlockerButton
 @onready var builder_button: Button = $JobBar/BuilderButton
 @onready var result_label: Label = $ResultLabel
+@onready var perf_label: Label = $PerfLabel
 
 var selected_job := "builder"
 var blockers_remaining := 0
 var builders_remaining := 0
 var _last_stats: Dictionary = {}
 var _spooky_font: SystemFont
+var _perf_overlay_enabled := false
+var _perf_update_timer := 0.0
 
 func _ready() -> void:
 	print("GameUI ready")
 	result_label.hide()
+	perf_label.hide()
 	_spooky_font = _make_spooky_font()
 	_apply_visual_style()
 	blocker_button.pressed.connect(_select_blocker)
@@ -50,6 +54,16 @@ func update_stats(stats: Dictionary) -> void:
 	builder_button.text = "2\n🦴\nx%d" % builders_remaining
 	hint_label.text = _build_hint_text(stats)
 	_update_job_buttons()
+	_update_perf_overlay(true)
+
+func _process(delta: float) -> void:
+	if not _perf_overlay_enabled:
+		return
+	_perf_update_timer += delta
+	if _perf_update_timer < 0.25:
+		return
+	_perf_update_timer = 0.0
+	_update_perf_overlay()
 
 func show_level_finished(success: bool, stats: Dictionary) -> void:
 	result_label.show()
@@ -70,6 +84,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_select_blocker()
 		elif event.keycode == KEY_2:
 			_select_builder()
+		elif event.keycode == KEY_F4:
+			_toggle_perf_overlay()
 
 func _select_blocker() -> void:
 	if blockers_remaining <= 0:
@@ -87,6 +103,7 @@ func _select_builder() -> void:
 
 func _build_hint_text(stats: Dictionary) -> String:
 	var debug_text := "  •  F3 hitbox ON" if stats.get("debug_click_areas", false) else "  •  F3 hitboxes"
+	debug_text += "  •  F4 perf ON" if _perf_overlay_enabled else "  •  F4 perf"
 	if selected_job == "builder" and builders_remaining > 0:
 		return "2 Bone: click a grounded skeleton near the gold mark. It builds from where it stands." + debug_text
 	if builders_remaining <= 0:
@@ -124,6 +141,12 @@ func _apply_visual_style() -> void:
 	result_label.add_theme_font_size_override("font_size", 30)
 	result_label.add_theme_constant_override("shadow_offset_x", 3)
 	result_label.add_theme_constant_override("shadow_offset_y", 3)
+	perf_label.add_theme_font_override("font", _spooky_font)
+	perf_label.add_theme_font_size_override("font_size", 13)
+	perf_label.add_theme_color_override("font_color", Color("b5ffbf"))
+	perf_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
+	perf_label.add_theme_constant_override("shadow_offset_x", 2)
+	perf_label.add_theme_constant_override("shadow_offset_y", 2)
 
 	for button in [blocker_button, builder_button]:
 		button.add_theme_font_override("font", _spooky_font)
@@ -172,3 +195,19 @@ func _make_spooky_font() -> SystemFont:
 	font.font_names = PackedStringArray(["Papyrus", "Chalkduster", "Marker Felt", "Georgia", "Times New Roman"])
 	font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
 	return font
+
+func _toggle_perf_overlay() -> void:
+	_perf_overlay_enabled = not _perf_overlay_enabled
+	perf_label.visible = _perf_overlay_enabled
+	_update_perf_overlay(true)
+
+func _update_perf_overlay(force := false) -> void:
+	if not force and not _perf_overlay_enabled:
+		return
+	perf_label.text = "FPS %d   ACT %d   SPN %d/%d   NODES %d" % [
+		Engine.get_frames_per_second(),
+		_last_stats.get("active", 0),
+		_last_stats.get("spawned", 0),
+		_last_stats.get("total", 0),
+		get_tree().get_node_count(),
+	]

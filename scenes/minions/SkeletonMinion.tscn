@@ -29,3 +29,6 @@ monitorable = false
 [node name="ClickShape" type="CollisionShape2D" parent="ClickArea"]
 position = Vector2(0, -8)
 shape = SubResource("CapsuleShape2D_click")
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="."]
+rect = Rect2(-40, -72, 80, 120)
