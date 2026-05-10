@@ -171,7 +171,7 @@ func _run_builder_sequence(minion: Node) -> void:
 		await get_tree().create_timer(BUILDER_WINDUP_SECONDS).timeout
 		if not is_instance_valid(minion) or minion.get("alive") != true or minion.get("rescued") == true:
 			return
-		var throw_visual: Polygon2D = await _animate_builder_throw(minion, center, facing, i + 1)
+		var throw_visual: Line2D = await _animate_builder_throw(minion, center, facing, i + 1)
 		if not is_instance_valid(minion) or minion.get("alive") != true or minion.get("rescued") == true:
 			if is_instance_valid(throw_visual):
 				throw_visual.queue_free()
@@ -196,22 +196,24 @@ func _get_builder_anchor(minion_position: Vector2, facing: float) -> Vector2:
 			y = support.position.y - (BUILDER_PIECE_SIZE.y * 0.5)
 	return Vector2(minion_position.x + facing * BUILDER_PIECE_SPACING, y)
 
-func _animate_builder_throw(minion: Node, target: Vector2, facing: float, index: int) -> Polygon2D:
-	# The thrown rib is the same polygon shape as the placed piece. Starts small at
-	# the builder's hand and grows to full size mid-air; the placed piece then
-	# cross-fades in at the same position so the silhouette never pops.
+func _animate_builder_throw(minion: Node, target: Vector2, facing: float, index: int) -> Line2D:
+	# The thrown rib is a rounded-cap bone shaft, same silhouette as the placed
+	# piece's bone visual. Starts small at the builder's hand and grows to full
+	# size mid-air; the placed piece then cross-fades in at the same position so
+	# the silhouette never pops.
 	var terrain := get_node_or_null("../TerrainRoot")
 	var parent_node: Node = terrain if terrain != null else self
-	var throw_visual := Polygon2D.new()
-	throw_visual.name = "BuilderThrownRib%d" % index
-	throw_visual.color = BUILDER_THROW_COLOR
 	var half := BUILDER_PIECE_SIZE * 0.5
-	throw_visual.polygon = PackedVector2Array([
+	var throw_visual := Line2D.new()
+	throw_visual.name = "BuilderThrownRib%d" % index
+	throw_visual.points = PackedVector2Array([
 		Vector2(-facing * half.x, half.y),
 		Vector2(-facing * half.x + facing * BUILDER_PIECE_SPACING, -half.y),
-		Vector2(facing * half.x, -half.y),
-		Vector2(facing * half.x, half.y),
 	])
+	throw_visual.width = 4.6
+	throw_visual.default_color = BUILDER_THROW_COLOR
+	throw_visual.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	throw_visual.end_cap_mode = Line2D.LINE_CAP_ROUND
 	throw_visual.global_position = minion.global_position + Vector2(BUILDER_HAND_OFFSET.x * facing, BUILDER_HAND_OFFSET.y)
 	throw_visual.rotation = -0.45 * facing
 	throw_visual.scale = Vector2(0.45, 0.45)
@@ -271,20 +273,55 @@ func _add_builder_piece(center: Vector2, facing: float, index: int) -> StaticBod
 	shape.polygon = poly_points
 	body.add_child(shape)
 
-	var visual := Polygon2D.new()
-	visual.name = "Visual"
-	visual.color = BUILDER_PIECE_COLOR
-	visual.polygon = poly_points
-	body.add_child(visual)
+	# Each piece is drawn as a tapered bone: thin shaft, big knuckle balls at
+	# each end. Adjacent pieces' knuckles overlap exactly at the slope junctions,
+	# so the chain reads as discrete ribs meeting at joints rather than one long
+	# stick.
+	var bone_a := Vector2(-facing * half.x, half.y)
+	var bone_b := Vector2(-facing * half.x + facing * slope_run, -half.y)
+	var shadow_offset := Vector2(0.0, 1.4)
 
-	var rib := Line2D.new()
-	rib.default_color = Color(1.0, 0.90, 0.68, 0.86)
-	rib.width = 2.0
-	rib.points = PackedVector2Array([Vector2(-facing * 9.0, 2.5), Vector2(facing * 10.0, -2.5)])
-	body.add_child(rib)
+	var shadow := Line2D.new()
+	shadow.name = "Shadow"
+	shadow.points = PackedVector2Array([bone_a + shadow_offset, bone_b + shadow_offset])
+	shadow.width = 4.0
+	shadow.default_color = Color(0.30, 0.22, 0.14, 0.50)
+	shadow.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	shadow.end_cap_mode = Line2D.LINE_CAP_ROUND
+	body.add_child(shadow)
+
+	var shaft := Line2D.new()
+	shaft.name = "Shaft"
+	shaft.points = PackedVector2Array([bone_a, bone_b])
+	shaft.width = 3.4
+	shaft.default_color = BUILDER_PIECE_COLOR
+	shaft.begin_cap_mode = Line2D.LINE_CAP_NONE
+	shaft.end_cap_mode = Line2D.LINE_CAP_NONE
+	body.add_child(shaft)
+
+	var knuckle_polygon := PackedVector2Array()
+	var knuckle_radius := 3.2
+	var knuckle_segments := 14
+	for k in knuckle_segments:
+		var angle := float(k) * TAU / float(knuckle_segments)
+		knuckle_polygon.append(Vector2(cos(angle), sin(angle)) * knuckle_radius)
+	var knuckle_color := BUILDER_PIECE_COLOR.lightened(0.08)
+	for endpoint in [bone_a, bone_b]:
+		var knuckle_shadow := Polygon2D.new()
+		knuckle_shadow.name = "KnuckleShadow"
+		knuckle_shadow.position = endpoint + shadow_offset
+		knuckle_shadow.polygon = knuckle_polygon
+		knuckle_shadow.color = Color(0.30, 0.22, 0.14, 0.50)
+		body.add_child(knuckle_shadow)
+		var knuckle := Polygon2D.new()
+		knuckle.name = "Knuckle"
+		knuckle.position = endpoint
+		knuckle.polygon = knuckle_polygon
+		knuckle.color = knuckle_color
+		body.add_child(knuckle)
 	return body
 
-func _crossfade_to_piece(throw_visual: Polygon2D, piece: StaticBody2D) -> void:
+func _crossfade_to_piece(throw_visual: Line2D, piece: StaticBody2D) -> void:
 	# Hand the airborne rib off to its placed counterpart by alpha-swapping in
 	# place — same shape, same position, just a quick brightness settle from the
 	# warm thrown color to the duller structural color. Avoids the silhouette
