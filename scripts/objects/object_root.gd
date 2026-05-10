@@ -33,7 +33,6 @@ func _process(delta: float) -> void:
 
 func _build_placeholder_objects() -> void:
 	_add_spawn_portal()
-	_add_builder_demo_label(Vector2(760, 360))
 	_add_exit(Vector2(1210, 400))
 
 func _add_spawn_portal() -> void:

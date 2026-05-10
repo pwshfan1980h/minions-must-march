@@ -36,13 +36,14 @@ func _run() -> void:
 		return
 
 	var build_origin: Vector2 = minion.global_position
+	var builders_before := int(minion_root.builders_remaining)
 	minion_root.set_selected_job("builder")
 	minion_root._on_minion_clicked(minion)
 
 	await create_timer(3.80).timeout
 
-	if minion_root.builders_remaining != 0:
-		_fail("Builder charge was not consumed")
+	if int(minion_root.builders_remaining) != builders_before - 1:
+		_fail("Builder charge was not consumed (before=%d after=%d)" % [builders_before, int(minion_root.builders_remaining)])
 		return
 
 	var terrain := level.get_node("TerrainRoot")
