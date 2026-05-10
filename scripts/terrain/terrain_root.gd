@@ -6,12 +6,15 @@ const PLAYFIELD_HEIGHT := 720
 const STYX_WATERLINE_Y := 560.0
 const STYX_DEPTH := 176.0
 const TERRAIN_REDRAW_FPS := 30.0
+const CRUMBLE_FUSE_MIN := 15.0
+const CRUMBLE_FUSE_MAX := 30.0
 
 var collision_rects: Array[Rect2] = []
 var _time := 0.0
 var _redraw_elapsed := 0.0
 var _soul_specs: Array[Dictionary] = []
 var _hand_specs: Array[Dictionary] = []
+var _crumbling_sections: Array[Dictionary] = []
 
 func _ready() -> void:
 	_build_souls()
@@ -26,17 +29,25 @@ func _process(delta: float) -> void:
 	if _redraw_elapsed >= 1.0 / TERRAIN_REDRAW_FPS:
 		_redraw_elapsed = 0.0
 		queue_redraw()
+	_tick_crumbling_sections()
 
 func _build_level_001_terrain() -> void:
-	# Builder Demo 1: a small, intentionally obvious bridge lab. Skeletons
-	# spawn on the left, march right, and hit one Styx gap before the exit.
-	# The gap is sized so one Builder v0 run should be enough: six 28x8
-	# rib-bone pieces placed 24 px forward / 8 px upward from a right-facing
-	# skeleton near the marked build line.
+	# Bridge lab + crumbler: spawn on the left, build a bone bridge over the
+	# Styx gap, then traverse the right platform — but a chunk of the right
+	# platform crumbles after first weight, so don't dawdle.
+	# Left platform + supports
 	_add_solid(Rect2(160, 448, 640, 32), Color("3a3144"), "crypt")
 	_add_solid(Rect2(128, 480, 32, 96), Color("2a2432"), "skull_end")
 	_add_solid(Rect2(800, 480, 32, 96), Color("2a2432"), "skull_end")
-	_add_solid(Rect2(912, 400, 480, 32), Color("342b3e"), "chain")
+	# Right platform: split into solid - crumbling - solid so one chunk falls
+	# away after a skeleton walks on it.
+	_add_solid(Rect2(912, 400, 160, 32), Color("342b3e"), "chain")
+	_add_crumbling_solid(Rect2(1072, 400, 96, 32), Color("342b3e"))
+	_add_solid(Rect2(1168, 400, 224, 32), Color("342b3e"), "chain")
+	# Right platform supports (previously missing — platform was floating)
+	_add_solid(Rect2(912, 432, 32, 144), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(1360, 432, 32, 144), Color("2a2432"), "skull_end")
+	# Decorative & exit-side block
 	_add_solid(Rect2(1392, 432, 96, 32), Color("241d2f"), "obsidian")
 	_add_solid(Rect2(500, 500, 184, 24), Color("4a3d37"), "bone_bridge")
 	_add_builder_demo_markers()
@@ -66,7 +77,7 @@ func _add_builder_demo_markers() -> void:
 	])
 	add_child(chevron)
 
-func _add_solid(rect: Rect2, color: Color, variant := "crypt") -> void:
+func _add_solid(rect: Rect2, color: Color, variant := "crypt") -> StaticBody2D:
 	collision_rects.append(rect)
 
 	var body := StaticBody2D.new()
@@ -85,15 +96,67 @@ func _add_solid(rect: Rect2, color: Color, variant := "crypt") -> void:
 	var visual := Polygon2D.new()
 	visual.name = "Visual"
 	visual.color = color
-	visual.polygon = PackedVector2Array([
-		-rect.size / 2.0,
-		Vector2(rect.size.x / 2.0, -rect.size.y / 2.0),
-		rect.size / 2.0,
-		Vector2(-rect.size.x / 2.0, rect.size.y / 2.0),
-	])
+	# Chipped top edge for crumbling-crypt feel; collision stays a clean rect.
+	visual.polygon = _build_chipped_silhouette(rect)
 	body.add_child(visual)
 
 	_add_block_underworld_detail(rect, body, variant)
+	if variant == "skull_end":
+		_add_pillar_capstone(rect, body, color)
+	return body
+
+func _build_chipped_silhouette(rect: Rect2) -> PackedVector2Array:
+	# Generate a polygon matching the rect's footprint, but with small notches
+	# bitten out of the top edge so the silhouette doesn't read as a perfect
+	# manufactured rectangle. Deterministic per-rect via a position-derived seed.
+	var hw := rect.size.x * 0.5
+	var hh := rect.size.y * 0.5
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(rect.position.x * 1009.0 + rect.position.y * 31.0 + rect.size.x * 7.0)
+	var pts := PackedVector2Array()
+	pts.append(Vector2(-hw, -hh))
+	var notch_count := clampi(int(rect.size.x / 60.0), 2, 8)
+	for i in notch_count:
+		var t := (float(i) + rng.randf_range(0.30, 0.70)) / float(notch_count)
+		var notch_x := lerpf(-hw + 12.0, hw - 12.0, t)
+		var notch_w := rng.randf_range(5.0, 13.0)
+		var notch_d := rng.randf_range(1.4, 3.2)
+		pts.append(Vector2(notch_x - notch_w * 0.5, -hh))
+		pts.append(Vector2(notch_x - notch_w * 0.18, -hh + notch_d * 0.55))
+		pts.append(Vector2(notch_x, -hh + notch_d))
+		pts.append(Vector2(notch_x + notch_w * 0.22, -hh + notch_d * 0.45))
+		pts.append(Vector2(notch_x + notch_w * 0.5, -hh))
+	pts.append(Vector2(hw, -hh))
+	pts.append(Vector2(hw, hh))
+	pts.append(Vector2(-hw, hh))
+	return pts
+
+func _add_pillar_capstone(rect: Rect2, body: Node2D, color: Color) -> void:
+	# Slightly wider band right at the pillar top — makes the seam where the
+	# pillar meets the platform read as proper masonry instead of two flush
+	# rectangles butting together.
+	var hw := rect.size.x * 0.5
+	var hh := rect.size.y * 0.5
+	var cap := Polygon2D.new()
+	cap.name = "Capstone"
+	cap.color = color.lightened(0.04)
+	cap.polygon = PackedVector2Array([
+		Vector2(-hw - 3.5, -hh),
+		Vector2(hw + 3.5, -hh),
+		Vector2(hw + 3.5, -hh + 4.0),
+		Vector2(hw + 1.0, -hh + 5.5),
+		Vector2(-hw - 1.0, -hh + 5.5),
+		Vector2(-hw - 3.5, -hh + 4.0),
+	])
+	body.add_child(cap)
+	var cap_shadow := Line2D.new()
+	cap_shadow.default_color = Color(0.07, 0.05, 0.07, 0.55)
+	cap_shadow.width = 1.4
+	cap_shadow.points = PackedVector2Array([
+		Vector2(-hw - 1.0, -hh + 5.5),
+		Vector2(hw + 1.0, -hh + 5.5),
+	])
+	body.add_child(cap_shadow)
 
 func _add_block_underworld_detail(rect: Rect2, body: Node2D, variant: String) -> void:
 	var top_line := Line2D.new()
@@ -168,6 +231,142 @@ func _add_block_underworld_detail(rect: Rect2, body: Node2D, variant: String) ->
 			skull.position = Vector2(0, y)
 			skull.polygon = PackedVector2Array([Vector2(-8,-7), Vector2(8,-7), Vector2(10,3), Vector2(4,10), Vector2(-4,10), Vector2(-10,3)])
 			body.add_child(skull)
+
+func _add_crumbling_solid(rect: Rect2, color: Color) -> StaticBody2D:
+	# Looks like a normal platform; an Area2D sitting just above its top
+	# detects the first skeleton to step on and starts a 15–30s fuse, after
+	# which the collision and visual disappear in a debris burst.
+	var body := _add_solid(rect, color, "crumbling")
+
+	var trigger := Area2D.new()
+	trigger.name = "CrumbleTrigger"
+	trigger.collision_layer = 0
+	trigger.collision_mask = 2  # detect skeletons (CharacterBody2D layer 2)
+	trigger.position = Vector2(0.0, -rect.size.y * 0.5 - 4.0)
+	body.add_child(trigger)
+
+	var trig_shape := CollisionShape2D.new()
+	var trig_rect := RectangleShape2D.new()
+	trig_rect.size = Vector2(maxf(rect.size.x - 4.0, 4.0), 8.0)
+	trig_shape.shape = trig_rect
+	trigger.add_child(trig_shape)
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(rect.position.x * 211.0 + rect.position.y * 17.0 + 7919.0)
+	var fuse_seconds := rng.randf_range(CRUMBLE_FUSE_MIN, CRUMBLE_FUSE_MAX)
+
+	# Pulsing warning cracks — invisible until the fuse starts. Three vertical
+	# zigzag scars across the section, modulate.a ramps from 0 to 1 over the fuse.
+	var warning := Node2D.new()
+	warning.name = "CrumbleWarning"
+	warning.modulate.a = 0.0
+	body.add_child(warning)
+	for k in 3:
+		var scar_x := lerpf(-rect.size.x * 0.5 + 8.0, rect.size.x * 0.5 - 8.0, (float(k) + 0.5) / 3.0)
+		scar_x += rng.randf_range(-4.0, 4.0)
+		var scar := Line2D.new()
+		scar.default_color = Color(0.04, 0.025, 0.030, 0.95)
+		scar.width = 1.4
+		scar.points = PackedVector2Array([
+			Vector2(scar_x - 1.0, -rect.size.y * 0.5 + 1.5),
+			Vector2(scar_x + 2.0, -rect.size.y * 0.5 + rect.size.y * 0.35),
+			Vector2(scar_x - 1.5, -rect.size.y * 0.5 + rect.size.y * 0.65),
+			Vector2(scar_x + 1.5, rect.size.y * 0.5 - 1.5),
+		])
+		warning.add_child(scar)
+
+	var section := {
+		"body": body,
+		"rect": rect,
+		"color": color,
+		"trigger": trigger,
+		"warning": warning,
+		"fuse_started": false,
+		"fuse_at": -1.0,
+		"fuse_seconds": fuse_seconds,
+		"crumbled": false,
+	}
+	_crumbling_sections.append(section)
+
+	trigger.body_entered.connect(_on_crumble_trigger_entered.bind(section))
+	return body
+
+func _on_crumble_trigger_entered(_body: Node, section: Dictionary) -> void:
+	if section["fuse_started"] or section["crumbled"]:
+		return
+	section["fuse_started"] = true
+	section["fuse_at"] = _time + section["fuse_seconds"]
+
+func _tick_crumbling_sections() -> void:
+	for section in _crumbling_sections:
+		if section["crumbled"]:
+			continue
+		if not section["fuse_started"]:
+			continue
+		var body: Node = section["body"]
+		if not is_instance_valid(body):
+			section["crumbled"] = true
+			continue
+		var time_left: float = section["fuse_at"] - _time
+		if time_left <= 0.0:
+			_trigger_crumble(section)
+			continue
+		# Ramp warning visibility from subtle (early in fuse) to obvious (last
+		# few seconds). Add a small breathing pulse so it's clearly alive.
+		var fuse_seconds: float = section["fuse_seconds"]
+		var progress: float = clampf(1.0 - time_left / fuse_seconds, 0.0, 1.0)
+		var pulse: float = 0.5 + 0.5 * sin(_time * 5.6)
+		var alpha: float = pow(progress, 2.0) * (0.55 + 0.45 * pulse)
+		var warning: Node2D = section["warning"]
+		if is_instance_valid(warning):
+			warning.modulate.a = alpha
+
+func _trigger_crumble(section: Dictionary) -> void:
+	if section["crumbled"]:
+		return
+	section["crumbled"] = true
+	var rect: Rect2 = section["rect"]
+	var color: Color = section["color"]
+	# Drop the rect from the support-rects list so future builders don't try
+	# to anchor a bridge to a section that just fell into Styx.
+	collision_rects.erase(rect)
+	_spawn_crumble_debris(rect, color)
+	var body: Node = section["body"]
+	if is_instance_valid(body):
+		body.queue_free()
+
+func _spawn_crumble_debris(rect: Rect2, color: Color) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(rect.position.x * 113.0 + 8191.0)
+	var chunk_count := 9
+	for i in chunk_count:
+		var chunk := Polygon2D.new()
+		chunk.color = color.darkened(rng.randf_range(0.0, 0.18))
+		var sx := rng.randf_range(5.0, 11.0)
+		var sy := rng.randf_range(4.0, 8.0)
+		chunk.polygon = PackedVector2Array([
+			Vector2(-sx * 0.5, -sy * 0.5),
+			Vector2(sx * 0.5 + rng.randf_range(-1.5, 1.5), -sy * 0.5),
+			Vector2(sx * 0.5, sy * 0.5),
+			Vector2(-sx * 0.5 + rng.randf_range(-1.5, 1.5), sy * 0.5),
+		])
+		chunk.global_position = rect.position + Vector2(
+			rng.randf_range(2.0, rect.size.x - 2.0),
+			rng.randf_range(0.0, rect.size.y)
+		)
+		chunk.rotation = rng.randf_range(-0.4, 0.4)
+		add_child(chunk)
+		var fall := rng.randf_range(180.0, 320.0)
+		var spin := rng.randf_range(-2.8, 2.8)
+		var sway := rng.randf_range(-22.0, 22.0)
+		var dur := rng.randf_range(1.2, 1.8)
+		var tween := create_tween()
+		tween.set_parallel(true)
+		tween.tween_property(chunk, "global_position:y", chunk.global_position.y + fall, dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tween.tween_property(chunk, "global_position:x", chunk.global_position.x + sway, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(chunk, "rotation", chunk.rotation + spin, dur)
+		tween.tween_property(chunk, "modulate:a", 0.0, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+		tween.chain().tween_callback(chunk.queue_free)
 
 func _add_styx_death_area() -> void:
 	var area := Area2D.new()
