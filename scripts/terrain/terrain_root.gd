@@ -35,8 +35,11 @@ func _build_level_001_terrain() -> void:
 	# Bridge lab + crumbler: spawn on the left, build a bone bridge over the
 	# Styx gap, then traverse the right platform — but a chunk of the right
 	# platform crumbles after first weight, so don't dawdle.
-	# Left platform + supports
-	_add_solid(Rect2(160, 448, 640, 32), Color("3a3144"), "crypt")
+	# Left platform + supports. The leftmost slice is a crumbler — sits just
+	# left of the spawn portal at x=220, so a redirected/turned-around crowd
+	# stepping back here will eventually take that chunk down with them.
+	_add_crumbling_solid(Rect2(160, 448, 56, 32), Color("3a3144"))
+	_add_solid(Rect2(216, 448, 584, 32), Color("3a3144"), "crypt")
 	_add_solid(Rect2(128, 480, 32, 96), Color("2a2432"), "skull_end")
 	_add_solid(Rect2(800, 480, 32, 96), Color("2a2432"), "skull_end")
 	# Right platform: split into solid - crumbling - solid so one chunk falls
