@@ -28,6 +28,39 @@ const STYX_IMPACT_Y := STYX_SURFACE_Y - 2.0
 const STANCE_FRACTION := 0.6
 const FOOT_NEUTRAL_PITCH := 0.46
 
+# Three body archetypes — each minion picks one at spawn. Within an archetype
+# we add small jitter so duplicates don't look copy-pasted, but the silhouette
+# and gait personality stay recognizable.
+const BODY_TYPES := {
+	"tall": {
+		"height_base": 1.16, "height_jitter": 0.06,
+		"body_width": 0.86,
+		"head_scale": 0.94,
+		"leg_length": 1.10,
+		"stride_speed": 0.96,
+		"bob_scale": 0.85,
+		"spine_bias": -0.04,
+	},
+	"stocky": {
+		"height_base": 0.86, "height_jitter": 0.05,
+		"body_width": 1.22,
+		"head_scale": 1.12,
+		"leg_length": 0.84,
+		"stride_speed": 0.80,
+		"bob_scale": 1.32,
+		"spine_bias": 0.10,
+	},
+	"wiry": {
+		"height_base": 0.99, "height_jitter": 0.05,
+		"body_width": 0.94,
+		"head_scale": 0.96,
+		"leg_length": 1.00,
+		"stride_speed": 1.18,
+		"bob_scale": 0.95,
+		"spine_bias": 0.04,
+	},
+}
+
 var direction := 1.0
 var alive := true
 var rescued := false
@@ -36,9 +69,14 @@ var is_builder := false
 var highest_fall_speed := 0.0
 var death_kind := ""
 var _walk_time := 0.0
+var _body_type := "wiry"
 var _height_variant := 1.0
 var _spine_variant := 0.0
 var _stride_variant := 1.0
+var _body_width := 1.0
+var _head_scale := 1.0
+var _leg_length := 1.0
+var _bob_scale := 1.0
 var _last_anim_frame := -1
 var _is_tumbling := false
 var _visual_tumble_rotation := 0.0
@@ -63,9 +101,16 @@ func _ready() -> void:
 		click_area.input_event.connect(_on_click_area_input_event)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(get_instance_id())
-	_height_variant = rng.randf_range(0.92, 1.10)
-	_spine_variant = rng.randf_range(-0.10, 0.16)
-	_stride_variant = rng.randf_range(0.88, 1.14)
+	var type_keys := BODY_TYPES.keys()
+	_body_type = String(type_keys[rng.randi() % type_keys.size()])
+	var bt: Dictionary = BODY_TYPES[_body_type]
+	_height_variant = float(bt["height_base"]) + rng.randf_range(-float(bt["height_jitter"]), float(bt["height_jitter"]))
+	_body_width = float(bt["body_width"]) * rng.randf_range(0.96, 1.04)
+	_head_scale = float(bt["head_scale"]) * rng.randf_range(0.97, 1.03)
+	_leg_length = float(bt["leg_length"]) * rng.randf_range(0.97, 1.03)
+	_bob_scale = float(bt["bob_scale"])
+	_stride_variant = float(bt["stride_speed"]) * rng.randf_range(0.95, 1.05)
+	_spine_variant = float(bt["spine_bias"]) + rng.randf_range(-0.05, 0.05)
 	queue_redraw()
 
 func _process(delta: float) -> void:
@@ -380,18 +425,19 @@ func _draw() -> void:
 	var front_lift := maxf(0.0, leg_front_phase)
 	var back_lift := maxf(0.0, leg_back_phase)
 	var vault_bob := -sin(vault_progress * PI) * 5.2 if _vault_anim_time > 0.0 else 0.0
-	var bob := 0.0 if is_blocker or is_builder else absf(stride) * (0.55 if airborne_motion else 1.05)
+	var bob := 0.0 if is_blocker or is_builder else absf(stride) * (0.55 if airborne_motion else 1.05) * _bob_scale
 	bob += vault_bob
 	var lean := face * (2.8 + _spine_variant * 7.0 + (0.45 * absf(stride) if not is_blocker else -1.0))
 	if airborne_motion:
 		lean += sin(fall_phase * 0.74) * 5.0
 	var h := _height_variant
+	var w := _body_width
 
 	var hip := Vector2(-face * 0.8, 3.0 - bob)
 	var chest := Vector2(lean * 0.45, -12.5 * h - bob)
 	var neck := Vector2(lean * 0.78, -19.2 * h - bob)
 	var head := neck + Vector2(face * 4.0, -5.9 * h)
-	var shoulder := chest + Vector2(face * 1.4, -0.8)
+	var shoulder := chest + Vector2(face * 1.4 * w, -0.8)
 
 	# Core silhouette first: spine, compact ribs, pelvis. Fewer draw calls than the
 	# earlier anatomy pass, but enough bone landmarks to read at small scale.
@@ -399,11 +445,11 @@ func _draw() -> void:
 	for i in 3:
 		var t := float(i) / 2.0
 		var rib_center := chest.lerp(hip + Vector2(face * 0.5, -4.5), t)
-		var rib_width := lerpf(6.6, 4.2, t) * h
+		var rib_width := lerpf(6.6, 4.2, t) * h * w
 		draw_arc(rib_center, rib_width, -0.72 * PI if face > 0.0 else -0.28 * PI, 0.18 * PI if face > 0.0 else 1.22 * PI, 6, bone, 1.35)
-	_draw_pelvis(hip, face, bone.darkened(0.04), h)
+	_draw_pelvis(hip, face, bone.darkened(0.04), h, w)
 	_draw_clavicles(chest, shoulder, face, bone.darkened(0.02))
-	_draw_side_skull(head, face, bone, shadow)
+	_draw_side_skull(head, face, bone, shadow, _head_scale)
 
 	# Arms: counter-swing, but subordinate to legs for readability.
 	var arm_swing := -stride
@@ -419,9 +465,9 @@ func _draw() -> void:
 
 	# Legs: explicit two-phase side-view gait. Near/far legs move in opposite
 	# horizontal phases: one plants behind while the other passes forward.
-	var ground_y := 24.6 * h
-	var hip_front := hip + Vector2(face * 2.4, 2.4 * h)
-	var hip_back := hip + Vector2(-face * 2.8, 2.6 * h)
+	var ground_y := 24.6 * h * _leg_length
+	var hip_front := hip + Vector2(face * 2.4 * w, 2.4 * h)
+	var hip_back := hip + Vector2(-face * 2.8 * w, 2.6 * h)
 	var ankle_front: Vector2
 	var ankle_back: Vector2
 	var knee_front: Vector2
@@ -528,30 +574,31 @@ func _draw_clavicles(chest: Vector2, shoulder: Vector2, face: float, color: Colo
 	_draw_bone_segment(chest + Vector2(0, -1.5), shoulder, color, 1.2)
 	_draw_bone_segment(chest + Vector2(-face * 0.8, -1.0), chest + Vector2(-face * 4.6, 1.2), color.darkened(0.10), 1.05)
 
-func _draw_pelvis(hip: Vector2, face: float, color: Color, h: float) -> void:
-	var rear := hip + Vector2(-face * 4.8, 1.6 * h)
-	var front := hip + Vector2(face * 5.4, 1.9 * h)
+func _draw_pelvis(hip: Vector2, face: float, color: Color, h: float, w: float = 1.0) -> void:
+	var rear := hip + Vector2(-face * 4.8 * w, 1.6 * h)
+	var front := hip + Vector2(face * 5.4 * w, 1.9 * h)
 	var pubis := hip + Vector2(face * 0.5, 6.2 * h)
 	_draw_bone_segment(rear, pubis, color.darkened(0.09), 1.35)
 	_draw_bone_segment(front, pubis, color, 1.45)
 	draw_circle(front, 1.45, color)
 	draw_circle(rear, 1.35, color.darkened(0.12))
 
-func _draw_side_skull(center: Vector2, face: float, bone: Color, shadow: Color) -> void:
+func _draw_side_skull(center: Vector2, face: float, bone: Color, shadow: Color, scale_factor: float = 1.0) -> void:
+	var s := scale_factor
 	var skull := PackedVector2Array([
-		center + Vector2(-face * 5.3, -5.7),
-		center + Vector2(face * 3.4, -7.1),
-		center + Vector2(face * 8.7, -3.0),
-		center + Vector2(face * 9.3, 1.3),
-		center + Vector2(face * 4.8, 5.3),
-		center + Vector2(-face * 2.7, 4.8),
-		center + Vector2(-face * 6.4, 0.5),
+		center + Vector2(-face * 5.3, -5.7) * s,
+		center + Vector2(face * 3.4, -7.1) * s,
+		center + Vector2(face * 8.7, -3.0) * s,
+		center + Vector2(face * 9.3, 1.3) * s,
+		center + Vector2(face * 4.8, 5.3) * s,
+		center + Vector2(-face * 2.7, 4.8) * s,
+		center + Vector2(-face * 6.4, 0.5) * s,
 	])
 	draw_colored_polygon(skull, bone)
-	draw_rect(Rect2(center + Vector2(face * 0.8 - 2.0, 2.0), Vector2(6.5, 4.4)), bone)
-	draw_circle(center + Vector2(face * 3.6, -1.8), 1.85, shadow)
-	draw_line(center + Vector2(face * 6.8, 0.7), center + Vector2(face * 10.0, 1.6), shadow, 1.05)
-	draw_line(center + Vector2(face * 1.4, 6.1), center + Vector2(face * 6.5, 6.2), shadow, 0.95)
+	draw_rect(Rect2(center + Vector2(face * 0.8 - 2.0, 2.0) * s, Vector2(6.5, 4.4) * s), bone)
+	draw_circle(center + Vector2(face * 3.6, -1.8) * s, 1.85 * s, shadow)
+	draw_line(center + Vector2(face * 6.8, 0.7) * s, center + Vector2(face * 10.0, 1.6) * s, shadow, 1.05 * s)
+	draw_line(center + Vector2(face * 1.4, 6.1) * s, center + Vector2(face * 6.5, 6.2) * s, shadow, 0.95 * s)
 
 func _draw_foot(ankle: Vector2, face: float, color: Color, foot_angle: float, is_front: bool) -> void:
 	# Articulated foot wedge. foot_angle in radians: positive rotates the toe upward
