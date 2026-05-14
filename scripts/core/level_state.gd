@@ -13,6 +13,7 @@ const LEVELS := {
 	1: {
 		"name": "Bone Bridge",
 		"terrain": "level_001",
+		"beat": {"bpm": 92.0, "steps_per_beat": 2, "swing": 0.08, "walk_cycles_per_beat": 1.0},
 		"rescue_required": 10,
 		"minions": 12,
 		"spawn_interval": 0.9,
@@ -26,6 +27,7 @@ const LEVELS := {
 	2: {
 		"name": "The Crumblepath",
 		"terrain": "level_002",
+		"beat": {"bpm": 92.0, "steps_per_beat": 2, "swing": 0.08, "walk_cycles_per_beat": 1.0},
 		"rescue_required": 8,
 		"minions": 12,
 		"spawn_interval": 0.9,
@@ -39,6 +41,7 @@ const LEVELS := {
 	3: {
 		"name": "Turn, You Fools",
 		"terrain": "level_003",
+		"beat": {"bpm": 92.0, "steps_per_beat": 2, "swing": 0.08, "walk_cycles_per_beat": 1.0},
 		"rescue_required": 10,
 		"minions": 12,
 		"spawn_interval": 0.9,
@@ -52,6 +55,7 @@ const LEVELS := {
 	4: {
 		"name": "Two-Bridge Bypass",
 		"terrain": "level_004",
+		"beat": {"bpm": 92.0, "steps_per_beat": 2, "swing": 0.08, "walk_cycles_per_beat": 1.0},
 		"rescue_required": 10,
 		"minions": 12,
 		"spawn_interval": 0.9,

@@ -1,5 +1,6 @@
 extends Node2D
 
+const BeatConductorScene := preload("res://scripts/audio/beat_conductor.gd")
 const WORLD_WIDTH := 2400.0
 const VIEWPORT_WIDTH := 1280.0
 const CAMERA_PAN_SPEED := 520.0
@@ -9,8 +10,13 @@ const CAMERA_PAN_SPEED := 520.0
 @onready var sfx: Node = $SfxPlayer
 @onready var camera: Camera2D = $Camera2D
 
+var beat_conductor: BeatConductor
+
 func _ready() -> void:
 	print("Minions Must March: GameRoot ready")
+	_setup_beat_conductor()
+	if sfx.has_method("start_music"):
+		sfx.start_music(LevelState.config().get("beat", {}))
 	camera.position.x = VIEWPORT_WIDTH / 2.0
 	camera.limit_left = 0
 	camera.limit_right = int(WORLD_WIDTH)
@@ -23,6 +29,13 @@ func _ready() -> void:
 	game_ui.job_selected.connect(_on_job_selected)
 	game_ui.update_stats(level_controller.get_stats())
 	_maybe_capture_screenshot()
+
+func _setup_beat_conductor() -> void:
+	beat_conductor = BeatConductorScene.new()
+	beat_conductor.name = "BeatConductor"
+	beat_conductor.add_to_group("beat_conductor")
+	beat_conductor.configure(LevelState.config().get("beat", {}))
+	add_child(beat_conductor)
 
 func _process(delta: float) -> void:
 	_update_camera_pan(delta)

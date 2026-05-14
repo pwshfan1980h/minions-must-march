@@ -38,7 +38,7 @@ func update_stats(stats: Dictionary) -> void:
 	blockers_remaining = stats.get("blockers", 0)
 	builders_remaining = stats.get("builders", 0)
 
-	mission_label.text = "BONE BRIDGE"
+	mission_label.text = String(stats.get("level_name", "Bone Bridge")).to_upper()
 	goal_label.text = "☠ %s   ✦ %s" % [stats.get("goal_text", "Save the march"), stats.get("bonus_text", "Bonus: save more, waste less")]
 	score_label.text = "SCORE\n%04d" % stats.get("score", 0)
 	stats_label.text = "SPN %d/%d   ACT %d   SAV %d/%d   LOST %d" % [

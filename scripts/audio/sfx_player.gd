@@ -27,11 +27,13 @@ var _music_player: AudioStreamPlayer
 
 func _ready() -> void:
 	_rng.randomize()
-	_start_music()
 
-func _start_music() -> void:
+func start_music(_config := {}) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
+	if _music_player != null and is_instance_valid(_music_player):
+		_music_player.stop()
+		_music_player.queue_free()
 	_music_player = AudioStreamPlayer.new()
 	var stream := AudioStreamWAV.load_from_file(MUSIC_PATH)
 	if stream == null:

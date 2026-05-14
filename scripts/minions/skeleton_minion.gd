@@ -97,6 +97,7 @@ var _visual_redraw_requested := false
 var _is_on_screen := true
 var _blocker_check_timer := 0.0
 var _blocker_ahead_cached := false
+var _beat_conductor: BeatConductor
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var click_area: Area2D = $ClickArea
@@ -105,6 +106,7 @@ var _blocker_ahead_cached := false
 
 func _ready() -> void:
 	add_to_group("minions")
+	_beat_conductor = get_tree().get_first_node_in_group("beat_conductor") as BeatConductor
 	input_pickable = false
 	if click_area != null:
 		click_area.input_event.connect(_on_click_area_input_event)
@@ -151,7 +153,13 @@ func _physics_process(delta: float) -> void:
 	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
 	velocity.x = 0.0 if is_blocker or is_builder else WALK_SPEED * direction
 	if is_on_floor() and not is_blocker and not is_builder:
-		_walk_time += delta * 8.8 * _stride_variant
+		if _beat_conductor != null and is_instance_valid(_beat_conductor):
+			# Movement speed remains deterministic and level-authored; only the
+			# drawn gait phase snaps to the spooky march beat so puzzle timing is
+			# unchanged while the crowd visually steps together.
+			_walk_time = _beat_conductor.walk_cycle_radians()
+		else:
+			_walk_time += delta * 8.8 * _stride_variant
 		var anim_frame := int(_walk_time * WALK_ANIM_FPS)
 		if anim_frame != _last_anim_frame:
 			_last_anim_frame = anim_frame
