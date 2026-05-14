@@ -34,9 +34,11 @@ def test_startup_skips_title_and_portal_gate() -> None:
 def test_hud_is_compact_and_no_long_startup_copy() -> None:
     scene = read("scenes/ui/GameUI.tscn")
     ui = read("scripts/ui/game_ui.gd")
-    require("offset_bottom = 74.0" in scene, "HUD job bar should be compact")
+    require("offset_bottom = 58.0" in scene, "status panel should be very compact")
+    require("[node name=\"SkillDock\" type=\"Panel\" parent=\".\"]" in scene, "skeleton skills should live in their own level dock")
+    require("parent=\"SkillDock\"" in scene, "action buttons should be parented to the in-level skill dock")
     require("Click the portal" not in scene + ui, "HUD should not tell player to click the portal")
-    require("Pick a tool, then click an eligible skeleton" in scene + ui, "HUD should use direct play instruction")
+    require("Pick a skeleton skill" in scene + ui, "HUD should name the skeleton skill dock")
 
 
 def test_river_has_bubbles_hands_and_pop_animation() -> None:
@@ -47,11 +49,14 @@ def test_river_has_bubbles_hands_and_pop_animation() -> None:
 
 def test_audio_feedback_assets_and_hooks_exist() -> None:
     sfx = read("scripts/audio/sfx_player.gd")
+    game_root = read("scripts/core/game_root.gd")
     minions = read("scripts/minions/minion_root.gd")
     skeleton = read("scripts/minions/skeleton_minion.gd")
-    for sound_id in ["command_clatter", "death_yelp_tall", "death_yelp_wiry", "death_yelp_stocky", "death_knell"]:
+    for sound_id in ["march_step", "command_clatter", "death_yelp_tall", "death_yelp_wiry", "death_yelp_stocky", "death_knell"]:
         require(sound_id in sfx, f"SfxPlayer missing stream {sound_id}")
         require((ROOT / f"assets/audio/generated/{sound_id}.wav").exists(), f"missing generated wav for {sound_id}")
+    require("play_march_step" in sfx and "step_crossed.connect(sfx.play_march_step)" in game_root, "beat conductor should drive audible aggregate march steps")
+    require("beat_marching" in skeleton and "stride *= 1.28" in skeleton, "beat-synced walk should be visually exaggerated")
     require("death_voice_id" in skeleton, "skeleton should expose body-height voice variant")
     require("death_voice_id()" in minions and "death_knell" in minions, "minion root should emit death yelp + knell")
     require(minions.count('sfx_requested.emit("command_clatter")') >= 2, "builder/blocker commands should both clatter")

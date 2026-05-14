@@ -17,6 +17,8 @@ func _ready() -> void:
 	_setup_beat_conductor()
 	if sfx.has_method("start_music"):
 		sfx.start_music(LevelState.config().get("beat", {}))
+	if sfx.has_method("play_march_step"):
+		beat_conductor.step_crossed.connect(sfx.play_march_step)
 	camera.position.x = VIEWPORT_WIDTH / 2.0
 	camera.limit_left = 0
 	camera.limit_right = int(WORLD_WIDTH)

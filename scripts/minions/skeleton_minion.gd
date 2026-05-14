@@ -480,7 +480,13 @@ func _draw() -> void:
 	var airborne_motion := _is_tumbling or (not alive and not rescued)
 	var fall_phase := _air_time * 9.5 + float(get_instance_id()) * 0.01
 	var vault_progress := 1.0 - clampf(_vault_anim_time / VAULT_ANIM_SECONDS, 0.0, 1.0)
+	var beat_marching := _beat_conductor != null and is_instance_valid(_beat_conductor) and not airborne_motion and not is_blocker and not is_builder
 	var stride := sin(fall_phase) * 0.55 if airborne_motion else 0.0 if is_blocker or is_builder else sin(_walk_time)
+	if beat_marching:
+		# Exaggerate only the drawn gait, not WALK_SPEED/collision. The conductor
+		# should read as a spooky stomp: bigger leg separation, deeper bob, harder
+		# shoulder nods on the aggregate march beat.
+		stride *= 1.28
 	if _vault_anim_time > 0.0 and not is_blocker and not is_builder:
 		stride = sin(vault_progress * PI * 1.35) * 0.88
 	var leg_front_phase := stride
@@ -488,9 +494,10 @@ func _draw() -> void:
 	var front_lift := maxf(0.0, leg_front_phase)
 	var back_lift := maxf(0.0, leg_back_phase)
 	var vault_bob := -sin(vault_progress * PI) * 5.2 if _vault_anim_time > 0.0 else 0.0
-	var bob := 0.0 if is_blocker or is_builder else absf(stride) * (0.55 if airborne_motion else 1.05) * _bob_scale
+	var bob_scale := 1.55 if beat_marching else 1.05
+	var bob := 0.0 if is_blocker or is_builder else absf(stride) * (0.55 if airborne_motion else bob_scale) * _bob_scale
 	bob += vault_bob
-	var lean := face * (2.8 + _spine_variant * 7.0 + (0.45 * absf(stride) if not is_blocker else -1.0))
+	var lean := face * (2.8 + _spine_variant * 7.0 + ((0.95 if beat_marching else 0.45) * absf(stride) if not is_blocker else -1.0))
 	if airborne_motion:
 		lean += sin(fall_phase * 0.74) * 5.0
 	var h := _height_variant
@@ -542,6 +549,8 @@ func _draw() -> void:
 		var phase_front := fposmod(_walk_time / TAU, 1.0)
 		var phase_back := fposmod(phase_front + 0.5, 1.0)
 		var cycle_speed := 8.8 * _stride_variant
+		if beat_marching:
+			cycle_speed = TAU / _beat_conductor.seconds_per_beat()
 		var stance_slide := WALK_SPEED * STANCE_FRACTION * TAU / cycle_speed
 		var pose_front := _walk_leg_pose(phase_front, hip_front, face, h, stance_slide)
 		var pose_back := _walk_leg_pose(phase_back, hip_back, face, h, stance_slide)
