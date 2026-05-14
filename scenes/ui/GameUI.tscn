@@ -8,59 +8,59 @@ script = ExtResource("1")
 [node name="JobBar" type="Panel" parent="."]
 offsets_preset = 10
 anchor_right = 1.0
-offset_bottom = 104.0
+offset_bottom = 74.0
 
 [node name="MissionLabel" type="Label" parent="JobBar"]
 offset_left = 16.0
-offset_top = 7.0
-offset_right = 250.0
-offset_bottom = 35.0
+offset_top = 5.0
+offset_right = 300.0
+offset_bottom = 28.0
 text = "BONE BRIDGE"
 
 [node name="GoalLabel" type="Label" parent="JobBar"]
 offset_left = 16.0
-offset_top = 38.0
-offset_right = 600.0
-offset_bottom = 61.0
+offset_top = 30.0
+offset_right = 570.0
+offset_bottom = 51.0
 text = "☠ Save 1 skeleton   ✦ Bonus: save more, waste less"
 
 [node name="StatsLabel" type="Label" parent="JobBar"]
 offset_left = 16.0
-offset_top = 68.0
+offset_top = 52.0
 offset_right = 620.0
-offset_bottom = 95.0
+offset_bottom = 72.0
 text = "SPN 0/1   ACT 0   SAV 0/1   LOST 0"
 
 [node name="HintLabel" type="Label" parent="JobBar"]
-offset_left = 644.0
-offset_top = 64.0
+offset_left = 530.0
+offset_top = 42.0
 offset_right = 1052.0
-offset_bottom = 96.0
+offset_bottom = 72.0
 autowrap_mode = 3
-text = "Click the portal, pick a tool, then click an eligible skeleton."
+text = "Pick a tool, then click an eligible skeleton."
 
 [node name="ScoreLabel" type="Label" parent="JobBar"]
-offset_left = 632.0
-offset_top = 10.0
-offset_right = 750.0
-offset_bottom = 58.0
+offset_left = 580.0
+offset_top = 6.0
+offset_right = 700.0
+offset_bottom = 38.0
 horizontal_alignment = 1
 text = "SCORE\n0000"
 
 [node name="BlockerButton" type="Button" parent="JobBar"]
 offset_left = 1064.0
-offset_top = 10.0
+offset_top = 6.0
 offset_right = 1154.0
-offset_bottom = 94.0
+offset_bottom = 70.0
 focus_mode = 0
 disabled = true
 text = "1\n⛔\nx0"
 
 [node name="BuilderButton" type="Button" parent="JobBar"]
 offset_left = 1168.0
-offset_top = 10.0
+offset_top = 6.0
 offset_right = 1258.0
-offset_bottom = 94.0
+offset_bottom = 70.0
 focus_mode = 0
 text = "2\n🦴\nx1"
 
@@ -81,7 +81,7 @@ text = "CRYPT CLEARED"
 [node name="PerfLabel" type="Label" parent="."]
 visible = false
 offset_left = 16.0
-offset_top = 116.0
+offset_top = 82.0
 offset_right = 420.0
-offset_bottom = 144.0
+offset_bottom = 110.0
 text = "FPS 0   ACT 0   SPN 0/0   NODES 0"

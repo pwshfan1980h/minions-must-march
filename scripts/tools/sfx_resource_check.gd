@@ -2,6 +2,11 @@ extends SceneTree
 
 const SOUND_PATHS := [
 	"res://assets/audio/generated/bone_clack.wav",
+	"res://assets/audio/generated/command_clatter.wav",
+	"res://assets/audio/generated/death_yelp_tall.wav",
+	"res://assets/audio/generated/death_yelp_wiry.wav",
+	"res://assets/audio/generated/death_yelp_stocky.wav",
+	"res://assets/audio/generated/death_knell.wav",
 	"res://assets/audio/imported/death_bone_rattle.wav",
 	"res://assets/audio/imported/styx_soup_impact.wav",
 	"res://assets/audio/generated/blocker_brace.wav",

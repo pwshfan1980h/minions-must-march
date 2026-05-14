@@ -14,11 +14,14 @@ var _time := 0.0
 var _redraw_elapsed := 0.0
 var _soul_specs: Array[Dictionary] = []
 var _hand_specs: Array[Dictionary] = []
+var _bubble_specs: Array[Dictionary] = []
+var _bubble_pops: Array[Dictionary] = []
 var _crumbling_sections: Array[Dictionary] = []
 
 func _ready() -> void:
 	_build_souls()
 	_build_hands()
+	_build_bubbles()
 	var terrain_id: String = LevelState.config().get("terrain", "level_001")
 	match terrain_id:
 		"level_001": _build_level_001_terrain()
@@ -35,6 +38,7 @@ func _process(delta: float) -> void:
 	if _redraw_elapsed >= 1.0 / TERRAIN_REDRAW_FPS:
 		_redraw_elapsed = 0.0
 		queue_redraw()
+	_tick_bubble_pops()
 	_tick_crumbling_sections()
 
 func _build_level_001_terrain() -> void:
@@ -472,6 +476,32 @@ func _build_hands() -> void:
 	for spec in hand_data:
 		_hand_specs.append(spec)
 
+func _build_bubbles() -> void:
+	_bubble_specs.clear()
+	for i in 22:
+		_bubble_specs.append({
+			"x": 52.0 + fposmod(float(i) * 137.0, WORLD_WIDTH - 104.0),
+			"phase": float(i) * 0.071,
+			"speed": 0.055 + float(i % 5) * 0.012,
+			"rise": 46.0 + float((i * 11) % 64),
+			"size": 2.0 + float((i * 7) % 9) * 0.42,
+			"sway": 8.0 + float((i * 3) % 13),
+		})
+
+func _tick_bubble_pops() -> void:
+	for spec in _bubble_specs:
+		var cycle := fposmod(_time * float(spec["speed"]) + float(spec["phase"]), 1.0)
+		var last_cycle := fposmod((_time - 1.0 / TERRAIN_REDRAW_FPS) * float(spec["speed"]) + float(spec["phase"]), 1.0)
+		if cycle < last_cycle:
+			_bubble_pops.append({
+				"pos": Vector2(float(spec["x"]), STYX_WATERLINE_Y + 4.0),
+				"born": _time,
+				"size": float(spec["size"]),
+			})
+	for i in range(_bubble_pops.size() - 1, -1, -1):
+		if _time - float(_bubble_pops[i]["born"]) > 0.46:
+			_bubble_pops.remove_at(i)
+
 func _draw() -> void:
 	_draw_crypt_gradient()
 	_draw_distant_underworld_background()
@@ -719,6 +749,7 @@ func _draw_styx_water() -> void:
 	draw_rect(rect, Color(0.030, 0.018, 0.014, 1.0))
 	_draw_styx_surface_skin()
 	_draw_styx_currents()
+	_draw_styx_bubbles()
 	_draw_styx_hands()
 
 	for soul in _soul_specs:
@@ -768,6 +799,32 @@ func _draw_styx_currents() -> void:
 			Vector2(x + 2.0, y + 6.0),
 		])
 		draw_polyline(eddy, Color(0.53, 0.43, 0.22, 0.070), 1.4, true)
+
+func _draw_styx_bubbles() -> void:
+	for spec in _bubble_specs:
+		var cycle := fposmod(_time * float(spec["speed"]) + float(spec["phase"]), 1.0)
+		var lift := smoothstep(0.0, 1.0, cycle) * float(spec["rise"])
+		var pos := Vector2(
+			float(spec["x"]) + sin(_time * 1.8 + float(spec["phase"]) * 21.0) * float(spec["sway"]),
+			STYX_WATERLINE_Y + 72.0 - lift
+		)
+		var alpha := sin(cycle * PI) * 0.22
+		var size := float(spec["size"]) * lerpf(0.55, 1.15, cycle)
+		var rim := Color(0.68, 0.86, 0.62, alpha)
+		draw_circle(pos, size * 1.8, Color(0.15, 0.26, 0.17, alpha * 0.28))
+		draw_arc(pos, size, -0.4, PI * 1.36, 12, rim, 1.1, true)
+		draw_circle(pos + Vector2(-size * 0.28, -size * 0.24), maxf(0.7, size * 0.18), Color(0.92, 0.98, 0.76, alpha * 0.55))
+	for pop in _bubble_pops:
+		_draw_bubble_pop(pop)
+
+func _draw_bubble_pop(pop: Dictionary) -> void:
+	var age := clampf((_time - float(pop["born"])) / 0.46, 0.0, 1.0)
+	var pos: Vector2 = pop["pos"]
+	var radius := float(pop["size"]) * lerpf(1.1, 5.6, age)
+	var alpha := (1.0 - age) * 0.26
+	draw_arc(pos, radius, 0.0, TAU, 18, Color(0.82, 0.95, 0.62, alpha), 1.2, true)
+	draw_line(pos + Vector2(-radius * 0.7, 0), pos + Vector2(-radius * 1.15, -radius * 0.45), Color(0.82, 0.95, 0.62, alpha * 0.75), 1.0, true)
+	draw_line(pos + Vector2(radius * 0.6, -radius * 0.1), pos + Vector2(radius * 1.05, -radius * 0.55), Color(0.82, 0.95, 0.62, alpha * 0.75), 1.0, true)
 
 func _draw_styx_hands() -> void:
 	for hand in _hand_specs:

@@ -5,6 +5,11 @@ const MUSIC_PATH := "res://assets/audio/generated/crypt_march_loop.wav"
 
 const STREAMS := {
 	"bone_clack": preload("res://assets/audio/generated/bone_clack.wav"),
+	"command_clatter": preload("res://assets/audio/generated/command_clatter.wav"),
+	"death_yelp_tall": preload("res://assets/audio/generated/death_yelp_tall.wav"),
+	"death_yelp_wiry": preload("res://assets/audio/generated/death_yelp_wiry.wav"),
+	"death_yelp_stocky": preload("res://assets/audio/generated/death_yelp_stocky.wav"),
+	"death_knell": preload("res://assets/audio/generated/death_knell.wav"),
 	"bone_splash": preload("res://assets/audio/imported/death_bone_rattle.wav"),
 	"styx_impact": preload("res://assets/audio/imported/styx_soup_impact.wav"),
 	"blocker_brace": preload("res://assets/audio/generated/blocker_brace.wav"),
@@ -17,6 +22,11 @@ const STREAMS := {
 
 const VOLUME_OFFSETS_DB := {
 	"bone_splash": -7.5,
+	"command_clatter": -3.0,
+	"death_yelp_tall": -4.5,
+	"death_yelp_wiry": -5.0,
+	"death_yelp_stocky": -4.0,
+	"death_knell": -10.0,
 	"styx_impact": -9.0,
 	"exit_rescue": -5.5,
 }

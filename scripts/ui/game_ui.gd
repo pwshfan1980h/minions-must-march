@@ -105,12 +105,12 @@ func _build_hint_text(stats: Dictionary) -> String:
 	var debug_text := "  •  F3 hitbox ON" if stats.get("debug_click_areas", false) else "  •  F3 hitboxes"
 	debug_text += "  •  F4 perf ON" if _perf_overlay_enabled else "  •  F4 perf"
 	if selected_job == "builder" and builders_remaining > 0:
-		return "2 Bone: click a grounded skeleton near the gold mark. It builds from where it stands." + debug_text
+		return "2 Bone: click grounded skeleton by gold mark. R restarts." + debug_text
 	if builders_remaining <= 0:
-		return "Bridge spent. Let the boney bastards march into the uplight. R restarts." + debug_text
+		return "Bone spent. Keep marching to the uplight. R restarts." + debug_text
 	if selected_job == "blocker" and blockers_remaining > 0:
-		return "1 Block: brace a skeleton; click it again to release." + debug_text
-	return "Click the portal, pick a tool, then click an eligible skeleton. R restarts." + debug_text
+		return "1 Block: brace/release a skeleton. R restarts." + debug_text
+	return "Pick a tool, then click an eligible skeleton. R restarts." + debug_text
 
 func _update_job_buttons() -> void:
 	blocker_button.disabled = blockers_remaining <= 0

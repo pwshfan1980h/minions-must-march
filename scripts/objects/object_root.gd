@@ -13,7 +13,7 @@ var exit_position := Vector2.ZERO
 var _time := 0.0
 var _redraw_elapsed := 0.0
 var _mote_specs: Array[Dictionary] = []
-var _spawn_portal_waiting := true
+var _spawn_portal_waiting := false
 var _spawn_portal_voom := 0.0
 var _spawn_portal_area: Area2D
 
@@ -47,7 +47,7 @@ func _add_spawn_portal() -> void:
 	_spawn_portal_area.position = spawn_portal_pos
 	_spawn_portal_area.collision_layer = 4
 	_spawn_portal_area.collision_mask = 0
-	_spawn_portal_area.input_pickable = true
+	_spawn_portal_area.input_pickable = _spawn_portal_waiting
 	_spawn_portal_area.monitoring = false
 	_spawn_portal_area.monitorable = false
 	_spawn_portal_area.input_event.connect(_on_spawn_portal_input_event)
@@ -57,6 +57,7 @@ func _add_spawn_portal() -> void:
 	var rect := RectangleShape2D.new()
 	rect.size = Vector2(96, 112)
 	shape.shape = rect
+	shape.disabled = not _spawn_portal_waiting
 	_spawn_portal_area.add_child(shape)
 
 func _on_spawn_portal_input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> void:
@@ -121,11 +122,11 @@ func _draw() -> void:
 	_draw_exit_light(exit_position)
 
 func _draw_spawn_portal() -> void:
-	if not _spawn_portal_waiting and _spawn_portal_voom <= 0.0:
-		return
+	# The portal is now decorative only: minions march immediately when the level
+	# loads, but keeping the green crypt gate grounds the spawn point visually.
 	var pulse := 0.5 + sin(_time * 3.6) * 0.5
 	var voom := _spawn_portal_voom
-	var alpha := clampf(1.0 if _spawn_portal_waiting else voom, 0.0, 1.0)
+	var alpha := clampf(1.0 if _spawn_portal_waiting else 0.72 + pulse * 0.10 + voom * 0.18, 0.0, 1.0)
 	var squash := Vector2(1.0 + voom * 0.85, 1.0 - voom * 0.55)
 	var pos := spawn_portal_pos + Vector2(voom * 34.0, -voom * 8.0)
 	draw_set_transform(pos, voom * 0.45, squash)

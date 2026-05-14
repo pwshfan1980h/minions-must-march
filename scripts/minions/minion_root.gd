@@ -14,7 +14,7 @@ const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
 @export var spawn_direction := 1.0
 @export var blockers_available := 0
 @export var builders_available := 1
-@export var wait_for_start := true
+@export var wait_for_start := false
 
 var selected_job := "builder"
 var spawned_count := 0
@@ -107,6 +107,11 @@ func _on_minion_exited(minion: Node) -> void:
 	minion_rescued.emit(minion)
 
 func _on_minion_death_started(_minion: Node, death_kind: String) -> void:
+	if _minion.has_method("death_voice_id"):
+		sfx_requested.emit(_minion.death_voice_id())
+	else:
+		sfx_requested.emit("death_yelp_wiry")
+	sfx_requested.emit("death_knell")
 	if death_kind == "styx_water":
 		sfx_requested.emit("styx_impact")
 	sfx_requested.emit("bone_splash")
@@ -144,6 +149,7 @@ func _on_minion_clicked(minion: Node) -> void:
 		return
 	if minion.become_blocker():
 		blockers_remaining -= 1
+		sfx_requested.emit("command_clatter")
 		sfx_requested.emit("bone_clack")
 		sfx_requested.emit("blocker_brace")
 		minion_spawned.emit(minion)
@@ -153,6 +159,7 @@ func _try_assign_builder(minion: Node) -> void:
 	if builders_remaining <= 0 or not minion.has_method("can_become_builder") or not minion.can_become_builder():
 		return
 	builders_remaining -= 1
+	sfx_requested.emit("command_clatter")
 	sfx_requested.emit("bone_clack")
 	minion_spawned.emit(minion)
 	_run_builder_sequence(minion)

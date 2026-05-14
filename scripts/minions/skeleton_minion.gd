@@ -248,6 +248,15 @@ func play_builder_build_pulse(duration := BUILDER_PULSE_SECONDS) -> void:
 	_builder_pulse_time = duration
 	_request_visual_redraw(true)
 
+func death_voice_id() -> String:
+	match _body_type:
+		"tall":
+			return "death_yelp_tall"
+		"stocky":
+			return "death_yelp_stocky"
+		_:
+			return "death_yelp_wiry"
+
 func become_blocker() -> bool:
 	if not alive or rescued or is_blocker or not is_on_floor():
 		return false
