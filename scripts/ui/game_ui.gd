@@ -127,13 +127,24 @@ func _populate_chamber_map() -> void:
 		var button := Button.new()
 		button.name = "LevelButton%02d" % n
 		button.focus_mode = Control.FOCUS_NONE
+		button.clip_text = true
+		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		button.custom_minimum_size = Vector2(0.0, 26.0)
 		var current := "▶" if n == int(_last_stats.get("level_number", LevelState.current_level)) else " "
 		var node := "◆" if biome == "ash_catacombs" else "●"
-		button.text = "%s %s─ L%02d  %s" % [current, node, n, String(cfg.get("name", "Chamber"))]
+		button.text = "%s%s L%02d %s" % [current, node, n, _campaign_button_name(String(cfg.get("name", "Chamber")))]
 		button.tooltip_text = "Campaign stop: %s\n%s" % [biome, String(cfg.get("hint", ""))]
 		button.pressed.connect(func() -> void: level_selected.emit(n))
 		level_button_container.add_child(button)
 	campaign_track_label.text = "──".join(track_nodes) + "   CAMPAIGN ROAD"
+
+func _campaign_button_name(level_name: String) -> String:
+	# Keep campaign map names inside the visual box; full names remain in tooltips
+	# and the mission header. Text overrun is still enabled as a second guard.
+	const MAX_CAMPAIGN_NAME_CHARS := 18
+	if level_name.length() <= MAX_CAMPAIGN_NAME_CHARS:
+		return level_name
+	return level_name.substr(0, MAX_CAMPAIGN_NAME_CHARS - 1).rstrip(" ") + "…"
 
 func show_level_finished(success: bool, stats: Dictionary) -> void:
 	result_label.show()

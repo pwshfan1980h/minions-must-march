@@ -63,6 +63,17 @@ These levels use only Portal Start, Blocker, Builder, Styx, and Crumbler.
 
 ## Feature Roadmap
 
+### Audio/SFX backlog: find better sounds
+
+**Objective:** Replace the current placeholder/generated command and death sounds with stronger, weirder underworld audio. Keep discrete feedback for commands, rescues, deaths, crumbling terrain, water impacts, and future Digger/Tunneler actions, but avoid bringing back a global march/music loop unless it is ambient and non-metronomic.
+
+**Tasks:**
+
+1. Audition better licensed/public-domain SFX packs or generate a new cohesive palette for bone clatter, tiny death voices, Styx splashes, crumble ticks, portal/uplight shimmer, and distant underworld ambience.
+2. Normalize loudness and trim silence so repeated commands do not become harsh.
+3. Keep per-event sounds short and readable; use ambient loops only as low-volume texture.
+4. Update `scripts/audio/sfx_player.gd`, `assets/audio/generated/`, and `scripts/tools/sfx_resource_check.gd` together.
+
 ### Feature 0: Async skeleton gait (was: spooky beat conductor) ❌ reverted
 
 **Objective:** Skeleton crowd reads as a loose, asynchronous shuffle. No global metronome, no background music loop.

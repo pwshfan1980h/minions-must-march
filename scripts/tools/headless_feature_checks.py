@@ -56,6 +56,8 @@ def test_chamber_map_objective_and_event_log_ui() -> None:
     require("static func all_levels" in state, "LevelState should expose level list data for chamber buttons")
     require("objective_summary" in ui and "Skills:" in ui, "objective panel should summarize rescue target and available skills")
     require("Campaign stop:" in ui and "CAMPAIGN ROAD" in ui, "chamber map should present levels as a campaign track map")
+    require("clip_contents = true" in scene and "clip_text = true" in ui, "campaign map level names should be clipped inside the panel")
+    require("_campaign_button_name" in ui and "OVERRUN_TRIM_ELLIPSIS" in ui, "campaign buttons should shorten long level names safely")
 
 
 def test_selected_skill_affordance_and_builder_preview() -> None:
@@ -66,6 +68,7 @@ def test_selected_skill_affordance_and_builder_preview() -> None:
         require(token in minions + skeleton, f"selected skill targeting affordance missing {token}")
     require("_draw_target_affordance" in skeleton and "_target_affordance_job" in skeleton, "SkeletonMinion should draw a skill-specific targeting halo")
     require("_draw_builder_preview_ghost" in skeleton and "BuilderPreviewGhost" in skeleton, "Builder affordance should include ghost rib preview lines")
+    require('if _target_affordance_job == "builder" and _target_affordance_valid and _target_hovered' in skeleton, "Builder ghost/shadowlines should appear only on hover before click commits")
     require("mouse_entered" in skeleton and "_target_hovered" in skeleton, "target affordance should brighten on hover")
     require("InvalidTargetFlash" in skeleton and "flash_invalid_target" in skeleton, "invalid clicks should flash visible feedback")
 
@@ -125,7 +128,7 @@ def test_platforms_are_jagged_and_emit_motes() -> None:
 
 def test_levels_have_extra_hellish_atmosphere() -> None:
     terrain = read("scripts/terrain/terrain_root.gd")
-    for token in ["InfernalEmbers", "_draw_blood_moon", "_draw_lavafalls", "_draw_bone_spike_ridge", "_draw_infernal_embers"]:
+    for token in ["InfernalEmbers", "_draw_blood_moon", "_draw_lavafalls", "_draw_bone_spike_ridge", "_draw_infernal_embers", "MonsterFlockSilhouettes", "_build_monster_flocks", "_draw_monster_flocks", "_draw_monster_boid", "red/purple hell-horizon"]:
         require(token in terrain, f"hellish atmospheric layer missing {token}")
     require("visual-only" in terrain and "puzzle geometry less readable" in terrain, "hellish polish must document that it does not alter collision")
 

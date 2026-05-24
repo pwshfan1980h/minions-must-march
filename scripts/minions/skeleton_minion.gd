@@ -715,7 +715,7 @@ func _draw_target_affordance() -> void:
 	var width := 2.6 if _target_hovered else 1.5
 	draw_arc(Vector2(0, -9), 20.0, 0.0, TAU, 28, color, width)
 	draw_line(Vector2(-12, -36), Vector2(12, -36), color, width, true)
-	if _target_affordance_job == "builder" and _target_affordance_valid:
+	if _target_affordance_job == "builder" and _target_affordance_valid and _target_hovered:
 		_draw_builder_preview_ghost(color)
 	elif _target_affordance_job == "featherfall" and _target_affordance_valid:
 		var feather := Color(0.72, 0.92, 1.0, 0.28 if not _target_hovered else 0.48)

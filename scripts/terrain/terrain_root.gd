@@ -20,12 +20,14 @@ var _bubble_pops: Array[Dictionary] = []
 var _crumbling_sections: Array[Dictionary] = []
 var _platform_ash_specs: Array[Dictionary] = []
 var _ember_specs: Array[Dictionary] = []
+var _monster_flock_specs: Array[Dictionary] = []
 
 func _ready() -> void:
 	_build_souls()
 	_build_hands()
 	_build_bubbles()
 	_build_embers()
+	_build_monster_flocks()
 	var terrain_id: String = LevelState.config().get("terrain", "level_001")
 	match terrain_id:
 		"level_001": _build_level_001_terrain()
@@ -739,14 +741,14 @@ func _draw_crypt_gradient() -> void:
 	draw_circle(Vector2(640, STYX_WATERLINE_Y + 30.0), 420, Color(0.09, 0.19, 0.17, 0.045))
 
 func _draw_distant_underworld_background() -> void:
-	# Single coherent atmospheric pass: a low-contrast crimson dawn band
-	# bleeding into the crypt gradient, a far horizon of jagged crypt towers,
-	# a tighter tree silhouette layer, and a few breathing lantern flames.
+	# Single coherent atmospheric pass: a reddish-purple underworld horizon,
+	# jagged crypt towers, gnarly monster silhouette flocks, and breathing lights.
 	# Designed to read as ONE distant skyline, not a stack of competing motifs.
 	_draw_horizon_haze()
 	_draw_blood_moon()
 	_draw_lavafalls()
 	_draw_far_skyline()
+	_draw_monster_flocks()
 	_draw_near_tree_line()
 	_draw_bone_spike_ridge()
 	_draw_horizon_lanterns()
@@ -767,18 +769,79 @@ func _build_embers() -> void:
 			"size": 1.1 + float((i * 5) % 8) * 0.28,
 		})
 
+func _build_monster_flocks() -> void:
+	# MonsterFlockSilhouettes: deterministic boid-like groups of distant things.
+	# They are visual-only skyline shadows; no collision, no gameplay targeting.
+	_monster_flock_specs.clear()
+	for flock_index in 5:
+		var boids: Array[Dictionary] = []
+		var base_x := 220.0 + float(flock_index) * 410.0
+		var base_y := 150.0 + float((flock_index * 37) % 95)
+		var count := 7 + (flock_index % 4)
+		for i in count:
+			boids.append({
+				"offset": Vector2(float((i * 47) % 118) - 59.0, float((i * 31) % 62) - 31.0),
+				"phase": float(flock_index) * 0.71 + float(i) * 0.43,
+				"scale": 0.72 + float((i * 5 + flock_index) % 6) * 0.12,
+				"kind": (i + flock_index) % 3,
+			})
+		_monster_flock_specs.append({
+			"base": Vector2(base_x, base_y),
+			"speed": 8.0 + float(flock_index) * 2.6,
+			"depth": 0.36 + float(flock_index % 3) * 0.07,
+			"boids": boids,
+		})
+
 func _draw_horizon_haze() -> void:
-	# Soft crimson-to-dark gradient band, kept low-saturation so the playable
-	# layer always has more visual weight.
-	for i in 22:
-		var t := float(i) / 21.0
+	# Stronger red/purple hell-horizon, still behind the playable layer.
+	for i in 30:
+		var t := float(i) / 29.0
 		var color := Color(
-			0.085 + t * 0.040,
-			0.022 + t * 0.014,
-			0.032 + t * 0.020,
-			0.20 - t * 0.080
+			0.18 - t * 0.08,
+			0.028 + t * 0.018,
+			0.105 + t * 0.070,
+			0.30 - t * 0.105
 		)
-		draw_rect(Rect2(0, 80.0 + i * 11.5, WORLD_WIDTH, 13.0), color)
+		draw_rect(Rect2(0, 66.0 + i * 10.4, WORLD_WIDTH, 12.0), color)
+	for i in 7:
+		var x := 120.0 + float(i) * 350.0
+		var pulse := 0.72 + 0.28 * sin(_time * 0.18 + float(i) * 1.4)
+		draw_circle(Vector2(x, 315.0 + sin(float(i)) * 22.0), 190.0, Color(0.58, 0.055, 0.11, 0.045 * pulse))
+		draw_circle(Vector2(x + 72.0, 285.0), 155.0, Color(0.31, 0.09, 0.48, 0.040 * pulse))
+
+func _draw_monster_flocks() -> void:
+	for flock in _monster_flock_specs:
+		var base: Vector2 = flock["base"]
+		var speed: float = float(flock["speed"])
+		var depth: float = float(flock["depth"])
+		var drift := fposmod(_time * speed + base.x, WORLD_WIDTH + 260.0) - 130.0
+		var flock_center := Vector2(drift, base.y + sin(_time * 0.55 + base.x * 0.01) * 15.0)
+		var color := Color(0.006, 0.004, 0.011, 0.44 * depth)
+		for boid in flock["boids"]:
+			var offset: Vector2 = boid["offset"]
+			var phase: float = float(boid["phase"])
+			var scale: float = float(boid["scale"])
+			var kind: int = int(boid["kind"])
+			var pos := flock_center + offset + Vector2(sin(_time * 1.4 + phase) * 9.0, cos(_time * 1.1 + phase) * 6.0)
+			_draw_monster_boid(pos, scale, kind, color)
+
+func _draw_monster_boid(pos: Vector2, scale: float, kind: int, color: Color) -> void:
+	var wing := 13.0 * scale * (0.72 + 0.28 * sin(_time * 4.2 + pos.x * 0.03))
+	var body := 5.0 * scale
+	if kind == 0:
+		# Two simple convex wing triangles plus a body dot; avoids self-intersecting
+		# polygons while still reading as a gnarly flock silhouette.
+		draw_colored_polygon(PackedVector2Array([pos + Vector2(-wing, 0), pos + Vector2(-body, -body), pos + Vector2(0, body * 0.35)]), color)
+		draw_colored_polygon(PackedVector2Array([pos + Vector2(wing, 0), pos + Vector2(body, -body), pos + Vector2(0, body * 0.35)]), color)
+		draw_circle(pos + Vector2(0, -body * 0.28), body * 0.55, color)
+	elif kind == 1:
+		draw_colored_polygon(PackedVector2Array([pos + Vector2(-wing * 0.8, body * 0.2), pos + Vector2(-body * 0.5, -body * 1.5), pos + Vector2(body * 0.15, -body * 0.15)]), color)
+		draw_colored_polygon(PackedVector2Array([pos + Vector2(body * 0.15, -body * 0.15), pos + Vector2(wing * 0.9, -body * 0.35), pos + Vector2(body * 0.55, body)]), color)
+		draw_line(pos + Vector2(-body * 0.45, body * 0.7), pos + Vector2(body * 0.85, body * 0.35), color, 1.3 * scale, true)
+	else:
+		draw_circle(pos, body * 0.85, color)
+		draw_line(pos + Vector2(-wing, -body * 0.4), pos + Vector2(wing, body * 0.25), color, 2.2 * scale, true)
+		draw_line(pos + Vector2(-body, body * 0.9), pos + Vector2(body * 1.4, -body * 1.1), color, 1.6 * scale, true)
 
 func _draw_blood_moon() -> void:
 	var pos := Vector2(1820.0, 154.0)
@@ -1169,3 +1232,4 @@ func _draw_soft_ellipse(rect: Rect2, color: Color) -> void:
 		var angle := TAU * float(i) / 28.0
 		points.append(center + Vector2(cos(angle) * radius.x, sin(angle) * radius.y))
 	draw_colored_polygon(points, color)
+
