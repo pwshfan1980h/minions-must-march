@@ -51,9 +51,9 @@ text = "Pick a skeleton skill below, then click a skeleton."
 
 [node name="SkillDock" type="Panel" parent="."]
 offset_left = 22.0
-offset_top = 470.0
-offset_right = 224.0
-offset_bottom = 562.0
+offset_top = 70.0
+offset_right = 320.0
+offset_bottom = 162.0
 
 [node name="BlockerButton" type="Button" parent="SkillDock"]
 offset_left = 10.0
@@ -75,6 +75,17 @@ focus_mode = 0
 text = "2
 BUILD
 🦴 x1"
+
+[node name="DiggerButton" type="Button" parent="SkillDock"]
+offset_left = 202.0
+offset_top = 10.0
+offset_right = 288.0
+offset_bottom = 82.0
+focus_mode = 0
+disabled = true
+text = "3
+DIG
+⛏ x0"
 
 [node name="ResultLabel" type="Label" parent="."]
 anchors_preset = 8

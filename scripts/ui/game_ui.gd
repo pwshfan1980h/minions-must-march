@@ -12,12 +12,14 @@ signal job_selected(job_id: String)
 @onready var skill_dock: Panel = $SkillDock
 @onready var blocker_button: Button = $SkillDock/BlockerButton
 @onready var builder_button: Button = $SkillDock/BuilderButton
+@onready var digger_button: Button = $SkillDock/DiggerButton
 @onready var result_label: Label = $ResultLabel
 @onready var perf_label: Label = $PerfLabel
 
 var selected_job := "builder"
 var blockers_remaining := 0
 var builders_remaining := 0
+var diggers_remaining := 0
 var _last_stats: Dictionary = {}
 var _spooky_font: SystemFont
 var _perf_overlay_enabled := false
@@ -31,6 +33,7 @@ func _ready() -> void:
 	_apply_visual_style()
 	blocker_button.pressed.connect(_select_blocker)
 	builder_button.pressed.connect(_select_builder)
+	digger_button.pressed.connect(_select_digger)
 	_update_job_buttons()
 
 func update_stats(stats: Dictionary) -> void:
@@ -38,6 +41,7 @@ func update_stats(stats: Dictionary) -> void:
 	selected_job = stats.get("selected_job", selected_job)
 	blockers_remaining = stats.get("blockers", 0)
 	builders_remaining = stats.get("builders", 0)
+	diggers_remaining = stats.get("diggers", 0)
 
 	mission_label.text = String(stats.get("level_name", "Bone Bridge")).to_upper()
 	goal_label.text = "☠ %s" % stats.get("goal_text", "Save the march")
@@ -52,6 +56,7 @@ func update_stats(stats: Dictionary) -> void:
 
 	blocker_button.text = "1\nBLOCK\n⛔ x%d" % blockers_remaining
 	builder_button.text = "2\nBUILD\n🦴 x%d" % builders_remaining
+	digger_button.text = "3\nDIG\n⛏ x%d" % diggers_remaining
 	hint_label.text = _build_hint_text(stats)
 	_update_job_buttons()
 	_update_perf_overlay(true)
@@ -84,6 +89,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_select_blocker()
 		elif event.keycode == KEY_2:
 			_select_builder()
+		elif event.keycode == KEY_3:
+			_select_digger()
 		elif event.keycode == KEY_F4:
 			_toggle_perf_overlay()
 
@@ -101,22 +108,35 @@ func _select_builder() -> void:
 	_update_job_buttons()
 	job_selected.emit(selected_job)
 
+func _select_digger() -> void:
+	if diggers_remaining <= 0:
+		return
+	selected_job = "digger"
+	_update_job_buttons()
+	job_selected.emit(selected_job)
+
 func _build_hint_text(stats: Dictionary) -> String:
 	var debug_text := "  •  F3 hitbox ON" if stats.get("debug_click_areas", false) else "  •  F3 hitboxes"
 	debug_text += "  •  F4 perf ON" if _perf_overlay_enabled else "  •  F4 perf"
 	if selected_job == "builder" and builders_remaining > 0:
 		return "BUILD selected: click a grounded skeleton by the gold mark. R restarts." + debug_text
-	if builders_remaining <= 0:
-		return "Build bones spent. Keep marching to the uplight. R restarts." + debug_text
 	if selected_job == "blocker" and blockers_remaining > 0:
 		return "BLOCK selected: brace/release a skeleton. R restarts." + debug_text
+	if selected_job == "digger" and diggers_remaining > 0:
+		return "DIG selected: click a skeleton standing on cracked ash floor. R restarts." + debug_text
+	if builders_remaining <= 0 and diggers_remaining <= 0:
+		return "Bones and picks spent. Keep marching to the uplight. R restarts." + debug_text
+	if builders_remaining <= 0:
+		return "Build bones spent. Keep marching to the uplight. R restarts." + debug_text
 	return "Pick a skeleton skill from the level dock, then click a skeleton. R restarts." + debug_text
 
 func _update_job_buttons() -> void:
 	blocker_button.disabled = blockers_remaining <= 0
 	builder_button.disabled = builders_remaining <= 0
+	digger_button.disabled = diggers_remaining <= 0
 	_style_job_button(blocker_button, selected_job == "blocker", blocker_button.disabled)
 	_style_job_button(builder_button, selected_job == "builder", builder_button.disabled)
+	_style_job_button(digger_button, selected_job == "digger", digger_button.disabled)
 
 func _apply_visual_style() -> void:
 	job_bar.add_theme_stylebox_override("panel", _panel_box(Color(0.034, 0.027, 0.042, 0.86), Color(0.66, 0.53, 0.31, 0.48), 1, 10))
@@ -149,7 +169,7 @@ func _apply_visual_style() -> void:
 	perf_label.add_theme_constant_override("shadow_offset_x", 2)
 	perf_label.add_theme_constant_override("shadow_offset_y", 2)
 
-	for button in [blocker_button, builder_button]:
+	for button in [blocker_button, builder_button, digger_button]:
 		button.add_theme_font_override("font", _spooky_font)
 		button.add_theme_font_size_override("font_size", 15)
 		button.add_theme_color_override("font_disabled_color", Color(0.50, 0.47, 0.43, 0.9))

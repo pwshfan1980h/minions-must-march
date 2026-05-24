@@ -1,11 +1,8 @@
 extends Node
 class_name SfxPlayer
 
-const MUSIC_PATH := "res://assets/audio/generated/crypt_march_loop.wav"
-
 const STREAMS := {
 	"bone_clack": preload("res://assets/audio/generated/bone_clack.wav"),
-	"march_step": preload("res://assets/audio/generated/march_step.wav"),
 	"command_clatter": preload("res://assets/audio/generated/command_clatter.wav"),
 	"death_yelp_tall": preload("res://assets/audio/generated/death_yelp_tall.wav"),
 	"death_yelp_wiry": preload("res://assets/audio/generated/death_yelp_wiry.wav"),
@@ -22,7 +19,6 @@ const STREAMS := {
 }
 
 const VOLUME_OFFSETS_DB := {
-	"march_step": -8.0,
 	"bone_splash": -7.5,
 	"command_clatter": -3.0,
 	"death_yelp_tall": -4.5,
@@ -35,37 +31,11 @@ const VOLUME_OFFSETS_DB := {
 
 var _rng := RandomNumberGenerator.new()
 var _active_players: Array[AudioStreamPlayer] = []
-var _music_player: AudioStreamPlayer
 
 func _ready() -> void:
 	_rng.randomize()
 
-func start_music(_config := {}) -> void:
-	if DisplayServer.get_name() == "headless":
-		return
-	if _music_player != null and is_instance_valid(_music_player):
-		_music_player.stop()
-		_music_player.queue_free()
-	_music_player = AudioStreamPlayer.new()
-	var stream := AudioStreamWAV.load_from_file(MUSIC_PATH)
-	if stream == null:
-		push_warning("Music skipped: could not load %s" % MUSIC_PATH)
-		return
-	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-	_music_player.stream = stream
-	_music_player.volume_db = -12.0
-	add_child(_music_player)
-	_music_player.play()
-
-func play_march_step(step_index: int) -> void:
-	# One aggregate bone-stomp per conductor step. This makes the march beat
-	# audible without scaling SFX count by the number of skeletons on screen.
-	var accent_db := -2.0 if step_index % 2 == 0 else -5.0
-	play("march_step", accent_db, 0.015)
-
 func _exit_tree() -> void:
-	if _music_player != null and is_instance_valid(_music_player):
-		_music_player.stop()
 	for player in _active_players:
 		if is_instance_valid(player):
 			player.stop()

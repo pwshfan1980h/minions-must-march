@@ -60,6 +60,7 @@ func get_stats() -> Dictionary:
 		"lost": minion_root.lost_count,
 		"blockers": minion_root.blockers_remaining,
 		"builders": minion_root.builders_remaining,
+		"diggers": minion_root.diggers_remaining,
 		"selected_job": minion_root.selected_job,
 		"required": rescue_required,
 		"score": score,

@@ -13,7 +13,6 @@ const LEVELS := {
 	1: {
 		"name": "Bone Bridge",
 		"terrain": "level_001",
-		"beat": {"bpm": 92.0, "steps_per_beat": 2, "swing": 0.08, "walk_cycles_per_beat": 1.0},
 		"rescue_required": 10,
 		"minions": 12,
 		"spawn_interval": 0.9,
@@ -27,7 +26,6 @@ const LEVELS := {
 	2: {
 		"name": "The Crumblepath",
 		"terrain": "level_002",
-		"beat": {"bpm": 92.0, "steps_per_beat": 2, "swing": 0.08, "walk_cycles_per_beat": 1.0},
 		"rescue_required": 8,
 		"minions": 12,
 		"spawn_interval": 0.9,
@@ -41,7 +39,6 @@ const LEVELS := {
 	3: {
 		"name": "Turn, You Fools",
 		"terrain": "level_003",
-		"beat": {"bpm": 92.0, "steps_per_beat": 2, "swing": 0.08, "walk_cycles_per_beat": 1.0},
 		"rescue_required": 10,
 		"minions": 12,
 		"spawn_interval": 0.9,
@@ -55,7 +52,6 @@ const LEVELS := {
 	4: {
 		"name": "Two-Bridge Bypass",
 		"terrain": "level_004",
-		"beat": {"bpm": 92.0, "steps_per_beat": 2, "swing": 0.08, "walk_cycles_per_beat": 1.0},
 		"rescue_required": 10,
 		"minions": 12,
 		"spawn_interval": 0.9,
@@ -65,6 +61,34 @@ const LEVELS := {
 		"spawn_direction": 1,
 		"exit_position": Vector2(1180, 356),
 		"hint": "Two gaps. Pace your builder charges.",
+	},
+	5: {
+		"name": "Drop Crypt Detour",
+		"terrain": "level_005",
+		"rescue_required": 9,
+		"minions": 12,
+		"spawn_interval": 0.85,
+		"blockers": 2,
+		"builders": 1,
+		"spawn_position": Vector2(220, 324),
+		"spawn_direction": 1,
+		"exit_position": Vector2(1298, 472),
+		"hint": "The first fall is survivable. Catch the lower march, turn them, then bridge the last Styx cut.",
+	},
+	6: {
+		"name": "Bone Basement Shortcut",
+		"biome": "ash_catacombs",
+		"terrain": "level_006",
+		"rescue_required": 9,
+		"minions": 12,
+		"spawn_interval": 0.85,
+		"blockers": 1,
+		"builders": 0,
+		"diggers": 1,
+		"spawn_position": Vector2(220, 292),
+		"spawn_direction": 1,
+		"exit_position": Vector2(1180, 420),
+		"hint": "Ash Catacombs: DIG the cracked floor plug, drop into the bone basement, then march to the exit.",
 	},
 }
 

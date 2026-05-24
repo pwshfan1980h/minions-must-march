@@ -17,7 +17,7 @@ This file normalizes early puzzle design around reusable challenge atoms. The go
 | Styx Marsh | wet, haunted, rotten | black-brown, sickly green, bone white | first hazards, soup gaps, portals |
 | Crypt Forge | hot, industrial, infernal | ember orange, soot black, iron blue | builder-heavy levels, moving/metal future bits |
 | Soul Cavern | spectral, vertical, airy | teal, violet, ghost pale | uplifts, shafts, falling routes |
-| Ash Catacombs | dusty, brittle, tomb-like | ash gray, dried blood red, candle gold | dig/tunnel teaching, crumble floors |
+| Ash Catacombs | dusty, brittle, tomb-like | ash gray, dusty brown/black substrate, dried blood red, candle gold | first Digger biome; dig/tunnel teaching, crumble floors; avoid river-of-souls platform composition |
 | Bone Gardens | weird, organic, ossuary | ivory, moss green, muted purple | blockers, path pruning, creature-ish terrain |
 
 ## Challenge Atoms
@@ -78,9 +78,9 @@ This file normalizes early puzzle design around reusable challenge atoms. The go
 
 ### Crumbly Floor Dig
 
-- **Purpose:** future Digger introduction.
-- **Shape:** obvious patched floor over lower safe route.
-- **Rule:** dig patch should be wide and visually loud.
+- **Purpose:** Digger introduction, now implemented by L006 `Bone Basement Shortcut`.
+- **Shape:** skeletons stand directly on an obvious brown/black cracked floor plug with a lower safe route and exit below.
+- **Rule:** dig patch should be wide, visually loud, and charge-safe: invalid DIG clicks away from cracked floor do not spend the Digger.
 
 ### Crumbly Wall Tunnel
 
@@ -95,8 +95,8 @@ This file normalizes early puzzle design around reusable challenge atoms. The go
 3. **Builder Down Recovery** — easier bridge after a tougher puzzle.
 4. **Island Staging** — two builders, two gaps, safe middle.
 5. **Safe Drop + Reverse Flow** — fall down a flight, blocker reverses, builder crosses.
-6. **Delayed Release** — crowd management while a worker builds.
-7. **Crumbly Floor Dig** — introduce Digger in Ash Catacombs.
+6. **Crumbly Floor Dig** — introduce Digger in Ash Catacombs with a marked plug into a lower tomb route.
+7. **Delayed Release** — crowd management while a worker builds.
 8. **Crumbly Wall Tunnel** — introduce Tunneler.
 
 ## Preview Export Workflow

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Godot 4, GDScript, existing scene tree (`GameRoot`, `LevelController`, `TerrainRoot`, `ObjectRoot`, `MinionRoot`, `GameUI`), existing headless Godot test script pattern under `tests/`.
 
-**New rhythm direction:** The game remains a normal Lemmings-style puzzle game mechanically, but the skeleton crowd should *look* like it is marching to spooky puzzle music. Beat sync must drive gait phase and audio feel, not horizontal movement speed, so existing timing/puzzle solutions do not drift when music changes.
+**Animation direction:** Each skeleton animates on its own clock — random initial gait phase, deterministic stride speed jittered by body archetype. No global beat conductor and no background music loop; the crowd reads as a loose, asynchronous shuffle instead of a metronomic stomp.
 
 ---
 
@@ -54,7 +54,7 @@ These levels use only Portal Start, Blocker, Builder, Styx, and Crumbler.
 
 ### Slice 3 — Add terrain modification v0
 
-9. **L009 Bone Basement Shortcut** — Digger v0: dig through a marked floor plug into a lower safe corridor.
+9. **L006 Bone Basement Shortcut** — Digger v0 has been pulled forward: dig through a marked floor plug into a lower safe corridor in Ash Catacombs.
 10. **L010 Side Crypt** — Tunneler v0: tunnel through an obvious cracked side wall to exit chamber.
 11. **L011 Plug and Pray** — Combine Digger + Builder: dig down, then build out of a bad pocket.
 12. **L012 Three Ways Across** — Builder sandbox/tuning level comparing down, flat, and up bridge lines; can be hidden under debug/bonus until polished.
@@ -63,32 +63,20 @@ These levels use only Portal Start, Blocker, Builder, Styx, and Crumbler.
 
 ## Feature Roadmap
 
-### Feature 0: Spooky beat conductor and synced skeleton march ✅ first pass
+### Feature 0: Async skeleton gait (was: spooky beat conductor) ❌ reverted
 
-**Objective:** Add a deterministic beat clock so skeletons visually step in time with a spooky underworld loop while retaining normal puzzle movement.
+**Objective:** Skeleton crowd reads as a loose, asynchronous shuffle. No global metronome, no background music loop.
 
-**Files:**
+**Status:** Beat conductor, `crypt_march_loop.wav`, and `march_step.wav` aggregation were removed on 2026-05-22. Each skeleton now seeds `_walk_time` to a random phase in `_ready()` and advances its own gait via `delta * 8.8 * _stride_variant`, so body archetypes already give variety in stride speed and starting phase desyncs the visual crowd.
 
-- Create: `scripts/audio/beat_conductor.gd`
-- Create: `tests/beat_conductor_check.gd`
-- Modify: `scripts/core/game_root.gd`
-- Modify: `scripts/minions/skeleton_minion.gd`
-- Modify: `scripts/audio/sfx_player.gd`
-- Replace/generated: `assets/audio/generated/crypt_march_loop.wav`
+**Files removed:**
 
-**Implemented first-pass behavior:**
+- `scripts/audio/beat_conductor.gd`
+- `tests/beat_conductor_check.gd`
+- `assets/audio/generated/crypt_march_loop.wav`
+- `assets/audio/generated/march_step.wav`
 
-- `BeatConductor` exposes BPM, beat phase, swung step index, and walk-cycle radians.
-- `GameRoot` creates a conductor, configures it from `LevelState.config()["beat"]`, adds it to group `beat_conductor`, then starts the music loop.
-- Walking skeletons keep their deterministic `WALK_SPEED`; only `_walk_time` for drawing is snapped to the conductor's walk-cycle phase.
-- The new loop is a 92 BPM spooky march: low crypt thumps, swung bone clicks, ghost pad, bell accents, and Styx risers.
-
-**Next rhythm refinements:**
-
-1. Add per-biome loop variants once level biomes are catalog-driven.
-2. Add tiny footstep/bone-click particles on `step_crossed` for nearby skeletons, but cap it so the crowd does not spam draw calls or SFX.
-3. Add UI/music settings: music volume, rhythm sync on/off, and maybe “strict metronome” debug display.
-4. If puzzle timing ever depends on audio, use the conductor clock as source of truth; never derive mechanics from audio playback position.
+**If we ever revisit:** prefer per-skeleton variation (gait jitter, occasional stumble) over a global clock. Audio backbone, if it returns, should be ambient (crypt drip, distant wind) rather than rhythmic.
 
 ### Feature A: Level registry and data-driven terrain rectangles
 
@@ -232,6 +220,8 @@ Use a first-pass dictionary shape like:
 
 ### Feature E: Digger v0 with marked floor plugs
 
+**Status:** ✅ Implemented first pass in the existing hardcoded level pattern as L006 `Bone Basement Shortcut` / `level_006`, before the full data-driven catalog migration.
+
 **Objective:** Add the first downward terrain-modification job without building full bitmap destructible terrain.
 
 **Files:**
@@ -246,10 +236,10 @@ Use a first-pass dictionary shape like:
 
 **Rules:**
 
-- Digger can only be assigned to alive, grounded, non-blocker, non-builder skeletons standing on a marked `diggable_floor` plug.
+- Digger can only be assigned to alive, grounded, non-blocker, non-builder skeletons standing on a marked `dig_plug` floor plug.
 - Assignment consumes one Digger charge only when valid.
-- Digger removes a vertical stack of small plug segments, one chunk every ~0.18s.
-- Digger stops at air, indestructible terrain, hazard/water, or a max depth.
+- Digger v0 removes one pre-authored rectangular plug instantly; chunked/over-time digging is deferred.
+- Digger stops at invalid terrain by doing nothing and preserving the charge.
 - After the plug opens, normal gravity/walking resumes.
 
 **Tasks:**
@@ -259,10 +249,10 @@ Use a first-pass dictionary shape like:
 3. Add `selected_job == "digger"` routing in `_on_minion_clicked()`.
 4. Add terrain plug registration in `TerrainRoot`, e.g. `var diggable_plugs: Array[Dictionary]`.
 5. Implement `TerrainRoot.get_floor_plug_under(position: Vector2)` and `TerrainRoot.remove_plug_chunk(plug_id)`.
-6. Add `SkeletonMinion.can_become_digger()` and `set_digger_active()` similar to Builder state.
-7. Add `MinionRoot._run_digger_sequence(minion, plug)` that removes chunks over time.
-8. Add `tests/digger_plug_check.gd`: assign Digger on valid plug, assert charge consumed and collision chunk count decreases.
-9. Build L009 `Bone Basement Shortcut`.
+6. Add `SkeletonMinion.can_become_digger()` and lightweight Digger feedback.
+7. Add `MinionRoot._try_assign_digger(minion)` that removes the plug only after validation.
+8. Add `tests/digger_activation_check.gd`: assign Digger on valid plug, assert charge consumed and collision rect removed.
+9. Build L006 `Bone Basement Shortcut`.
 
 **Gate:** Digger opens a marked floor plug into a lower safe corridor; invalid assignments do not spend charges.
 
@@ -324,12 +314,12 @@ Use a first-pass dictionary shape like:
 
 ## Priority Recommendation
 
-Do **not** jump straight to Digger/Tunneler. The next best swath is:
+Original recommendation was not to jump straight to Digger/Tunneler. Current implementation intentionally pulled **Digger v0 + Ash Catacombs** forward because it adds a new verb and biome without requiring the full catalog migration. The remaining best swath is:
 
 1. Feature A — data-driven level catalog.
 2. Feature B — title level select.
 3. Feature C — build/polish L001-L006 with current mechanics.
 4. Feature D — uplight drafts for vertical variety.
-5. Feature E/F — Digger and Tunneler only after the existing campaign slice feels solid.
+5. Feature F — Tunneler only after the existing campaign slice and Digger v0 feel solid.
 
 This sequence gives you more playable content quickly while keeping technical risk bounded. It also avoids expanding the UI/job surface before the level pipeline is stable.

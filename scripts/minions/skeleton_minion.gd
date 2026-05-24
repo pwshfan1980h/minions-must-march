@@ -97,7 +97,6 @@ var _visual_redraw_requested := false
 var _is_on_screen := true
 var _blocker_check_timer := 0.0
 var _blocker_ahead_cached := false
-var _beat_conductor: BeatConductor
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var click_area: Area2D = $ClickArea
@@ -106,7 +105,6 @@ var _beat_conductor: BeatConductor
 
 func _ready() -> void:
 	add_to_group("minions")
-	_beat_conductor = get_tree().get_first_node_in_group("beat_conductor") as BeatConductor
 	input_pickable = false
 	if click_area != null:
 		click_area.input_event.connect(_on_click_area_input_event)
@@ -124,8 +122,11 @@ func _ready() -> void:
 	_head_scale = float(bt["head_scale"]) * rng.randf_range(0.97, 1.03)
 	_leg_length = float(bt["leg_length"]) * rng.randf_range(0.97, 1.03)
 	_bob_scale = float(bt["bob_scale"])
-	_stride_variant = float(bt["stride_speed"]) * rng.randf_range(0.95, 1.05)
+	# Keep the crowd loose: each skeleton starts on a different foot and drifts
+	# at its own gait speed, so the line shuffles instead of marching in sync.
+	_stride_variant = float(bt["stride_speed"]) * rng.randf_range(0.82, 1.18)
 	_spine_variant = float(bt["spine_bias"]) + rng.randf_range(-0.05, 0.05)
+	_walk_time = rng.randf_range(0.0, TAU)
 	_request_visual_redraw(true)
 
 func _process(delta: float) -> void:
@@ -153,13 +154,7 @@ func _physics_process(delta: float) -> void:
 	velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
 	velocity.x = 0.0 if is_blocker or is_builder else WALK_SPEED * direction
 	if is_on_floor() and not is_blocker and not is_builder:
-		if _beat_conductor != null and is_instance_valid(_beat_conductor):
-			# Movement speed remains deterministic and level-authored; only the
-			# drawn gait phase snaps to the spooky march beat so puzzle timing is
-			# unchanged while the crowd visually steps together.
-			_walk_time = _beat_conductor.walk_cycle_radians()
-		else:
-			_walk_time += delta * 8.8 * _stride_variant
+		_walk_time += delta * 8.8 * _stride_variant
 		var anim_frame := int(_walk_time * WALK_ANIM_FPS)
 		if anim_frame != _last_anim_frame:
 			_last_anim_frame = anim_frame
@@ -232,6 +227,14 @@ func rescue(exit_position := Vector2.INF) -> void:
 
 func can_become_builder() -> bool:
 	return alive and not rescued and not is_blocker and not is_builder and is_on_floor()
+
+func can_become_digger() -> bool:
+	return alive and not rescued and not is_blocker and not is_builder and is_on_floor()
+
+func play_digger_dust() -> void:
+	# Digger v0 is an instant cracked-floor command; a forced redraw gives the
+	# player immediate feedback while the removed plug/debris does the heavy read.
+	_request_visual_redraw(true)
 
 func set_builder_active(active: bool) -> void:
 	if not alive or rescued or is_blocker:
@@ -480,13 +483,7 @@ func _draw() -> void:
 	var airborne_motion := _is_tumbling or (not alive and not rescued)
 	var fall_phase := _air_time * 9.5 + float(get_instance_id()) * 0.01
 	var vault_progress := 1.0 - clampf(_vault_anim_time / VAULT_ANIM_SECONDS, 0.0, 1.0)
-	var beat_marching := _beat_conductor != null and is_instance_valid(_beat_conductor) and not airborne_motion and not is_blocker and not is_builder
 	var stride := sin(fall_phase) * 0.55 if airborne_motion else 0.0 if is_blocker or is_builder else sin(_walk_time)
-	if beat_marching:
-		# Exaggerate only the drawn gait, not WALK_SPEED/collision. The conductor
-		# should read as a spooky stomp: bigger leg separation, deeper bob, harder
-		# shoulder nods on the aggregate march beat.
-		stride *= 1.28
 	if _vault_anim_time > 0.0 and not is_blocker and not is_builder:
 		stride = sin(vault_progress * PI * 1.35) * 0.88
 	var leg_front_phase := stride
@@ -494,10 +491,9 @@ func _draw() -> void:
 	var front_lift := maxf(0.0, leg_front_phase)
 	var back_lift := maxf(0.0, leg_back_phase)
 	var vault_bob := -sin(vault_progress * PI) * 5.2 if _vault_anim_time > 0.0 else 0.0
-	var bob_scale := 1.55 if beat_marching else 1.05
-	var bob := 0.0 if is_blocker or is_builder else absf(stride) * (0.55 if airborne_motion else bob_scale) * _bob_scale
+	var bob := 0.0 if is_blocker or is_builder else absf(stride) * (0.55 if airborne_motion else 1.05) * _bob_scale
 	bob += vault_bob
-	var lean := face * (2.8 + _spine_variant * 7.0 + ((0.95 if beat_marching else 0.45) * absf(stride) if not is_blocker else -1.0))
+	var lean := face * (2.8 + _spine_variant * 7.0 + (0.45 * absf(stride) if not is_blocker else -1.0))
 	if airborne_motion:
 		lean += sin(fall_phase * 0.74) * 5.0
 	var h := _height_variant
@@ -549,8 +545,6 @@ func _draw() -> void:
 		var phase_front := fposmod(_walk_time / TAU, 1.0)
 		var phase_back := fposmod(phase_front + 0.5, 1.0)
 		var cycle_speed := 8.8 * _stride_variant
-		if beat_marching:
-			cycle_speed = TAU / _beat_conductor.seconds_per_beat()
 		var stance_slide := WALK_SPEED * STANCE_FRACTION * TAU / cycle_speed
 		var pose_front := _walk_leg_pose(phase_front, hip_front, face, h, stance_slide)
 		var pose_back := _walk_leg_pose(phase_back, hip_back, face, h, stance_slide)

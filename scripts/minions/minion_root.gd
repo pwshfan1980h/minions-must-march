@@ -14,6 +14,7 @@ const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
 @export var spawn_direction := 1.0
 @export var blockers_available := 0
 @export var builders_available := 1
+@export var diggers_available := 0
 @export var wait_for_start := false
 
 var selected_job := "builder"
@@ -23,6 +24,7 @@ var rescued_count := 0
 var lost_count := 0
 var blockers_remaining := 0
 var builders_remaining := 0
+var diggers_remaining := 0
 var _spawn_timer := 0.0
 var _spawning_done := false
 var _spawn_started := false
@@ -47,6 +49,7 @@ func _ready() -> void:
 	spawn_interval = float(cfg.get("spawn_interval", spawn_interval))
 	blockers_available = int(cfg.get("blockers", blockers_available))
 	builders_available = int(cfg.get("builders", builders_available))
+	diggers_available = int(cfg.get("diggers", diggers_available))
 	spawn_position = cfg.get("spawn_position", spawn_position)
 	spawn_direction = float(cfg.get("spawn_direction", spawn_direction))
 	reset_spawner()
@@ -69,6 +72,7 @@ func reset_spawner() -> void:
 	lost_count = 0
 	blockers_remaining = blockers_available
 	builders_remaining = builders_available
+	diggers_remaining = diggers_available
 	_spawn_timer = 0.1
 	_spawning_done = false
 	_spawn_started = not wait_for_start
@@ -135,6 +139,10 @@ func _on_minion_clicked(minion: Node) -> void:
 		_try_assign_builder(minion)
 		return
 
+	if selected_job == "digger":
+		_try_assign_digger(minion)
+		return
+
 	if selected_job != "blocker":
 		return
 
@@ -154,6 +162,24 @@ func _on_minion_clicked(minion: Node) -> void:
 		sfx_requested.emit("blocker_brace")
 		minion_spawned.emit(minion)
 
+
+func _try_assign_digger(minion: Node) -> void:
+	if diggers_remaining <= 0 or not minion.has_method("can_become_digger") or not minion.can_become_digger():
+		return
+	var terrain := get_node_or_null("../TerrainRoot")
+	if terrain == null or not terrain.has_method("find_diggable_plug_at") or not terrain.has_method("remove_diggable_plug"):
+		return
+	var plug: Dictionary = terrain.find_diggable_plug_at(minion.global_position)
+	if plug.is_empty():
+		return
+	if not terrain.remove_diggable_plug(plug):
+		return
+	diggers_remaining -= 1
+	sfx_requested.emit("command_clatter")
+	sfx_requested.emit("bone_clack")
+	if minion.has_method("play_digger_dust"):
+		minion.play_digger_dust()
+	minion_spawned.emit(minion)
 
 func _try_assign_builder(minion: Node) -> void:
 	if builders_remaining <= 0 or not minion.has_method("can_become_builder") or not minion.can_become_builder():

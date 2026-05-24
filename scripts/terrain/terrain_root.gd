@@ -10,6 +10,7 @@ const CRUMBLE_FUSE_MIN := 15.0
 const CRUMBLE_FUSE_MAX := 30.0
 
 var collision_rects: Array[Rect2] = []
+var diggable_plugs: Array[Dictionary] = []
 var _time := 0.0
 var _redraw_elapsed := 0.0
 var _soul_specs: Array[Dictionary] = []
@@ -17,6 +18,7 @@ var _hand_specs: Array[Dictionary] = []
 var _bubble_specs: Array[Dictionary] = []
 var _bubble_pops: Array[Dictionary] = []
 var _crumbling_sections: Array[Dictionary] = []
+var _platform_ash_specs: Array[Dictionary] = []
 
 func _ready() -> void:
 	_build_souls()
@@ -28,6 +30,8 @@ func _ready() -> void:
 		"level_002": _build_level_002_terrain()
 		"level_003": _build_level_003_terrain()
 		"level_004": _build_level_004_terrain()
+		"level_005": _build_level_005_terrain()
+		"level_006": _build_level_006_terrain()
 		_: _build_level_001_terrain()
 	_add_styx_death_area()
 	queue_redraw()
@@ -115,6 +119,91 @@ func _build_level_004_terrain() -> void:
 	_add_solid(Rect2(792, 416, 32, 160), Color("2a2432"), "skull_end")
 	_add_solid(Rect2(1240, 416, 32, 160), Color("2a2432"), "skull_end")
 
+func _build_level_005_terrain() -> void:
+	# Drop Crypt Detour: the first true multi-level map. Skeletons start on a
+	# high balcony, walk off a short 96px drop that stays below the fatal-fall
+	# threshold, then need a blocker decision on the lower floor before spending
+	# one builder charge to cross the final Styx cut to the exit shelf.
+	# Upper balcony: top y=352. It deliberately has no right guard rail so the
+	# crowd tumbles to the lower playable tier instead of simply marching across.
+	_add_solid(Rect2(160, 352, 404, 32), Color("3a3144"), "crypt")
+	_add_solid(Rect2(128, 384, 32, 192), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(532, 384, 32, 88), Color("2a2432"), "skull_end")
+
+	# Lower tier landing: top y=448, so the 96px fall is survivable. A left wall
+	# prevents the crowd from back-walking into the Styx after the player uses a
+	# blocker to reorganize the flow on this level.
+	_add_solid(Rect2(456, 448, 376, 32), Color("342b3e"), "chain")
+	_add_solid(Rect2(424, 416, 32, 160), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(800, 480, 32, 96), Color("2a2432"), "skull_end")
+
+	# Final exit shelf after a bridgeable 112px gap. The single Builder charge can
+	# span this cut from the lower lip, making the level a lemmings-style sequence:
+	# survive fall -> decide/turn -> build -> exit.
+	_add_solid(Rect2(944, 448, 448, 32), Color("241d2f"), "obsidian")
+	_add_solid(Rect2(944, 480, 32, 96), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(1360, 480, 32, 96), Color("2a2432"), "skull_end")
+
+	# A faint upper ledge silhouette above the lower route helps the player read
+	# that this is a stacked, multi-level space rather than a single flat bridge.
+	_add_solid(Rect2(1030, 320, 168, 18), Color("2d2536"), "chain")
+
+func _build_level_006_terrain() -> void:
+	# Bone Basement Shortcut: first Ash Catacombs board and first Digger lesson.
+	# Skeletons march on an upper tomb corridor directly over a cracked brown/black
+	# diggable substrate. Removing that plug opens a survivable 128px drop into a
+	# lower burial passage with the exit portal below the original floor.
+	_add_solid(Rect2(128, 320, 456, 32), Color("665c54"), "ash_floor")
+	_add_diggable_plug(Rect2(584, 320, 96, 32), Color("3c332f"))
+	_add_solid(Rect2(680, 320, 220, 32), Color("5a514c"), "ash_floor")
+	_add_solid(Rect2(96, 224, 32, 352), Color("2b2828"), "ash_wall")
+	_add_solid(Rect2(900, 224, 32, 352), Color("2b2828"), "ash_wall")
+
+	# Middle tomb shelf gives the level a 2-3 layer read without creating a safe
+	# route; it is decorative/structural and teaches this is a taller catacomb.
+	_add_solid(Rect2(1010, 252, 230, 24), Color("4a4442"), "lower_catacomb")
+	_add_solid(Rect2(1210, 276, 30, 172), Color("2b2828"), "ash_wall")
+
+	# Lower route: y=448 top means the DIG drop from y=320 is survivable while
+	# still clearly vertical. The left wall prevents a back-walk into the out-of-
+	# bounds Styx safety area and turns the crowd toward the exit glow.
+	_add_solid(Rect2(392, 448, 858, 32), Color("4a403c"), "lower_catacomb")
+	_add_solid(Rect2(360, 384, 32, 192), Color("252222"), "ash_wall")
+	_add_solid(Rect2(1250, 384, 32, 192), Color("252222"), "ash_wall")
+	_add_solid(Rect2(520, 512, 176, 24), Color("342b2a"), "lower_catacomb")
+	_add_solid(Rect2(820, 544, 240, 24), Color("312827"), "lower_catacomb")
+	_add_ash_catacombs_markers()
+
+func _add_ash_catacombs_markers() -> void:
+	var sign := Line2D.new()
+	sign.name = "DiggerDownMarker"
+	sign.default_color = Color(0.95, 0.68, 0.28, 0.76)
+	sign.width = 3.0
+	sign.points = PackedVector2Array([
+		Vector2(632, 268),
+		Vector2(632, 306),
+		Vector2(616, 290),
+		Vector2(632, 306),
+		Vector2(648, 290),
+	])
+	add_child(sign)
+
+	for x in [430.0, 1130.0, 1195.0]:
+		var candle := Node2D.new()
+		candle.name = "AshCandle"
+		candle.position = Vector2(x, 438.0)
+		add_child(candle)
+		var wick := Line2D.new()
+		wick.default_color = Color("d8b56b")
+		wick.width = 2.0
+		wick.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -14)])
+		candle.add_child(wick)
+		var flame := Polygon2D.new()
+		flame.color = Color(1.0, 0.58, 0.18, 0.78)
+		flame.position = Vector2(0, -18)
+		flame.polygon = PackedVector2Array([Vector2(0, -9), Vector2(6, 2), Vector2(0, 7), Vector2(-5, 2)])
+		candle.add_child(flame)
+
 func _add_builder_demo_markers() -> void:
 	# A single non-colliding build marker. Do not show ghost bridge pieces here:
 	# the empty gap needs to read as unbuilt until a Builder creates the ribs.
@@ -158,40 +247,124 @@ func _add_solid(rect: Rect2, color: Color, variant := "crypt") -> StaticBody2D:
 	var visual := Polygon2D.new()
 	visual.name = "Visual"
 	visual.color = color
-	# Chipped top edge for crumbling-crypt feel; collision stays a clean rect.
+	# Jagged, tomb-broken silhouette; collision stays a clean rect for puzzles.
 	visual.polygon = _build_chipped_silhouette(rect)
 	body.add_child(visual)
 
+	_add_hanging_shards(rect, body, color, variant)
 	_add_block_underworld_detail(rect, body, variant)
+	_add_platform_ash_emitter(rect, variant)
 	if variant == "skull_end":
 		_add_pillar_capstone(rect, body, color)
 	return body
 
+func _add_diggable_plug(rect: Rect2, color: Color) -> StaticBody2D:
+	var body := _add_solid(rect, color, "dig_plug")
+	body.name = "DiggablePlug"
+	diggable_plugs.append({"rect": rect, "body": body})
+	return body
+
+func find_diggable_plug_at(world_position: Vector2) -> Dictionary:
+	for plug in diggable_plugs:
+		var rect: Rect2 = plug["rect"]
+		var within_x := world_position.x >= rect.position.x - 12.0 and world_position.x <= rect.end.x + 12.0
+		var near_top := absf(world_position.y - rect.position.y) <= 48.0
+		if within_x and near_top:
+			return plug
+	return {}
+
+func remove_diggable_plug(plug: Dictionary) -> bool:
+	if plug.is_empty():
+		return false
+	var rect: Rect2 = plug["rect"]
+	var body: Node = plug["body"]
+	collision_rects.erase(rect)
+	diggable_plugs.erase(plug)
+	_spawn_crumble_debris(rect, Color("6f625a"))
+	if is_instance_valid(body):
+		body.queue_free()
+	queue_redraw()
+	return true
+
 func _build_chipped_silhouette(rect: Rect2) -> PackedVector2Array:
-	# Generate a polygon matching the rect's footprint, but with small notches
-	# bitten out of the top edge so the silhouette doesn't read as a perfect
-	# manufactured rectangle. Deterministic per-rect via a position-derived seed.
+	# Generate a mostly-rectangular collision footprint with a more organic visual
+	# shell: chipped top edge, slanted sides, and a ragged underside. Deterministic
+	# per-rect via a position-derived seed so the level is stable between runs.
 	var hw := rect.size.x * 0.5
 	var hh := rect.size.y * 0.5
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(rect.position.x * 1009.0 + rect.position.y * 31.0 + rect.size.x * 7.0)
 	var pts := PackedVector2Array()
-	pts.append(Vector2(-hw, -hh))
-	var notch_count := clampi(int(rect.size.x / 60.0), 2, 8)
+	pts.append(Vector2(-hw + rng.randf_range(-2.0, 3.0), -hh + rng.randf_range(0.0, 2.4)))
+	var notch_count := clampi(int(rect.size.x / 42.0), 3, 14)
 	for i in notch_count:
 		var t := (float(i) + rng.randf_range(0.30, 0.70)) / float(notch_count)
 		var notch_x := lerpf(-hw + 12.0, hw - 12.0, t)
-		var notch_w := rng.randf_range(5.0, 13.0)
-		var notch_d := rng.randf_range(1.4, 3.2)
+		var notch_w := rng.randf_range(7.0, 20.0)
+		var notch_d := rng.randf_range(2.0, 8.0)
 		pts.append(Vector2(notch_x - notch_w * 0.5, -hh))
 		pts.append(Vector2(notch_x - notch_w * 0.18, -hh + notch_d * 0.55))
 		pts.append(Vector2(notch_x, -hh + notch_d))
 		pts.append(Vector2(notch_x + notch_w * 0.22, -hh + notch_d * 0.45))
 		pts.append(Vector2(notch_x + notch_w * 0.5, -hh))
-	pts.append(Vector2(hw, -hh))
-	pts.append(Vector2(hw, hh))
-	pts.append(Vector2(-hw, hh))
+	pts.append(Vector2(hw + rng.randf_range(-3.0, 2.0), -hh + rng.randf_range(0.0, 2.5)))
+	pts.append(Vector2(hw + rng.randf_range(-2.5, 3.5), hh - rng.randf_range(1.0, 5.0)))
+	var tooth_count := clampi(int(rect.size.x / 52.0), 2, 12)
+	for i in range(tooth_count, -1, -1):
+		var t := float(i) / float(maxi(tooth_count, 1))
+		var x := lerpf(-hw + 6.0, hw - 6.0, t)
+		var drop := rng.randf_range(0.0, minf(12.0, rect.size.y * 0.35))
+		pts.append(Vector2(x + rng.randf_range(-4.0, 4.0), hh + drop))
+	pts.append(Vector2(-hw + rng.randf_range(-3.0, 2.0), hh - rng.randf_range(1.0, 5.0)))
 	return pts
+
+func _add_hanging_shards(rect: Rect2, body: Node2D, color: Color, variant: String) -> void:
+	if variant == "skull_end" or rect.size.x < 72.0:
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(rect.position.x * 719.0 + rect.position.y * 43.0 + rect.size.y * 17.0)
+	var shard_count := clampi(int(rect.size.x / 110.0), 1, 6)
+	for i in shard_count:
+		var x := lerpf(-rect.size.x * 0.5 + 18.0, rect.size.x * 0.5 - 18.0, (float(i) + rng.randf_range(0.18, 0.82)) / float(shard_count))
+		var w := rng.randf_range(7.0, 17.0)
+		var h := rng.randf_range(8.0, 24.0)
+		var shard := Polygon2D.new()
+		shard.name = "HangingJaggedShard"
+		shard.color = color.darkened(rng.randf_range(0.10, 0.25))
+		shard.polygon = PackedVector2Array([
+			Vector2(x - w * 0.5, rect.size.y * 0.5 - 1.0),
+			Vector2(x + w * 0.45, rect.size.y * 0.5 - rng.randf_range(0.0, 3.0)),
+			Vector2(x + rng.randf_range(-2.0, 2.0), rect.size.y * 0.5 + h),
+		])
+		body.add_child(shard)
+
+func _add_platform_ash_emitter(rect: Rect2, variant: String) -> void:
+	if rect.size.x < 96.0 or variant == "skull_end":
+		return
+	var mote_count := clampi(int(rect.size.x / 150.0), 1, 5)
+	for i in mote_count:
+		_platform_ash_specs.append({
+			"x": rect.position.x + (float(i) + 0.35) * rect.size.x / float(mote_count),
+			"y": rect.position.y - 4.0,
+			"phase": fposmod(rect.position.x * 0.011 + rect.position.y * 0.017 + float(i) * 0.37, 1.0),
+			"rise": 14.0 + float((int(rect.position.x) + i * 13) % 18),
+			"drift": -8.0 + float((int(rect.position.y) + i * 19) % 17),
+			"speed": 0.10 + float((int(rect.size.x) + i * 7) % 6) * 0.018,
+			"color": Color(0.90, 0.68, 0.36, 0.0) if variant == "obsidian" or variant == "dig_plug" else Color(0.62, 0.55, 0.68, 0.0),
+		})
+
+func _draw_platform_ash_motes() -> void:
+	# Tiny non-colliding motes rising from platforms: a cheap particle-emission
+	# pass that keeps the terrain alive without adding physics or audio noise.
+	for spec in _platform_ash_specs:
+		var cycle := fposmod(_time * float(spec["speed"]) + float(spec["phase"]), 1.0)
+		var lift := float(spec["rise"]) * cycle
+		var sway := sin(_time * 1.7 + float(spec["x"]) * 0.031) * 3.0 + float(spec["drift"]) * cycle
+		var alpha := sin(cycle * PI) * 0.34
+		var color: Color = spec["color"]
+		color.a = alpha
+		var pos := Vector2(float(spec["x"]) + sway, float(spec["y"]) - lift)
+		draw_circle(pos, 1.4 + cycle * 1.1, color)
 
 func _add_pillar_capstone(rect: Rect2, body: Node2D, color: Color) -> void:
 	# Slightly wider band right at the pillar top — makes the seam where the
@@ -286,6 +459,44 @@ func _add_block_underworld_detail(rect: Rect2, body: Node2D, variant: String) ->
 			chain.width = 2.0
 			chain.points = PackedVector2Array([Vector2(x, -rect.size.y / 2.0), Vector2(x, -rect.size.y / 2.0 - 138.0)])
 			body.add_child(chain)
+	elif variant == "ash_floor" or variant == "lower_catacomb":
+		top_line.default_color = Color("9a8771") if variant == "ash_floor" else Color("74635a")
+		for i in range(18, int(rect.size.x), 74):
+			var seam := Line2D.new()
+			seam.default_color = Color(0.12, 0.095, 0.080, 0.32)
+			seam.width = 1.1
+			seam.points = PackedVector2Array([
+				Vector2(-rect.size.x / 2.0 + i, -rect.size.y / 2.0 + 5.0),
+				Vector2(-rect.size.x / 2.0 + i + 16.0, rect.size.y / 2.0 - 6.0),
+			])
+			body.add_child(seam)
+	elif variant == "ash_wall":
+		top_line.default_color = Color("6e6258")
+		for y in range(-int(rect.size.y / 2.0) + 22, int(rect.size.y / 2.0), 44):
+			var slab := Line2D.new()
+			slab.default_color = Color(0.08, 0.065, 0.060, 0.38)
+			slab.width = 1.2
+			slab.points = PackedVector2Array([Vector2(-rect.size.x / 2.0 + 4.0, y), Vector2(rect.size.x / 2.0 - 4.0, y + 5.0)])
+			body.add_child(slab)
+	elif variant == "dig_plug":
+		top_line.default_color = Color("d49a42")
+		top_line.width = 3.0
+		var warning := Line2D.new()
+		warning.name = "DiggerCrackWarning"
+		warning.default_color = Color("d4452f")
+		warning.width = 2.2
+		warning.points = PackedVector2Array([
+			Vector2(-rect.size.x / 2.0 + 10.0, -rect.size.y / 2.0 + 5.0),
+			Vector2(-rect.size.x / 2.0 + 34.0, rect.size.y / 2.0 - 8.0),
+			Vector2(-rect.size.x / 2.0 + 58.0, -rect.size.y / 2.0 + 9.0),
+			Vector2(rect.size.x / 2.0 - 12.0, rect.size.y / 2.0 - 6.0),
+		])
+		body.add_child(warning)
+		var chevron := Line2D.new()
+		chevron.default_color = Color(1.0, 0.78, 0.22, 0.72)
+		chevron.width = 2.0
+		chevron.points = PackedVector2Array([Vector2(-15, -4), Vector2(0, 9), Vector2(15, -4)])
+		body.add_child(chevron)
 	elif variant == "skull_end":
 		for y in range(-34, 35, 24):
 			var skull := Polygon2D.new()
@@ -507,6 +718,7 @@ func _draw() -> void:
 	_draw_distant_underworld_background()
 	_draw_ground_dust()
 	_draw_styx_water()
+	_draw_platform_ash_motes()
 
 func _draw_crypt_gradient() -> void:
 	var bands := 36

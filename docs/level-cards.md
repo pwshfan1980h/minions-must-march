@@ -5,6 +5,7 @@ These are concrete, implementable plans for the first batch of levels. They assu
 - Walking + falling + Styx soup-line death
 - Blocker (clickable, can resume-march)
 - Builder (six-piece sloped rib bridge, ~18° rise, anti-skate ramp)
+- Digger v0 (one-shot marked cracked-floor plug removal; valid uses only consume charge)
 - Crumbling terrain (Area2D-triggered, 15–30s fuse with intensifying warning cracks)
 - Three skeleton body archetypes (Tall / Stocky / Wiry) with matching gaits
 
@@ -205,17 +206,47 @@ crumbler        crumbler
 
 ---
 
-## L006+ — Future levels
+## L006 — Bone Basement Shortcut ✅
+
+**Status:** Implemented as the first Ash Catacombs / Digger teaching level.
+
+- **Biome:** Ash Catacombs
+- **Primary lesson:** some floors are doors; DIG a cracked brown/black substrate plug to open a lower tomb route.
+- **Jobs:** Blocker × 1, Builder × 0, Digger × 1
+- **Skeletons:** 12, save 9
+- **Core atoms:** Crumbly Floor Dig, Safe Drop, Reverse Flow light, enclosed lower route
+
+**Layout (world coords, y down):**
+- Spawn portal at `(220, 292)` facing right on the upper ash corridor.
+- Upper floor top `y=320`, x `128→900`, with a removable `dig_plug` at `Rect2(584, 320, 96, 32)`.
+- Right upper wall at `x=900` turns late/missed attempts back across the plug instead of killing the crowd.
+- Lower burial passage top `y=448`, x `392→1250`, with walls to keep the flow contained.
+- Exit light at `(1180, 420)` below the cracked substrate.
+
+**Intended solution:**
+1. Let the crowd march across the upper tomb corridor.
+2. Select DIG (`3`) and click a grounded skeleton while it is standing on the cracked plug.
+3. The plug breaks away; skeletons fall about 128px into the lower route, under the fatal threshold.
+4. Use the single Blocker only if needed to keep lower-route flow aimed at the exit.
+5. Crowd walks to the lower exit portal.
+
+**Failure modes:**
+- DIG away from cracked floor → no charge consumed.
+- DIG too late → skeletons hit the upper dead-end wall and turn around for another pass.
+- Never DIG → upper loop/dead-end stalls progress instead of becoming instant soup death.
+
+---
+
+## L007+ — Future levels
 
 Concept seeds for later sessions, in rough order of difficulty:
 
-- **L006 — Drop and Roll:** introduces a safe-fall onto a lower path; tests fall tolerance with the new gait.
 - **L007 — Crowded Crumbler:** narrow single-row platform where 20 skeletons must cross a long crumbling section in single file. Pure pacing puzzle, no jobs needed.
 - **L008 — Reverse Engineering:** spawn faces right (default), exit is to the *left*; player must blocker-reverse without falling off the right cliff first.
 - **L009 — Broken Teeth:** stair-stepped platforms where the rib bridge’s natural slope chains into the next step.
 - **L010 — Three Ways Across:** sandbox board comparing flat / up / down builder bridges; tuning level, not necessarily a shipped puzzle.
 
-Mechanics not yet in scope: Digger (downward terrain mod), Tunneler (sideways terrain mod), Floater/Climber. These are reserved for after the L001–L005 batch ships.
+Mechanics not yet in scope: Tunneler (sideways terrain mod), Floater/Climber. Digger v0 is now live for marked floor plugs only.
 
 ---
 
