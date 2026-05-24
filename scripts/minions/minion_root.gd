@@ -15,6 +15,7 @@ const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
 @export var blockers_available := 0
 @export var builders_available := 1
 @export var diggers_available := 0
+@export var featherfalls_available := 0
 @export var wait_for_start := false
 
 var selected_job := "builder"
@@ -25,6 +26,7 @@ var lost_count := 0
 var blockers_remaining := 0
 var builders_remaining := 0
 var diggers_remaining := 0
+var featherfalls_remaining := 0
 var _spawn_timer := 0.0
 var _spawning_done := false
 var _spawn_started := false
@@ -50,6 +52,7 @@ func _ready() -> void:
 	blockers_available = int(cfg.get("blockers", blockers_available))
 	builders_available = int(cfg.get("builders", builders_available))
 	diggers_available = int(cfg.get("diggers", diggers_available))
+	featherfalls_available = int(cfg.get("featherfalls", featherfalls_available))
 	spawn_position = cfg.get("spawn_position", spawn_position)
 	spawn_direction = float(cfg.get("spawn_direction", spawn_direction))
 	reset_spawner()
@@ -73,6 +76,7 @@ func reset_spawner() -> void:
 	blockers_remaining = blockers_available
 	builders_remaining = builders_available
 	diggers_remaining = diggers_available
+	featherfalls_remaining = featherfalls_available
 	_spawn_timer = 0.1
 	_spawning_done = false
 	_spawn_started = not wait_for_start
@@ -103,12 +107,14 @@ func _spawn_minion() -> void:
 	spawned_count += 1
 	active_count += 1
 	minion_spawned.emit(minion)
+	_refresh_target_affordances()
 
 func _on_minion_exited(minion: Node) -> void:
 	rescued_count += 1
 	active_count = max(0, active_count - 1)
 	sfx_requested.emit("exit_rescue")
 	minion_rescued.emit(minion)
+	_refresh_target_affordances()
 
 func _on_minion_death_started(_minion: Node, death_kind: String) -> void:
 	if _minion.has_method("death_voice_id"):
@@ -124,6 +130,7 @@ func _on_minion_died(minion: Node) -> void:
 	lost_count += 1
 	active_count = max(0, active_count - 1)
 	minion_lost.emit(minion)
+	_refresh_target_affordances()
 
 func set_debug_click_areas(enabled: bool) -> void:
 	debug_click_areas = enabled
@@ -133,14 +140,48 @@ func set_debug_click_areas(enabled: bool) -> void:
 
 func set_selected_job(job_id: String) -> void:
 	selected_job = job_id
+	_refresh_target_affordances()
+
+func _refresh_target_affordances() -> void:
+	for minion in get_tree().get_nodes_in_group("minions"):
+		if not minion.has_method("set_target_affordance"):
+			continue
+		var valid := _is_valid_target_for_selected_job(minion)
+		minion.set_target_affordance(selected_job, valid)
+
+func _is_valid_target_for_selected_job(minion: Node) -> bool:
+	if selected_job == "builder":
+		return builders_remaining > 0 and minion.has_method("can_become_builder") and minion.can_become_builder()
+	if selected_job == "digger":
+		if diggers_remaining <= 0 or not minion.has_method("can_become_digger") or not minion.can_become_digger():
+			return false
+		var terrain := get_node_or_null("../TerrainRoot")
+		if terrain == null or not terrain.has_method("find_diggable_plug_at"):
+			return false
+		return not terrain.find_diggable_plug_at(minion.global_position).is_empty()
+	if selected_job == "blocker":
+		if minion.get("is_blocker") == true:
+			return true
+		return blockers_remaining > 0 and minion.has_method("become_blocker") and minion.get("alive") == true and minion.get("rescued") == false and minion.is_on_floor()
+	if selected_job == "featherfall":
+		return featherfalls_remaining > 0 and minion.has_method("can_receive_featherfall") and minion.can_receive_featherfall()
+	return false
 
 func _on_minion_clicked(minion: Node) -> void:
+	if not _is_valid_target_for_selected_job(minion):
+		if minion.has_method("flash_invalid_target"):
+			minion.flash_invalid_target()
+		return
 	if selected_job == "builder":
 		_try_assign_builder(minion)
 		return
 
 	if selected_job == "digger":
 		_try_assign_digger(minion)
+		return
+
+	if selected_job == "featherfall":
+		_try_assign_featherfall(minion)
 		return
 
 	if selected_job != "blocker":
@@ -151,6 +192,7 @@ func _on_minion_clicked(minion: Node) -> void:
 			blockers_remaining = mini(blockers_remaining + 1, blockers_available)
 			sfx_requested.emit("resume_march")
 			minion_spawned.emit(minion)
+			_refresh_target_affordances()
 		return
 
 	if blockers_remaining <= 0 or not minion.has_method("become_blocker"):
@@ -161,7 +203,19 @@ func _on_minion_clicked(minion: Node) -> void:
 		sfx_requested.emit("bone_clack")
 		sfx_requested.emit("blocker_brace")
 		minion_spawned.emit(minion)
+		_refresh_target_affordances()
 
+
+func _try_assign_featherfall(minion: Node) -> void:
+	if featherfalls_remaining <= 0 or not minion.has_method("can_receive_featherfall") or not minion.can_receive_featherfall():
+		return
+	if not minion.activate_featherfall():
+		return
+	featherfalls_remaining -= 1
+	sfx_requested.emit("command_clatter")
+	sfx_requested.emit("bone_clack")
+	minion_spawned.emit(minion)
+	_refresh_target_affordances()
 
 func _try_assign_digger(minion: Node) -> void:
 	if diggers_remaining <= 0 or not minion.has_method("can_become_digger") or not minion.can_become_digger():
@@ -180,6 +234,7 @@ func _try_assign_digger(minion: Node) -> void:
 	if minion.has_method("play_digger_dust"):
 		minion.play_digger_dust()
 	minion_spawned.emit(minion)
+	_refresh_target_affordances()
 
 func _try_assign_builder(minion: Node) -> void:
 	if builders_remaining <= 0 or not minion.has_method("can_become_builder") or not minion.can_become_builder():
@@ -188,6 +243,7 @@ func _try_assign_builder(minion: Node) -> void:
 	sfx_requested.emit("command_clatter")
 	sfx_requested.emit("bone_clack")
 	minion_spawned.emit(minion)
+	_refresh_target_affordances()
 	_run_builder_sequence(minion)
 
 func _run_builder_sequence(minion: Node) -> void:
@@ -223,6 +279,7 @@ func _run_builder_sequence(minion: Node) -> void:
 	if is_instance_valid(minion) and minion.has_method("set_builder_active"):
 		minion.set_builder_active(false)
 		minion_spawned.emit(minion)
+		_refresh_target_affordances()
 
 func _get_builder_anchor(minion_position: Vector2, facing: float) -> Vector2:
 	# Build from the skeleton that was clicked, not from the far platform lip. Keep

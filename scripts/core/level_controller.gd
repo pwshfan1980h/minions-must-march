@@ -3,6 +3,7 @@ extends Node2D
 signal stats_changed(stats: Dictionary)
 signal level_finished(success: bool, stats: Dictionary)
 signal sfx_requested(sound_id: String)
+signal event_logged(text: String)
 
 const LEVEL_WIDTH := 2400
 const PLAYFIELD_HEIGHT := 608
@@ -22,9 +23,9 @@ func _ready() -> void:
 	rescue_required = int(cfg.get("rescue_required", rescue_required))
 	level_name = String(cfg.get("name", level_name))
 	print("LevelController ready: L%03d %s" % [LevelState.current_level, level_name])
-	minion_root.minion_spawned.connect(_on_minion_event)
-	minion_root.minion_rescued.connect(_on_minion_event)
-	minion_root.minion_lost.connect(_on_minion_event)
+	minion_root.minion_spawned.connect(_on_minion_spawned)
+	minion_root.minion_rescued.connect(_on_minion_rescued)
+	minion_root.minion_lost.connect(_on_minion_lost)
 	minion_root.spawn_complete.connect(_on_spawn_complete)
 	minion_root.sfx_requested.connect(_on_sfx_requested)
 	object_root.minion_entered_exit.connect(_on_exit_entered)
@@ -37,6 +38,10 @@ func _process(_delta: float) -> void:
 		_finish_level(minion_root.rescued_count >= rescue_required)
 
 func restart_level() -> void:
+	get_tree().reload_current_scene()
+
+func select_level(level_number: int) -> void:
+	LevelState.goto(level_number)
 	get_tree().reload_current_scene()
 
 func set_selected_job(job_id: String) -> void:
@@ -61,6 +66,7 @@ func get_stats() -> Dictionary:
 		"blockers": minion_root.blockers_remaining,
 		"builders": minion_root.builders_remaining,
 		"diggers": minion_root.diggers_remaining,
+		"featherfalls": minion_root.featherfalls_remaining,
 		"selected_job": minion_root.selected_job,
 		"required": rescue_required,
 		"score": score,
@@ -78,7 +84,15 @@ func _calculate_score() -> int:
 		score += minion_root.builders_remaining * 50 + minion_root.blockers_remaining * 25
 	return max(0, score)
 
-func _on_minion_event(_minion: Node = null) -> void:
+func _on_minion_spawned(_minion: Node = null) -> void:
+	_emit_stats()
+
+func _on_minion_rescued(_minion: Node = null) -> void:
+	event_logged.emit("Skeleton rescued: %d/%d" % [minion_root.rescued_count, rescue_required])
+	_emit_stats()
+
+func _on_minion_lost(_minion: Node = null) -> void:
+	event_logged.emit("Skeleton lost to the crypt")
 	_emit_stats()
 
 func _on_spawn_complete() -> void:

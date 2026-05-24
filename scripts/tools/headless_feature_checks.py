@@ -42,6 +42,63 @@ def test_hud_is_compact_and_no_long_startup_copy() -> None:
     require("offset_top = 70.0" in scene and "offset_bottom = 162.0" in scene, "skill dock should sit in the upper playfield, away from marching skeletons")
 
 
+def test_chamber_map_objective_and_event_log_ui() -> None:
+    scene = read("scenes/ui/GameUI.tscn")
+    ui = read("scripts/ui/game_ui.gd")
+    controller = read("scripts/core/level_controller.gd")
+    game_root = read("scripts/core/game_root.gd")
+    state = read("scripts/core/level_state.gd")
+
+    for token in ["signal level_selected", "ChamberMap", "LevelButtonContainer", "EventLogLabel", "add_event_log", "_populate_chamber_map", "CampaignTrackLabel", "CAMPAIGN TRACK"]:
+        require(token in scene + ui, f"level select / event log UI missing {token}")
+    require("level_selected.connect" in game_root and "select_level" in controller, "GameRoot should route chamber map selections to LevelController")
+    require("signal event_logged" in controller and "event_logged.connect" in game_root, "LevelController should publish rescue/loss/action events to UI")
+    require("static func all_levels" in state, "LevelState should expose level list data for chamber buttons")
+    require("objective_summary" in ui and "Skills:" in ui, "objective panel should summarize rescue target and available skills")
+    require("Campaign stop:" in ui and "CAMPAIGN ROAD" in ui, "chamber map should present levels as a campaign track map")
+
+
+def test_selected_skill_affordance_and_builder_preview() -> None:
+    minions = read("scripts/minions/minion_root.gd")
+    skeleton = read("scripts/minions/skeleton_minion.gd")
+
+    for token in ["_refresh_target_affordances", "set_target_affordance", "selected_job", "can_become_builder", "can_become_digger"]:
+        require(token in minions + skeleton, f"selected skill targeting affordance missing {token}")
+    require("_draw_target_affordance" in skeleton and "_target_affordance_job" in skeleton, "SkeletonMinion should draw a skill-specific targeting halo")
+    require("_draw_builder_preview_ghost" in skeleton and "BuilderPreviewGhost" in skeleton, "Builder affordance should include ghost rib preview lines")
+    require("mouse_entered" in skeleton and "_target_hovered" in skeleton, "target affordance should brighten on hover")
+    require("InvalidTargetFlash" in skeleton and "flash_invalid_target" in skeleton, "invalid clicks should flash visible feedback")
+
+
+def test_pause_inspect_mode_exists() -> None:
+    ui = read("scripts/ui/game_ui.gd")
+    scene = read("scenes/ui/GameUI.tscn")
+    game_root = read("scripts/core/game_root.gd")
+
+    require("signal pause_toggled" in ui and "KEY_SPACE" in ui, "HUD should expose Space pause toggle")
+    require("InspectLabel" in scene and "set_pause_inspect" in ui, "UI should show a pause/inspect overlay")
+    require("process_mode = Node.PROCESS_MODE_ALWAYS" in game_root, "GameRoot should keep camera/input alive while paused")
+    require("get_tree().paused" in game_root and "_toggle_pause_inspect" in game_root, "GameRoot should toggle tree pause for inspect mode")
+    require("PAUSED — inspect" in ui, "pause overlay should explain inspect controls")
+
+
+def test_featherfall_skill_contract_exists() -> None:
+    state = read("scripts/core/level_state.gd")
+    ui = read("scripts/ui/game_ui.gd")
+    scene = read("scenes/ui/GameUI.tscn")
+    minions = read("scripts/minions/minion_root.gd")
+    skeleton = read("scripts/minions/skeleton_minion.gd")
+    controller = read("scripts/core/level_controller.gd")
+
+    require('"featherfalls"' in state, "at least one level should provide Featherfall charges")
+    require("FeatherfallButton" in scene and "featherfall_button" in ui and "KEY_4" in ui, "HUD should expose FEATHER as hotkey 4")
+    require("featherfalls_remaining" in minions and 'selected_job == "featherfall"' in minions, "MinionRoot should route selected FEATHER jobs")
+    require("can_receive_featherfall" in skeleton and "activate_featherfall" in skeleton, "SkeletonMinion should expose Featherfall eligibility/action")
+    require("_consume_featherfall_landing" in skeleton and "FATAL_FALL_SPEED" in skeleton, "Featherfall should save one fatal landing")
+    require("_draw_featherfall_charm" in skeleton, "Featherfall should be visibly readable on the skeleton")
+    require('"featherfalls": minion_root.featherfalls_remaining' in controller, "LevelController stats should include Featherfall charges")
+
+
 def test_multilevel_drop_crypt_level_exists() -> None:
     state = read("scripts/core/level_state.gd")
     terrain = read("scripts/terrain/terrain_root.gd")
@@ -64,6 +121,13 @@ def test_platforms_are_jagged_and_emit_motes() -> None:
     for token in ["_build_chipped_silhouette", "ragged underside", "HangingJaggedShard", "_platform_ash_specs", "_add_platform_ash_emitter", "_draw_platform_ash_motes"]:
         require(token in terrain, f"terrain platform polish missing {token}")
     require("collision stays a clean rect" in terrain, "platform visual cleanup should not change puzzle collision rectangles")
+
+
+def test_levels_have_extra_hellish_atmosphere() -> None:
+    terrain = read("scripts/terrain/terrain_root.gd")
+    for token in ["InfernalEmbers", "_draw_blood_moon", "_draw_lavafalls", "_draw_bone_spike_ridge", "_draw_infernal_embers"]:
+        require(token in terrain, f"hellish atmospheric layer missing {token}")
+    require("visual-only" in terrain and "puzzle geometry less readable" in terrain, "hellish polish must document that it does not alter collision")
 
 
 def test_audio_feedback_assets_and_hooks_exist() -> None:
@@ -117,9 +181,14 @@ def main() -> None:
     tests = [
         test_startup_skips_title_and_portal_gate,
         test_hud_is_compact_and_no_long_startup_copy,
+        test_chamber_map_objective_and_event_log_ui,
+        test_selected_skill_affordance_and_builder_preview,
+        test_pause_inspect_mode_exists,
+        test_featherfall_skill_contract_exists,
         test_multilevel_drop_crypt_level_exists,
         test_river_has_bubbles_hands_and_pop_animation,
         test_platforms_are_jagged_and_emit_motes,
+        test_levels_have_extra_hellish_atmosphere,
         test_audio_feedback_assets_and_hooks_exist,
         test_async_gait_no_beat_conductor,
         test_digger_biome_and_skill_contract_exists,

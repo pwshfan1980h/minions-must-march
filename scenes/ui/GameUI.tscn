@@ -52,7 +52,7 @@ text = "Pick a skeleton skill below, then click a skeleton."
 [node name="SkillDock" type="Panel" parent="."]
 offset_left = 22.0
 offset_top = 70.0
-offset_right = 320.0
+offset_right = 416.0
 offset_bottom = 162.0
 
 [node name="BlockerButton" type="Button" parent="SkillDock"]
@@ -87,6 +87,51 @@ text = "3
 DIG
 ⛏ x0"
 
+[node name="FeatherfallButton" type="Button" parent="SkillDock"]
+offset_left = 298.0
+offset_top = 10.0
+offset_right = 384.0
+offset_bottom = 82.0
+focus_mode = 0
+disabled = true
+text = "4
+FEATHER
+🪶 x0"
+
+[node name="ChamberMap" type="Panel" parent="."]
+offset_left = 986.0
+offset_top = 48.0
+offset_right = 1268.0
+offset_bottom = 286.0
+
+[node name="ChamberTitle" type="Label" parent="ChamberMap"]
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 268.0
+offset_bottom = 28.0
+text = "CAMPAIGN TRACK"
+
+[node name="CampaignTrackLabel" type="Label" parent="ChamberMap"]
+offset_left = 10.0
+offset_top = 30.0
+offset_right = 272.0
+offset_bottom = 56.0
+text = "●──●──●──●──●──●"
+
+[node name="LevelButtonContainer" type="VBoxContainer" parent="ChamberMap"]
+offset_left = 10.0
+offset_top = 60.0
+offset_right = 272.0
+offset_bottom = 276.0
+
+[node name="EventLogLabel" type="Label" parent="."]
+offset_left = 650.0
+offset_top = 44.0
+offset_right = 968.0
+offset_bottom = 142.0
+autowrap_mode = 3
+text = "March log sleeps."
+
 [node name="ResultLabel" type="Label" parent="."]
 anchors_preset = 8
 anchor_left = 0.5
@@ -100,6 +145,21 @@ offset_bottom = 96.0
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "CRYPT CLEARED"
+
+[node name="InspectLabel" type="Label" parent="."]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -40.0
+offset_right = 250.0
+offset_bottom = 60.0
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "PAUSED — inspect"
 
 [node name="PerfLabel" type="Label" parent="."]
 visible = false

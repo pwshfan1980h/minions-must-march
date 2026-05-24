@@ -10,6 +10,7 @@ const CAMERA_PAN_SPEED := 520.0
 @onready var camera: Camera2D = $Camera2D
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("Minions Must March: GameRoot ready")
 	camera.position.x = VIEWPORT_WIDTH / 2.0
 	camera.limit_left = 0
@@ -19,7 +20,10 @@ func _ready() -> void:
 	level_controller.stats_changed.connect(game_ui.update_stats)
 	level_controller.level_finished.connect(game_ui.show_level_finished)
 	level_controller.sfx_requested.connect(sfx.play)
+	level_controller.event_logged.connect(game_ui.add_event_log)
 	game_ui.restart_requested.connect(level_controller.restart_level)
+	game_ui.level_selected.connect(level_controller.select_level)
+	game_ui.pause_toggled.connect(_toggle_pause_inspect)
 	game_ui.job_selected.connect(_on_job_selected)
 	game_ui.update_stats(level_controller.get_stats())
 	_maybe_capture_screenshot()
@@ -38,6 +42,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_F3 and level_controller.has_method("toggle_debug_click_areas"):
 			var enabled: bool = level_controller.toggle_debug_click_areas()
 			print("Click-area debug: %s" % ("ON" if enabled else "OFF"))
+		elif event.keycode == KEY_SPACE:
+			_toggle_pause_inspect()
+
+func _toggle_pause_inspect() -> void:
+	get_tree().paused = not get_tree().paused
+	game_ui.set_pause_inspect(get_tree().paused)
 
 func _update_camera_pan(delta: float) -> void:
 	var pan := 0.0

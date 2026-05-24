@@ -70,6 +70,7 @@ const LEVELS := {
 		"spawn_interval": 0.85,
 		"blockers": 2,
 		"builders": 1,
+		"featherfalls": 1,
 		"spawn_position": Vector2(220, 324),
 		"spawn_direction": 1,
 		"exit_position": Vector2(1298, 472),
@@ -96,6 +97,16 @@ static var current_level := 1
 
 static func config() -> Dictionary:
 	return LEVELS.get(current_level, LEVELS[1])
+
+static func all_levels() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	var keys := LEVELS.keys()
+	keys.sort()
+	for n in keys:
+		var cfg: Dictionary = LEVELS[n].duplicate()
+		cfg["number"] = n
+		rows.append(cfg)
+	return rows
 
 static func has_next_level() -> bool:
 	return LEVELS.has(current_level + 1)

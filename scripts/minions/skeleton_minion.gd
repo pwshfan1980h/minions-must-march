@@ -97,6 +97,13 @@ var _visual_redraw_requested := false
 var _is_on_screen := true
 var _blocker_check_timer := 0.0
 var _blocker_ahead_cached := false
+var _target_affordance_job := ""
+var _target_affordance_visible := false
+var _target_affordance_valid := false
+var _target_hovered := false
+var _invalid_target_flash := 0.0
+var _featherfall_active := false
+var _featherfall_glow := 0.0
 
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var click_area: Area2D = $ClickArea
@@ -108,6 +115,14 @@ func _ready() -> void:
 	input_pickable = false
 	if click_area != null:
 		click_area.input_event.connect(_on_click_area_input_event)
+		click_area.mouse_entered.connect(func() -> void:
+			_target_hovered = true
+			_request_visual_redraw(true)
+		)
+		click_area.mouse_exited.connect(func() -> void:
+			_target_hovered = false
+			_request_visual_redraw(true)
+		)
 	if screen_notifier != null:
 		_is_on_screen = screen_notifier.is_on_screen()
 		screen_notifier.screen_entered.connect(_on_screen_entered)
@@ -140,6 +155,12 @@ func _process(delta: float) -> void:
 		_request_visual_redraw()
 	if _vault_anim_time > 0.0:
 		_vault_anim_time = maxf(0.0, _vault_anim_time - delta)
+		_request_visual_redraw()
+	if _invalid_target_flash > 0.0:
+		_invalid_target_flash = maxf(0.0, _invalid_target_flash - delta)
+		_request_visual_redraw()
+	if _featherfall_glow > 0.0:
+		_featherfall_glow = maxf(0.0, _featherfall_glow - delta)
 		_request_visual_redraw()
 	_flush_visual_redraw_if_due()
 
@@ -180,7 +201,11 @@ func _physics_process(delta: float) -> void:
 
 	if on_floor:
 		if highest_fall_speed >= FATAL_FALL_SPEED:
-			_die()
+			if _consume_featherfall_landing():
+				highest_fall_speed = 0.0
+				_stop_tumble()
+			else:
+				_die()
 		else:
 			highest_fall_speed = 0.0
 			_stop_tumble()
@@ -230,6 +255,37 @@ func can_become_builder() -> bool:
 
 func can_become_digger() -> bool:
 	return alive and not rescued and not is_blocker and not is_builder and is_on_floor()
+
+func can_receive_featherfall() -> bool:
+	return alive and not rescued and not _featherfall_active
+
+func activate_featherfall() -> bool:
+	if not can_receive_featherfall():
+		return false
+	_featherfall_active = true
+	_featherfall_glow = 0.85
+	_request_visual_redraw(true)
+	return true
+
+func _consume_featherfall_landing() -> bool:
+	if not _featherfall_active:
+		return false
+	_featherfall_active = false
+	_featherfall_glow = 0.75
+	velocity.y = -42.0
+	_request_visual_redraw(true)
+	return true
+
+func set_target_affordance(job_id: String, valid: bool) -> void:
+	_target_affordance_job = job_id
+	_target_affordance_valid = valid
+	_target_affordance_visible = not job_id.is_empty() and alive and not rescued
+	_request_visual_redraw(true)
+
+func flash_invalid_target() -> void:
+	# InvalidTargetFlash: a small red pulse says "not this skeleton" without stealing input.
+	_invalid_target_flash = 0.35
+	_request_visual_redraw(true)
 
 func play_digger_dust() -> void:
 	# Digger v0 is an instant cracked-floor command; a forced redraw gives the
@@ -470,6 +526,8 @@ func _handle_click_event(event: InputEvent) -> void:
 func _draw() -> void:
 	# Draw at a smaller in-world scale. This keeps the same level camera/field,
 	# but makes the crowd feel more numerous and less toy-large.
+	if _target_affordance_visible or _invalid_target_flash > 0.0:
+		_draw_target_affordance()
 	draw_set_transform(Vector2.ZERO, _visual_tumble_rotation + _sink_wobble, Vector2(VISUAL_SCALE, VISUAL_SCALE))
 
 	var bone := Color("f1d27a") if is_builder else Color("f1e7c8") if is_blocker else Color("e8e0c8") if alive else Color("8c7f91")
@@ -610,9 +668,25 @@ func _draw() -> void:
 		var outline_color := Color(0.95, 0.76, 0.23, 0.18) if is_builder else Color(0.95, 0.76, 0.23, 0.13)
 		draw_rect(Rect2(Vector2(-20, -30), Vector2(40, 55)), outline_color, false, 2.0)
 
+	if _featherfall_active or _featherfall_glow > 0.0:
+		_draw_featherfall_charm(head, face)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if _debug_click_area:
 		_draw_click_debug()
+
+func _draw_featherfall_charm(anchor: Vector2, face: float) -> void:
+	# FeatherfallCharm: a blue-white bone feather pinned above the skull while
+	# active; a brief pulse remains when it saves a fatal landing.
+	var pulse := 0.45 + 0.55 * clampf(_featherfall_glow / 0.85, 0.0, 1.0)
+	var color := Color(0.66, 0.90, 1.0, 0.72 if _featherfall_active else 0.48 * pulse)
+	var base := anchor + Vector2(-face * 8.0, -9.0)
+	var tip := base + Vector2(face * 13.0, -10.0)
+	draw_line(base, tip, color, 1.9, true)
+	for i in 4:
+		var t := float(i + 1) / 5.0
+		var p := base.lerp(tip, t)
+		draw_line(p, p + Vector2(-face * (4.5 - t * 2.0), 4.0 + t * 2.0), Color(color.r, color.g, color.b, color.a * 0.78), 0.95, true)
+	draw_circle(tip, 2.2 + 3.2 * pulse, Color(color.r, color.g, color.b, 0.12 * pulse))
 
 func _draw_click_debug() -> void:
 	# Mirrors the ClickArea/ClickShape capsule so tuning click fairness is visible in-game.
@@ -630,6 +704,37 @@ func _draw_click_debug() -> void:
 	draw_line(Vector2(center.x + radius, top.y), Vector2(center.x + radius, bottom.y), color, 1.5)
 	draw_arc(top, radius, PI, TAU, 16, color, 1.5)
 	draw_arc(bottom, radius, 0.0, PI, 16, color, 1.5)
+
+func _draw_target_affordance() -> void:
+	var valid_color := Color(1.0, 0.78, 0.22, 0.56 if _target_hovered else 0.34)
+	var invalid_color := Color(1.0, 0.18, 0.12, 0.52 if _target_hovered else 0.28)
+	var pulse_color := Color(1.0, 0.08, 0.06, 0.70 * clampf(_invalid_target_flash / 0.35, 0.0, 1.0))
+	var color := valid_color if _target_affordance_valid else invalid_color
+	if _invalid_target_flash > 0.0:
+		color = pulse_color
+	var width := 2.6 if _target_hovered else 1.5
+	draw_arc(Vector2(0, -9), 20.0, 0.0, TAU, 28, color, width)
+	draw_line(Vector2(-12, -36), Vector2(12, -36), color, width, true)
+	if _target_affordance_job == "builder" and _target_affordance_valid:
+		_draw_builder_preview_ghost(color)
+	elif _target_affordance_job == "featherfall" and _target_affordance_valid:
+		var feather := Color(0.72, 0.92, 1.0, 0.28 if not _target_hovered else 0.48)
+		draw_line(Vector2(-16, -42), Vector2(16, -30), feather, 2.0, true)
+		draw_line(Vector2(-10, -39), Vector2(-2, -30), feather, 1.1, true)
+		draw_line(Vector2(2, -36), Vector2(10, -28), feather, 1.1, true)
+
+func _draw_builder_preview_ghost(color: Color) -> void:
+	# BuilderPreviewGhost: tiny rib bridge forecast beside the selected skeleton.
+	var face := signf(direction)
+	if face == 0.0:
+		face = 1.0
+	var ghost := Color(color.r, color.g, color.b, 0.24 if not _target_hovered else 0.42)
+	for i in 6:
+		var a := Vector2(face * (20.0 + float(i) * 16.0), 12.0 - float(i) * 5.0)
+		var b := a + Vector2(face * 18.0, -5.0)
+		draw_line(a, b, ghost, 2.0, true)
+		draw_circle(a, 2.1, ghost)
+		draw_circle(b, 2.1, ghost)
 
 func _draw_bone_segment(a: Vector2, b: Vector2, color: Color, width: float) -> void:
 	draw_line(a, b, color, width, true)

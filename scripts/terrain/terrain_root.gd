@@ -19,11 +19,13 @@ var _bubble_specs: Array[Dictionary] = []
 var _bubble_pops: Array[Dictionary] = []
 var _crumbling_sections: Array[Dictionary] = []
 var _platform_ash_specs: Array[Dictionary] = []
+var _ember_specs: Array[Dictionary] = []
 
 func _ready() -> void:
 	_build_souls()
 	_build_hands()
 	_build_bubbles()
+	_build_embers()
 	var terrain_id: String = LevelState.config().get("terrain", "level_001")
 	match terrain_id:
 		"level_001": _build_level_001_terrain()
@@ -742,9 +744,28 @@ func _draw_distant_underworld_background() -> void:
 	# a tighter tree silhouette layer, and a few breathing lantern flames.
 	# Designed to read as ONE distant skyline, not a stack of competing motifs.
 	_draw_horizon_haze()
+	_draw_blood_moon()
+	_draw_lavafalls()
 	_draw_far_skyline()
 	_draw_near_tree_line()
+	_draw_bone_spike_ridge()
 	_draw_horizon_lanterns()
+	_draw_infernal_embers()
+
+func _build_embers() -> void:
+	# InfernalEmbers: deterministic visual-only ash sparks drifting across the
+	# campaign, never collision or audio. Keeps the levels hellish without making
+	# puzzle geometry less readable.
+	_ember_specs.clear()
+	for i in 46:
+		_ember_specs.append({
+			"x": 40.0 + fposmod(float(i) * 173.0, WORLD_WIDTH - 80.0),
+			"y": 96.0 + fposmod(float(i) * 61.0, 360.0),
+			"phase": float(i) * 0.113,
+			"speed": 0.030 + float(i % 7) * 0.008,
+			"drift": -44.0 + float((i * 23) % 89),
+			"size": 1.1 + float((i * 5) % 8) * 0.28,
+		})
 
 func _draw_horizon_haze() -> void:
 	# Soft crimson-to-dark gradient band, kept low-saturation so the playable
@@ -758,6 +779,51 @@ func _draw_horizon_haze() -> void:
 			0.20 - t * 0.080
 		)
 		draw_rect(Rect2(0, 80.0 + i * 11.5, WORLD_WIDTH, 13.0), color)
+
+func _draw_blood_moon() -> void:
+	var pos := Vector2(1820.0, 154.0)
+	var pulse := 0.80 + 0.20 * sin(_time * 0.32)
+	draw_circle(pos, 78.0, Color(0.50, 0.055, 0.060, 0.075 * pulse))
+	draw_circle(pos, 46.0, Color(0.42, 0.045, 0.055, 0.18 * pulse))
+	draw_circle(pos + Vector2(-14, -8), 13.0, Color(0.06, 0.018, 0.030, 0.13))
+	draw_circle(pos + Vector2(18, 10), 8.0, Color(0.06, 0.018, 0.030, 0.12))
+
+func _draw_lavafalls() -> void:
+	# Far background lavafalls: red vertical wounds behind the playable layer.
+	# Low alpha and behind silhouettes, so they add hellishness without competing
+	# with platforms, minions, or skill previews.
+	for spec in [Vector2(560, 160), Vector2(1688, 128), Vector2(2210, 190)]:
+		var x: float = float(spec.x)
+		var top: float = float(spec.y)
+		var pulse := 0.64 + 0.36 * sin(_time * 0.95 + x * 0.01)
+		var h := 230.0 + 30.0 * sin(_time * 0.21 + x * 0.003)
+		draw_rect(Rect2(x - 7.0, top, 14.0, h), Color(0.78, 0.18, 0.045, 0.055 * pulse))
+		draw_rect(Rect2(x - 2.0, top + 10.0, 4.0, h - 20.0), Color(1.0, 0.52, 0.12, 0.075 * pulse))
+		draw_circle(Vector2(x, top + h), 32.0, Color(0.75, 0.10, 0.05, 0.040 * pulse))
+
+func _draw_bone_spike_ridge() -> void:
+	# Jagged bone stakes form a hellish mid-ground ridge, below the skyline and
+	# safely behind every collision rect.
+	var color := Color(0.12, 0.095, 0.075, 0.38)
+	var base_y := 390.0
+	for x in range(20, WORLD_WIDTH, 68):
+		var fx := float(x)
+		var h := 28.0 + absf(sin(fx * 0.018 + 0.7)) * 36.0
+		var lean := sin(fx * 0.041) * 9.0
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(fx - 10.0, base_y),
+			Vector2(fx + lean, base_y - h),
+			Vector2(fx + 12.0, base_y),
+		]), color)
+		draw_line(Vector2(fx + lean * 0.35, base_y - h * 0.72), Vector2(fx + lean, base_y - h), Color(0.72, 0.60, 0.40, 0.10), 1.0)
+
+func _draw_infernal_embers() -> void:
+	for spec in _ember_specs:
+		var cycle := fposmod(_time * float(spec["speed"]) + float(spec["phase"]), 1.0)
+		var pos := Vector2(float(spec["x"]) + float(spec["drift"]) * cycle + sin(_time * 1.8 + float(spec["x"]) * 0.02) * 5.0, float(spec["y"]) - cycle * 120.0)
+		var alpha := sin(cycle * PI) * 0.34
+		draw_circle(pos, float(spec["size"]), Color(1.0, 0.42, 0.10, alpha))
+		draw_circle(pos, float(spec["size"]) * 2.8, Color(0.88, 0.10, 0.04, alpha * 0.12))
 
 func _draw_far_skyline() -> void:
 	# A continuous, slightly-uneven skyline of distant crypt towers. Heights
