@@ -34,12 +34,16 @@ def test_startup_skips_title_and_portal_gate() -> None:
 def test_hud_is_compact_and_no_long_startup_copy() -> None:
     scene = read("scenes/ui/GameUI.tscn")
     ui = read("scripts/ui/game_ui.gd")
-    require("offset_bottom = 58.0" in scene, "status panel should be very compact")
+    require("offset_bottom = 46.0" in scene, "status panel should be compact and low-profile")
     require("[node name=\"SkillDock\" type=\"Panel\" parent=\".\"]" in scene, "skeleton skills should live in their own level dock")
     require("parent=\"SkillDock\"" in scene, "action buttons should be parented to the in-level skill dock")
     require("Click the portal" not in scene + ui, "HUD should not tell player to click the portal")
     require("Pick a skeleton skill" in scene + ui, "HUD should name the skeleton skill dock")
-    require("offset_top = 70.0" in scene and "offset_bottom = 162.0" in scene, "skill dock should sit in the upper playfield, away from marching skeletons")
+    require("offset_top = 54.0" in scene and "offset_bottom = 104.0" in scene, "skill dock should be smaller and sit high, away from marching skeletons")
+    for token in ["1 BLK x", "2 BLD x", "3 DIG x", "4 FTH x"]:
+        require(token in ui, f"compact single-line skill button copy missing {token}")
+    for token in ["Compact bone UI", "Color(0.015, 0.014, 0.013", "Color(\"f1eadb\")", "font_size\", 10", "_panel_box(fill, border, 1 if not selected else 2, 5)"]:
+        require(token in ui, f"black/white bone compact HUD styling missing {token}")
 
 
 def test_chamber_map_objective_and_event_log_ui() -> None:
@@ -111,6 +115,26 @@ def test_multilevel_drop_crypt_level_exists() -> None:
     require('"level_005": _build_level_005_terrain()' in terrain, "terrain dispatcher should load level_005")
     require("func _build_level_005_terrain()" in terrain, "level_005 terrain builder should exist")
     require("survivable" in terrain and "96px fall" in terrain, "level_005 should document the non-fatal multi-level fall")
+
+
+def test_additional_campaign_maps_exist() -> None:
+    state = read("scripts/core/level_state.gd")
+    terrain = read("scripts/terrain/terrain_root.gd")
+
+    expected = [
+        ("Ash Gutter Switchback", "level_007", "_build_level_007_terrain", '"diggers": 1', '"builders": 1'),
+        ("Crumbling Rib Toll", "level_008", "_build_level_008_terrain", '"builders": 2', '"blockers": 1'),
+        ("Featherfall Reliquary", "level_009", "_build_level_009_terrain", '"featherfalls": 1', '"diggers": 1'),
+    ]
+    for name, terrain_id, builder_func, skill_a, skill_b in expected:
+        require(f'"name": "{name}"' in state, f"missing new campaign map {name}")
+        require(f'"terrain": "{terrain_id}"' in state, f"{name} should reference {terrain_id}")
+        require(f'"{terrain_id}": {builder_func}()' in terrain, f"terrain dispatcher should load {terrain_id}")
+        require(f"func {builder_func}()" in terrain, f"terrain builder {builder_func} should exist")
+        start = state.index(f'"name": "{name}"')
+        chunk = state[start:start + 520]
+        require(skill_a in chunk and skill_b in chunk, f"{name} should declare intended skill economy")
+    require("_add_ash_catacombs_markers_at" in terrain, "new ash maps should reuse compact marker helper")
 
 
 def test_river_has_bubbles_hands_and_pop_animation() -> None:
@@ -189,6 +213,7 @@ def main() -> None:
         test_pause_inspect_mode_exists,
         test_featherfall_skill_contract_exists,
         test_multilevel_drop_crypt_level_exists,
+        test_additional_campaign_maps_exist,
         test_river_has_bubbles_hands_and_pop_animation,
         test_platforms_are_jagged_and_emit_motes,
         test_levels_have_extra_hellish_atmosphere,

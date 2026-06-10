@@ -36,6 +36,9 @@ func _ready() -> void:
 		"level_004": _build_level_004_terrain()
 		"level_005": _build_level_005_terrain()
 		"level_006": _build_level_006_terrain()
+		"level_007": _build_level_007_terrain()
+		"level_008": _build_level_008_terrain()
+		"level_009": _build_level_009_terrain()
 		_: _build_level_001_terrain()
 	_add_styx_death_area()
 	queue_redraw()
@@ -177,6 +180,96 @@ func _build_level_006_terrain() -> void:
 	_add_solid(Rect2(520, 512, 176, 24), Color("342b2a"), "lower_catacomb")
 	_add_solid(Rect2(820, 544, 240, 24), Color("312827"), "lower_catacomb")
 	_add_ash_catacombs_markers()
+
+func _build_level_007_terrain() -> void:
+	# Ash Gutter Switchback: a reverse-facing Digger map. The crowd starts on the
+	# upper-right ash walk, digs a gutter plug, drops a safe 112px to the lower
+	# floor, then uses one blocker/one builder to reverse and cross the exit cut.
+	_add_solid(Rect2(520, 320, 300, 32), Color("625a52"), "ash_floor")
+	_add_diggable_plug(Rect2(820, 320, 92, 32), Color("382f2d"))
+	_add_solid(Rect2(912, 320, 392, 32), Color("5a514c"), "ash_floor")
+	_add_solid(Rect2(1280, 256, 32, 320), Color("262323"), "ash_wall")
+	_add_solid(Rect2(488, 352, 32, 96), Color("2b2828"), "ash_wall")
+
+	# Lower switchback. The left exit shelf is separated by a short bridgeable cut;
+	# the right wall prevents the drop from becoming an instant Styx walk-off.
+	_add_solid(Rect2(528, 432, 496, 32), Color("443b38"), "lower_catacomb")
+	_add_solid(Rect2(1024, 384, 32, 192), Color("252222"), "ash_wall")
+	_add_solid(Rect2(160, 432, 256, 32), Color("312827"), "lower_catacomb")
+	_add_solid(Rect2(128, 384, 32, 192), Color("252222"), "ash_wall")
+	_add_solid(Rect2(260, 508, 220, 22), Color("2f2826"), "lower_catacomb")
+	_add_ash_catacombs_markers_at(Vector2(866, 268), [585.0, 760.0, 940.0])
+
+func _build_level_008_terrain() -> void:
+	# Crumbling Rib Toll: a compact pressure map. A blocker buys time on the left
+	# while two builders climb toward the high exit, but the middle toll span starts
+	# crumbling once the first skeleton crosses it.
+	_add_solid(Rect2(144, 448, 392, 32), Color("3a3144"), "crypt")
+	_add_solid(Rect2(112, 480, 32, 96), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(536, 480, 32, 96), Color("2a2432"), "skull_end")
+
+	_add_solid(Rect2(648, 400, 116, 32), Color("342b3e"), "chain")
+	_add_crumbling_solid(Rect2(764, 400, 148, 32), Color("342b3e"))
+	_add_solid(Rect2(912, 400, 96, 32), Color("342b3e"), "chain")
+	_add_solid(Rect2(648, 432, 32, 144), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(1008, 432, 32, 144), Color("2a2432"), "skull_end")
+
+	_add_solid(Rect2(1120, 352, 344, 32), Color("241d2f"), "obsidian")
+	_add_solid(Rect2(1120, 384, 32, 192), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(1464, 384, 32, 192), Color("2a2432"), "skull_end")
+	_add_solid(Rect2(700, 512, 188, 20), Color("4a3d37"), "bone_bridge")
+
+func _build_level_009_terrain() -> void:
+	# Featherfall Reliquary: a taller mixed-skill chamber. The intended solution is
+	# to dig a controlled shaft to a mid landing; Featherfall provides recovery if
+	# one scout takes the bigger reliquary drop before the lower turn/build puzzle.
+	_add_solid(Rect2(160, 288, 288, 32), Color("665c54"), "ash_floor")
+	_add_diggable_plug(Rect2(448, 288, 88, 32), Color("3c332f"))
+	_add_solid(Rect2(536, 288, 192, 32), Color("5a514c"), "ash_floor")
+	_add_solid(Rect2(128, 224, 32, 352), Color("252222"), "ash_wall")
+
+	# Mid landing after the shaft: y=416 gives a 128px controlled dig drop. A gap
+	# after this shelf creates a risky larger fall, making FEATHER a readable safety
+	# charm instead of mandatory busywork.
+	_add_solid(Rect2(428, 416, 292, 32), Color("443b38"), "lower_catacomb")
+	_add_solid(Rect2(396, 360, 32, 216), Color("252222"), "ash_wall")
+	_add_crumbling_solid(Rect2(720, 416, 92, 32), Color("443b38"))
+
+	_add_solid(Rect2(920, 480, 472, 32), Color("241d2f"), "obsidian")
+	_add_solid(Rect2(888, 416, 32, 160), Color("252222"), "ash_wall")
+	_add_solid(Rect2(1392, 416, 32, 160), Color("252222"), "ash_wall")
+	_add_solid(Rect2(1030, 340, 188, 22), Color("3a3144"), "chain")
+	_add_ash_catacombs_markers_at(Vector2(492, 236), [470.0, 1130.0, 1325.0])
+
+func _add_ash_catacombs_markers_at(sign_origin: Vector2, candle_xs: Array[float]) -> void:
+	var sign := Line2D.new()
+	sign.name = "DiggerDownMarker"
+	sign.default_color = Color(0.86, 0.82, 0.72, 0.82)
+	sign.width = 2.4
+	sign.points = PackedVector2Array([
+		sign_origin,
+		sign_origin + Vector2(0, 38),
+		sign_origin + Vector2(-16, 22),
+		sign_origin + Vector2(0, 38),
+		sign_origin + Vector2(16, 22),
+	])
+	add_child(sign)
+
+	for x in candle_xs:
+		var candle := Node2D.new()
+		candle.name = "AshCandle"
+		candle.position = Vector2(x, 438.0)
+		add_child(candle)
+		var wick := Line2D.new()
+		wick.default_color = Color("d8d0bb")
+		wick.width = 2.0
+		wick.points = PackedVector2Array([Vector2(0, 0), Vector2(0, -14)])
+		candle.add_child(wick)
+		var flame := Polygon2D.new()
+		flame.color = Color(0.92, 0.88, 0.76, 0.78)
+		flame.position = Vector2(0, -18)
+		flame.polygon = PackedVector2Array([Vector2(0, -9), Vector2(6, 2), Vector2(0, 7), Vector2(-5, 2)])
+		candle.add_child(flame)
 
 func _add_ash_catacombs_markers() -> void:
 	var sign := Line2D.new()

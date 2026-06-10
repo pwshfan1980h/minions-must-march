@@ -70,10 +70,10 @@ func update_stats(stats: Dictionary) -> void:
 		stats.get("lost", 0),
 	]
 
-	blocker_button.text = "1\nBLOCK\n⛔ x%d" % blockers_remaining
-	builder_button.text = "2\nBUILD\n🦴 x%d" % builders_remaining
-	digger_button.text = "3\nDIG\n⛏ x%d" % diggers_remaining
-	featherfall_button.text = "4\nFEATHER\n🪶 x%d" % featherfalls_remaining
+	blocker_button.text = "1 BLK x%d" % blockers_remaining
+	builder_button.text = "2 BLD x%d" % builders_remaining
+	digger_button.text = "3 DIG x%d" % diggers_remaining
+	featherfall_button.text = "4 FTH x%d" % featherfalls_remaining
 	hint_label.text = _build_hint_text(stats)
 	_update_job_buttons()
 	_update_perf_overlay(true)
@@ -230,68 +230,73 @@ func _update_job_buttons() -> void:
 	_style_job_button(featherfall_button, selected_job == "featherfall", featherfall_button.disabled)
 
 func _apply_visual_style() -> void:
-	job_bar.add_theme_stylebox_override("panel", _panel_box(Color(0.034, 0.027, 0.042, 0.86), Color(0.66, 0.53, 0.31, 0.48), 1, 10))
-	skill_dock.add_theme_stylebox_override("panel", _panel_box(Color(0.030, 0.024, 0.034, 0.58), Color(0.95, 0.72, 0.28, 0.38), 1, 12))
-	chamber_map.add_theme_stylebox_override("panel", _panel_box(Color(0.025, 0.021, 0.032, 0.72), Color(0.52, 0.70, 0.58, 0.34), 1, 10))
+	# Compact bone UI: nearly black glass panels, bone-white text, thin pale
+	# borders, and small single-line skill buttons so the playfield stays visible.
+	job_bar.add_theme_stylebox_override("panel", _panel_box(Color(0.015, 0.014, 0.013, 0.88), Color(0.78, 0.74, 0.64, 0.62), 1, 6))
+	skill_dock.add_theme_stylebox_override("panel", _panel_box(Color(0.010, 0.010, 0.009, 0.62), Color(0.88, 0.84, 0.74, 0.52), 1, 6))
+	chamber_map.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.012, 0.011, 0.74), Color(0.70, 0.68, 0.62, 0.44), 1, 6))
 
 	for label in [mission_label, goal_label, score_label, stats_label, hint_label, event_log_label, chamber_title, campaign_track_label, inspect_label, result_label]:
 		label.add_theme_font_override("font", _spooky_font)
-		label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.86))
-		label.add_theme_constant_override("shadow_offset_x", 2)
-		label.add_theme_constant_override("shadow_offset_y", 2)
+		label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.88))
+		label.add_theme_constant_override("shadow_offset_x", 1)
+		label.add_theme_constant_override("shadow_offset_y", 1)
 
-	mission_label.add_theme_color_override("font_color", Color("ffd36f"))
-	mission_label.add_theme_font_size_override("font_size", 18)
-	goal_label.add_theme_color_override("font_color", Color("e8d7a9"))
-	goal_label.add_theme_font_size_override("font_size", 12)
-	score_label.add_theme_color_override("font_color", Color("aef5a4"))
-	score_label.add_theme_font_size_override("font_size", 14)
-	stats_label.add_theme_color_override("font_color", Color("d9ccae"))
-	stats_label.add_theme_font_size_override("font_size", 12)
-	hint_label.add_theme_color_override("font_color", Color("f1e7c8"))
-	hint_label.add_theme_font_size_override("font_size", 12)
-	event_log_label.add_theme_color_override("font_color", Color("b9d8bd"))
-	event_log_label.add_theme_font_size_override("font_size", 11)
-	chamber_title.add_theme_color_override("font_color", Color("bff0c4"))
-	chamber_title.add_theme_font_size_override("font_size", 13)
-	campaign_track_label.add_theme_color_override("font_color", Color("ffbf6e"))
-	campaign_track_label.add_theme_font_size_override("font_size", 12)
+	mission_label.add_theme_color_override("font_color", Color("f1eadb"))
+	mission_label.add_theme_font_size_override("font_size", 15)
+	goal_label.add_theme_color_override("font_color", Color("d8d1c2"))
+	goal_label.add_theme_font_size_override("font_size", 10)
+	score_label.add_theme_color_override("font_color", Color("f7f1e4"))
+	score_label.add_theme_font_size_override("font_size", 11)
+	stats_label.add_theme_color_override("font_color", Color("cfc8ba"))
+	stats_label.add_theme_font_size_override("font_size", 10)
+	hint_label.add_theme_color_override("font_color", Color("e8e1d4"))
+	hint_label.add_theme_font_size_override("font_size", 10)
+	event_log_label.add_theme_color_override("font_color", Color("c8c1b4"))
+	event_log_label.add_theme_font_size_override("font_size", 9)
+	chamber_title.add_theme_color_override("font_color", Color("f0eadc"))
+	chamber_title.add_theme_font_size_override("font_size", 11)
+	campaign_track_label.add_theme_color_override("font_color", Color("d6d0c2"))
+	campaign_track_label.add_theme_font_size_override("font_size", 9)
 
-	result_label.add_theme_font_size_override("font_size", 30)
-	inspect_label.add_theme_color_override("font_color", Color("fff1c4"))
-	inspect_label.add_theme_font_size_override("font_size", 22)
-	result_label.add_theme_constant_override("shadow_offset_x", 3)
-	result_label.add_theme_constant_override("shadow_offset_y", 3)
+	result_label.add_theme_font_size_override("font_size", 26)
+	inspect_label.add_theme_color_override("font_color", Color("f7f1e4"))
+	inspect_label.add_theme_font_size_override("font_size", 18)
+	result_label.add_theme_constant_override("shadow_offset_x", 2)
+	result_label.add_theme_constant_override("shadow_offset_y", 2)
 	perf_label.add_theme_font_override("font", _spooky_font)
-	perf_label.add_theme_font_size_override("font_size", 13)
-	perf_label.add_theme_color_override("font_color", Color("b5ffbf"))
+	perf_label.add_theme_font_size_override("font_size", 11)
+	perf_label.add_theme_color_override("font_color", Color("f0eadc"))
 	perf_label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.9))
-	perf_label.add_theme_constant_override("shadow_offset_x", 2)
-	perf_label.add_theme_constant_override("shadow_offset_y", 2)
+	perf_label.add_theme_constant_override("shadow_offset_x", 1)
+	perf_label.add_theme_constant_override("shadow_offset_y", 1)
 
 	for button in [blocker_button, builder_button, digger_button, featherfall_button]:
 		button.add_theme_font_override("font", _spooky_font)
-		button.add_theme_font_size_override("font_size", 15)
-		button.add_theme_color_override("font_disabled_color", Color(0.50, 0.47, 0.43, 0.9))
-		button.add_theme_color_override("font_color", Color("f0e2bf"))
-		button.add_theme_color_override("font_hover_color", Color("fff1c4"))
-		button.add_theme_color_override("font_pressed_color", Color("fff1c4"))
+		button.add_theme_font_size_override("font_size", 10)
+		button.add_theme_color_override("font_disabled_color", Color(0.42, 0.40, 0.37, 0.9))
+		button.add_theme_color_override("font_color", Color("eee7d8"))
+		button.add_theme_color_override("font_hover_color", Color("ffffff"))
+		button.add_theme_color_override("font_pressed_color", Color("ffffff"))
 		button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 func _style_job_button(button: Button, selected: bool, disabled: bool) -> void:
-	var fill := Color(0.12, 0.095, 0.075, 0.94)
-	var border := Color(0.55, 0.47, 0.34, 0.82)
+	var fill := Color(0.025, 0.024, 0.022, 0.94)
+	var border := Color(0.72, 0.69, 0.61, 0.70)
 	if disabled:
-		fill = Color(0.055, 0.052, 0.058, 0.76)
-		border = Color(0.22, 0.20, 0.19, 0.75)
+		fill = Color(0.012, 0.012, 0.012, 0.70)
+		border = Color(0.28, 0.27, 0.25, 0.70)
 	elif selected:
-		fill = Color(0.35, 0.20, 0.055, 0.98)
-		border = Color(1.0, 0.78, 0.28, 1.0)
-	button.add_theme_stylebox_override("normal", _panel_box(fill, border, 2 if not selected else 3, 12))
-	button.add_theme_stylebox_override("hover", _panel_box(fill.lightened(0.13), border.lightened(0.20), 2, 12))
-	button.add_theme_stylebox_override("pressed", _panel_box(fill.darkened(0.10), border.lightened(0.30), 3, 12))
-	button.add_theme_stylebox_override("disabled", _panel_box(fill, border, 1, 12))
+		fill = Color(0.82, 0.78, 0.68, 0.96)
+		border = Color(1.0, 0.98, 0.90, 1.0)
+		button.add_theme_color_override("font_color", Color("080807"))
+	else:
+		button.add_theme_color_override("font_color", Color("eee7d8"))
+	button.add_theme_stylebox_override("normal", _panel_box(fill, border, 1 if not selected else 2, 5))
+	button.add_theme_stylebox_override("hover", _panel_box(fill.lightened(0.10), border.lightened(0.18), 1, 5))
+	button.add_theme_stylebox_override("pressed", _panel_box(fill.darkened(0.08), border.lightened(0.28), 2, 5))
+	button.add_theme_stylebox_override("disabled", _panel_box(fill, border, 1, 5))
 
 func _panel_box(fill: Color, border: Color, border_width: int, corner_radius: int) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
@@ -305,10 +310,10 @@ func _panel_box(fill: Color, border: Color, border_width: int, corner_radius: in
 	box.corner_radius_top_right = corner_radius
 	box.corner_radius_bottom_left = corner_radius
 	box.corner_radius_bottom_right = corner_radius
-	box.content_margin_left = 8
-	box.content_margin_top = 6
-	box.content_margin_right = 8
-	box.content_margin_bottom = 6
+	box.content_margin_left = 4
+	box.content_margin_top = 3
+	box.content_margin_right = 4
+	box.content_margin_bottom = 3
 	return box
 
 func _make_spooky_font() -> SystemFont:
