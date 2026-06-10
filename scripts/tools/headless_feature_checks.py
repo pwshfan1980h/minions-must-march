@@ -34,15 +34,19 @@ def test_startup_skips_title_and_portal_gate() -> None:
 def test_hud_is_compact_and_no_long_startup_copy() -> None:
     scene = read("scenes/ui/GameUI.tscn")
     ui = read("scripts/ui/game_ui.gd")
-    require("offset_bottom = 46.0" in scene, "status panel should be compact and low-profile")
-    require("[node name=\"SkillDock\" type=\"Panel\" parent=\".\"]" in scene, "skeleton skills should live in their own level dock")
-    require("parent=\"SkillDock\"" in scene, "action buttons should be parented to the in-level skill dock")
+    require('parent="JobBar"' in scene and "ObjectiveCollapsedLabel" in scene, "objective should live in upper-left panel with collapsed label")
+    require("_expand_objective_then_collapse" in ui and "_objective_collapse_elapsed >= 4.0" in ui, "objective should appear then auto-collapse")
+    require("objective_collapsed_label.visible = collapsed" in ui and "mission_label.visible = not collapsed" in ui, "objective collapse should swap full/collapsed labels")
+    require("StatsPanel" in scene and '$StatsPanel/StatsLabel' in ui and '$StatsPanel/ScoreLabel' in ui, "stats should live in a small upper-right stats panel")
+    require("offset_left = 1004.0" in scene and "offset_right = 1268.0" in scene, "stats panel should stay in the upper-right")
+    require("[node name=\"SkillDock\" type=\"Panel\" parent=\".\"]" in scene, "skeleton actions should live in their own dock")
+    require("parent=\"SkillDock\"" in scene, "action buttons should be parented to the bottom action dock")
+    require("offset_top = 646.0" in scene and "offset_bottom = 710.0" in scene, "action dock should be a horizontal stack along the bottom")
     require("Click the portal" not in scene + ui, "HUD should not tell player to click the portal")
     require("Pick a skeleton skill" in scene + ui, "HUD should name the skeleton skill dock")
-    require("offset_top = 54.0" in scene and "offset_bottom = 104.0" in scene, "skill dock should be smaller and sit high, away from marching skeletons")
-    for token in ["1 BLK x", "2 BLD x", "3 DIG x", "4 FTH x"]:
-        require(token in ui, f"compact single-line skill button copy missing {token}")
-    for token in ["Compact bone UI", "Color(0.015, 0.014, 0.013", "Color(\"f1eadb\")", "font_size\", 10", "_panel_box(fill, border, 1 if not selected else 2, 5)"]:
+    for token in ["1  BLOCK  x", "2  BUILD  x", "3  DIG  x", "4  FEATHER  x"]:
+        require(token in ui, f"bottom action button copy missing {token}")
+    for token in ["Corner-and-bottom bone UI", "stats_panel.add_theme_stylebox_override", "Color(\"f1eadb\")", "font_size\", 10", "_panel_box(fill, border, 1 if not selected else 2, 5)"]:
         require(token in ui, f"black/white bone compact HUD styling missing {token}")
 
 

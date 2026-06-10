@@ -8,9 +8,11 @@ signal pause_toggled
 @onready var job_bar: Panel = $JobBar
 @onready var mission_label: Label = $JobBar/MissionLabel
 @onready var goal_label: Label = $JobBar/GoalLabel
-@onready var score_label: Label = $JobBar/ScoreLabel
-@onready var stats_label: Label = $JobBar/StatsLabel
-@onready var hint_label: Label = $HintLabel
+@onready var hint_label: Label = $JobBar/HintLabel
+@onready var objective_collapsed_label: Label = $JobBar/ObjectiveCollapsedLabel
+@onready var stats_panel: Panel = $StatsPanel
+@onready var score_label: Label = $StatsPanel/ScoreLabel
+@onready var stats_label: Label = $StatsPanel/StatsLabel
 @onready var skill_dock: Panel = $SkillDock
 @onready var chamber_map: Panel = $ChamberMap
 @onready var chamber_title: Label = $ChamberMap/ChamberTitle
@@ -35,6 +37,10 @@ var _spooky_font: SystemFont
 var _perf_overlay_enabled := false
 var _perf_update_timer := 0.0
 var _event_lines: Array[String] = []
+var _objective_collapsed := false
+var _objective_collapse_pending := false
+var _objective_collapse_elapsed := 0.0
+var _last_level_number := -1
 
 func _ready() -> void:
 	print("GameUI ready")
@@ -50,9 +56,14 @@ func _ready() -> void:
 	_populate_chamber_map()
 	_update_event_log()
 	_update_job_buttons()
+	_expand_objective_then_collapse()
 
 func update_stats(stats: Dictionary) -> void:
 	_last_stats = stats
+	var level_number := int(stats.get("level_number", LevelState.current_level))
+	if level_number != _last_level_number:
+		_last_level_number = level_number
+		_expand_objective_then_collapse()
 	selected_job = stats.get("selected_job", selected_job)
 	blockers_remaining = stats.get("blockers", 0)
 	builders_remaining = stats.get("builders", 0)
@@ -60,9 +71,10 @@ func update_stats(stats: Dictionary) -> void:
 	featherfalls_remaining = stats.get("featherfalls", 0)
 
 	mission_label.text = String(stats.get("level_name", "Bone Bridge")).to_upper()
+	objective_collapsed_label.text = "OBJ ▸ " + String(stats.get("level_name", "Bone Bridge")).to_upper()
 	goal_label.text = "☠ %s" % _objective_summary(stats)
 	score_label.text = "SCORE\n%04d" % stats.get("score", 0)
-	stats_label.text = "SPN %d/%d  SAV %d/%d  LOST %d" % [
+	stats_label.text = "SPN %d/%d\nSAV %d/%d  LOST %d" % [
 		stats.get("spawned", 0),
 		stats.get("total", 0),
 		stats.get("rescued", 0),
@@ -70,15 +82,20 @@ func update_stats(stats: Dictionary) -> void:
 		stats.get("lost", 0),
 	]
 
-	blocker_button.text = "1 BLK x%d" % blockers_remaining
-	builder_button.text = "2 BLD x%d" % builders_remaining
-	digger_button.text = "3 DIG x%d" % diggers_remaining
-	featherfall_button.text = "4 FTH x%d" % featherfalls_remaining
+	blocker_button.text = "1  BLOCK  x%d" % blockers_remaining
+	builder_button.text = "2  BUILD  x%d" % builders_remaining
+	digger_button.text = "3  DIG  x%d" % diggers_remaining
+	featherfall_button.text = "4  FEATHER  x%d" % featherfalls_remaining
 	hint_label.text = _build_hint_text(stats)
 	_update_job_buttons()
 	_update_perf_overlay(true)
 
 func _process(delta: float) -> void:
+	if _objective_collapse_pending:
+		_objective_collapse_elapsed += delta
+		if _objective_collapse_elapsed >= 4.0:
+			_objective_collapse_pending = false
+			_set_objective_collapsed(true)
 	if not _perf_overlay_enabled:
 		return
 	_perf_update_timer += delta
@@ -86,6 +103,26 @@ func _process(delta: float) -> void:
 		return
 	_perf_update_timer = 0.0
 	_update_perf_overlay()
+
+func _expand_objective_then_collapse() -> void:
+	# Objective appears full-size whenever a level loads, then collapses into a
+	# small upper-left marker so the playfield is not covered during the puzzle.
+	_set_objective_collapsed(false)
+	_objective_collapse_elapsed = 0.0
+	_objective_collapse_pending = true
+
+func _set_objective_collapsed(collapsed: bool) -> void:
+	_objective_collapsed = collapsed
+	objective_collapsed_label.visible = collapsed
+	mission_label.visible = not collapsed
+	goal_label.visible = not collapsed
+	hint_label.visible = not collapsed
+	if collapsed:
+		job_bar.offset_right = job_bar.offset_left + 252.0
+		job_bar.offset_bottom = job_bar.offset_top + 30.0
+	else:
+		job_bar.offset_right = job_bar.offset_left + 376.0
+		job_bar.offset_bottom = job_bar.offset_top + 108.0
 
 func set_pause_inspect(paused: bool) -> void:
 	inspect_label.visible = paused
@@ -230,13 +267,14 @@ func _update_job_buttons() -> void:
 	_style_job_button(featherfall_button, selected_job == "featherfall", featherfall_button.disabled)
 
 func _apply_visual_style() -> void:
-	# Compact bone UI: nearly black glass panels, bone-white text, thin pale
-	# borders, and small single-line skill buttons so the playfield stays visible.
+	# Corner-and-bottom bone UI: objective appears in the upper-left then collapses;
+	# stats stay small in the upper-right; actions live in a bottom horizontal stack.
 	job_bar.add_theme_stylebox_override("panel", _panel_box(Color(0.015, 0.014, 0.013, 0.88), Color(0.78, 0.74, 0.64, 0.62), 1, 6))
+	stats_panel.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.012, 0.011, 0.82), Color(0.78, 0.74, 0.64, 0.58), 1, 6))
 	skill_dock.add_theme_stylebox_override("panel", _panel_box(Color(0.010, 0.010, 0.009, 0.62), Color(0.88, 0.84, 0.74, 0.52), 1, 6))
 	chamber_map.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.012, 0.011, 0.74), Color(0.70, 0.68, 0.62, 0.44), 1, 6))
 
-	for label in [mission_label, goal_label, score_label, stats_label, hint_label, event_log_label, chamber_title, campaign_track_label, inspect_label, result_label]:
+	for label in [mission_label, goal_label, objective_collapsed_label, score_label, stats_label, hint_label, event_log_label, chamber_title, campaign_track_label, inspect_label, result_label]:
 		label.add_theme_font_override("font", _spooky_font)
 		label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.88))
 		label.add_theme_constant_override("shadow_offset_x", 1)
@@ -246,6 +284,8 @@ func _apply_visual_style() -> void:
 	mission_label.add_theme_font_size_override("font_size", 15)
 	goal_label.add_theme_color_override("font_color", Color("d8d1c2"))
 	goal_label.add_theme_font_size_override("font_size", 10)
+	objective_collapsed_label.add_theme_color_override("font_color", Color("f1eadb"))
+	objective_collapsed_label.add_theme_font_size_override("font_size", 12)
 	score_label.add_theme_color_override("font_color", Color("f7f1e4"))
 	score_label.add_theme_font_size_override("font_size", 11)
 	stats_label.add_theme_color_override("font_color", Color("cfc8ba"))
