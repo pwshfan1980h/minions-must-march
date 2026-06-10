@@ -16,7 +16,7 @@ const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
 @export var builders_available := 1
 @export var diggers_available := 0
 @export var featherfalls_available := 0
-@export var wait_for_start := false
+@export var wait_for_start := true
 
 var selected_job := "builder"
 var spawned_count := 0

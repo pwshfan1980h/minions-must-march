@@ -26,9 +26,10 @@ def test_startup_skips_title_and_portal_gate() -> None:
     minions = read("scripts/minions/minion_root.gd")
     objects = read("scripts/objects/object_root.gd")
     require('run/main_scene="res://scenes/GameRoot.tscn"' in project, "main scene should launch directly into GameRoot")
-    require("@export var wait_for_start := false" in minions, "minion spawning should begin immediately")
-    require("var _spawn_portal_waiting := false" in objects, "spawn portal should be decorative, not a required click gate")
-    require("input_pickable = _spawn_portal_waiting" in objects, "decorative portal should not steal clicks")
+    require("@export var wait_for_start := true" in minions, "minion spawning should wait for the clicked spawn portal")
+    require("var _spawn_portal_waiting := true" in objects, "spawn portal should begin as the click-to-start gate")
+    require("input_pickable = _spawn_portal_waiting" in objects, "portal should only steal clicks while waiting to start")
+    require("_spawn_portal_attention_tween" in objects and 'tween_property(self, "_spawn_portal_attention"' in objects, "spawn portal should pulse/scale to invite the start click")
 
 
 def test_hud_is_compact_and_no_long_startup_copy() -> None:
@@ -39,6 +40,12 @@ def test_hud_is_compact_and_no_long_startup_copy() -> None:
     require("objective_collapsed_label.visible = collapsed" in ui and "mission_label.visible = not collapsed" in ui, "objective collapse should swap full/collapsed labels")
     require("StatsPanel" in scene and '$StatsPanel/StatsLabel' in ui and '$StatsPanel/ScoreLabel' in ui, "stats should live in a small upper-right stats panel")
     require("offset_left = 1004.0" in scene and "offset_right = 1268.0" in scene, "stats panel should stay in the upper-right")
+    require("TutorialPopup" in scene and "SkullLabel" in scene and "TutorialOkButton" in scene, "game should begin with skull tutorial popup and OK button")
+    require("WELCOME TO MINIONS MUST MARCH" in scene and "Use A/D" in scene and "click the portal" in scene.lower(), "tutorial popup should explain play guidelines and camera/portal start")
+    require("tutorial_ok_button.pressed.connect" in ui and "_dismiss_tutorial_popup" in ui, "OK button should dismiss the skull tutorial")
+    require("LevelListToggleButton" in scene and "F4 LEVELS" in scene, "level list should be opened by an F4 button instead of always shown")
+    require("visible = false" in scene[scene.index('[node name=\"ChamberMap\"'):scene.index('[node name=\"ChamberTitle\"')], "level list should not be static on screen")
+    require("_toggle_level_list" in ui and "KEY_F4" in ui and "chamber_map.visible = not chamber_map.visible" in ui, "F4 should open and close the level list")
     require("[node name=\"SkillDock\" type=\"Panel\" parent=\".\"]" in scene, "skeleton actions should live in their own dock")
     require("parent=\"SkillDock\"" in scene, "action buttons should be parented to the bottom action dock")
     require("offset_top = 646.0" in scene and "offset_bottom = 710.0" in scene, "action dock should be a horizontal stack along the bottom")
@@ -57,13 +64,13 @@ def test_chamber_map_objective_and_event_log_ui() -> None:
     game_root = read("scripts/core/game_root.gd")
     state = read("scripts/core/level_state.gd")
 
-    for token in ["signal level_selected", "ChamberMap", "LevelButtonContainer", "EventLogLabel", "add_event_log", "_populate_chamber_map", "CampaignTrackLabel", "CAMPAIGN TRACK"]:
+    for token in ["signal level_selected", "ChamberMap", "LevelButtonContainer", "EventLogLabel", "add_event_log", "_populate_chamber_map", "CampaignTrackLabel", "LEVEL LIST"]:
         require(token in scene + ui, f"level select / event log UI missing {token}")
     require("level_selected.connect" in game_root and "select_level" in controller, "GameRoot should route chamber map selections to LevelController")
     require("signal event_logged" in controller and "event_logged.connect" in game_root, "LevelController should publish rescue/loss/action events to UI")
     require("static func all_levels" in state, "LevelState should expose level list data for chamber buttons")
     require("objective_summary" in ui and "Skills:" in ui, "objective panel should summarize rescue target and available skills")
-    require("Campaign stop:" in ui and "CAMPAIGN ROAD" in ui, "chamber map should present levels as a campaign track map")
+    require("F4 closes" in ui and "maps" in ui, "level list should present levels only when opened")
     require("clip_contents = true" in scene and "clip_text = true" in ui, "campaign map level names should be clipped inside the panel")
     require("_campaign_button_name" in ui and "OVERRUN_TRIM_ELLIPSIS" in ui, "campaign buttons should shorten long level names safely")
 

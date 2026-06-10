@@ -13,12 +13,18 @@ signal pause_toggled
 @onready var stats_panel: Panel = $StatsPanel
 @onready var score_label: Label = $StatsPanel/ScoreLabel
 @onready var stats_label: Label = $StatsPanel/StatsLabel
+@onready var level_list_toggle_button: Button = $LevelListToggleButton
 @onready var skill_dock: Panel = $SkillDock
 @onready var chamber_map: Panel = $ChamberMap
 @onready var chamber_title: Label = $ChamberMap/ChamberTitle
 @onready var campaign_track_label: Label = $ChamberMap/CampaignTrackLabel
 @onready var level_button_container: VBoxContainer = $ChamberMap/LevelButtonContainer
 @onready var event_log_label: Label = $EventLogLabel
+@onready var tutorial_popup: Panel = $TutorialPopup
+@onready var tutorial_skull_label: Label = $TutorialPopup/SkullLabel
+@onready var tutorial_title: Label = $TutorialPopup/TutorialTitle
+@onready var tutorial_text: Label = $TutorialPopup/TutorialText
+@onready var tutorial_ok_button: Button = $TutorialPopup/TutorialOkButton
 @onready var blocker_button: Button = $SkillDock/BlockerButton
 @onready var builder_button: Button = $SkillDock/BuilderButton
 @onready var digger_button: Button = $SkillDock/DiggerButton
@@ -53,6 +59,9 @@ func _ready() -> void:
 	builder_button.pressed.connect(_select_builder)
 	digger_button.pressed.connect(_select_digger)
 	featherfall_button.pressed.connect(_select_featherfall)
+	level_list_toggle_button.pressed.connect(_toggle_level_list)
+	tutorial_ok_button.pressed.connect(_dismiss_tutorial_popup)
+	chamber_map.hide()
 	_populate_chamber_map()
 	_update_event_log()
 	_update_job_buttons()
@@ -172,8 +181,9 @@ func _populate_chamber_map() -> void:
 		button.text = "%s%s L%02d %s" % [current, node, n, _campaign_button_name(String(cfg.get("name", "Chamber")))]
 		button.tooltip_text = "Campaign stop: %s\n%s" % [biome, String(cfg.get("hint", ""))]
 		button.pressed.connect(func() -> void: level_selected.emit(n))
+		_style_utility_button(button)
 		level_button_container.add_child(button)
-	campaign_track_label.text = "──".join(track_nodes) + "   CAMPAIGN ROAD"
+	campaign_track_label.text = "F4 closes  •  %d maps" % track_nodes.size()
 
 func _campaign_button_name(level_name: String) -> String:
 	# Keep campaign map names inside the visual box; full names remain in tooltips
@@ -209,7 +219,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_SPACE:
 			pause_toggled.emit()
 		elif event.keycode == KEY_F4:
-			_toggle_perf_overlay()
+			_toggle_level_list()
+
+func _dismiss_tutorial_popup() -> void:
+	tutorial_popup.hide()
+
+func _toggle_level_list() -> void:
+	chamber_map.visible = not chamber_map.visible
+	level_list_toggle_button.text = "F4 CLOSE" if chamber_map.visible else "F4 LEVELS"
 
 func _select_blocker() -> void:
 	if blockers_remaining <= 0:
@@ -241,20 +258,22 @@ func _select_featherfall() -> void:
 
 func _build_hint_text(stats: Dictionary) -> String:
 	var debug_text := "  •  F3 hitbox ON" if stats.get("debug_click_areas", false) else "  •  F3 hitboxes"
-	debug_text += "  •  F4 perf ON" if _perf_overlay_enabled else "  •  F4 perf"
+	debug_text += "  •  F4 levels"
 	if selected_job == "builder" and builders_remaining > 0:
-		return "BUILD selected: click a grounded skeleton by the gold mark. R restarts." + debug_text
+		return "BUILD selected: click a grounded skeleton by the gold mark. A/D pan. R restarts." + debug_text
 	if selected_job == "blocker" and blockers_remaining > 0:
-		return "BLOCK selected: brace/release a skeleton. R restarts." + debug_text
+		return "BLOCK selected: brace/release a skeleton. A/D pan. R restarts." + debug_text
 	if selected_job == "digger" and diggers_remaining > 0:
-		return "DIG selected: click a skeleton standing on cracked ash floor. R restarts." + debug_text
+		return "DIG selected: click a skeleton standing on cracked ash floor. A/D pan. R restarts." + debug_text
 	if selected_job == "featherfall" and featherfalls_remaining > 0:
-		return "FEATHER selected: bless one skeleton to survive its next fatal drop. R restarts." + debug_text
+		return "FEATHER selected: bless one skeleton to survive its next fatal drop. A/D pan. R restarts." + debug_text
 	if builders_remaining <= 0 and diggers_remaining <= 0 and featherfalls_remaining <= 0:
 		return "Bones and picks spent. Keep marching to the uplight. R restarts." + debug_text
 	if builders_remaining <= 0:
 		return "Build bones spent. Keep marching to the uplight. R restarts." + debug_text
-	return "Pick a skeleton skill from the level dock, then click a skeleton. R restarts." + debug_text
+	if int(stats.get("spawned", 0)) == 0 and int(stats.get("active", 0)) == 0:
+		return "Click the pulsing spawn portal to begin. Use A/D or arrows to pan. R restarts." + debug_text
+	return "Pick a skeleton skill from the bottom dock, then click a skeleton. A/D pan. R restarts." + debug_text
 
 func _update_job_buttons() -> void:
 	blocker_button.disabled = blockers_remaining <= 0
@@ -272,9 +291,10 @@ func _apply_visual_style() -> void:
 	job_bar.add_theme_stylebox_override("panel", _panel_box(Color(0.015, 0.014, 0.013, 0.88), Color(0.78, 0.74, 0.64, 0.62), 1, 6))
 	stats_panel.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.012, 0.011, 0.82), Color(0.78, 0.74, 0.64, 0.58), 1, 6))
 	skill_dock.add_theme_stylebox_override("panel", _panel_box(Color(0.010, 0.010, 0.009, 0.62), Color(0.88, 0.84, 0.74, 0.52), 1, 6))
-	chamber_map.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.012, 0.011, 0.74), Color(0.70, 0.68, 0.62, 0.44), 1, 6))
+	chamber_map.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.012, 0.011, 0.86), Color(0.70, 0.68, 0.62, 0.54), 1, 6))
+	tutorial_popup.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.011, 0.010, 0.96), Color(0.88, 0.84, 0.74, 0.82), 2, 12))
 
-	for label in [mission_label, goal_label, objective_collapsed_label, score_label, stats_label, hint_label, event_log_label, chamber_title, campaign_track_label, inspect_label, result_label]:
+	for label in [mission_label, goal_label, objective_collapsed_label, score_label, stats_label, hint_label, event_log_label, chamber_title, campaign_track_label, inspect_label, result_label, tutorial_skull_label, tutorial_title, tutorial_text]:
 		label.add_theme_font_override("font", _spooky_font)
 		label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.88))
 		label.add_theme_constant_override("shadow_offset_x", 1)
@@ -298,6 +318,12 @@ func _apply_visual_style() -> void:
 	chamber_title.add_theme_font_size_override("font_size", 11)
 	campaign_track_label.add_theme_color_override("font_color", Color("d6d0c2"))
 	campaign_track_label.add_theme_font_size_override("font_size", 9)
+	tutorial_skull_label.add_theme_color_override("font_color", Color("f3eddf"))
+	tutorial_skull_label.add_theme_font_size_override("font_size", 86)
+	tutorial_title.add_theme_color_override("font_color", Color("f7f1e4"))
+	tutorial_title.add_theme_font_size_override("font_size", 20)
+	tutorial_text.add_theme_color_override("font_color", Color("d8d1c2"))
+	tutorial_text.add_theme_font_size_override("font_size", 15)
 
 	result_label.add_theme_font_size_override("font_size", 26)
 	inspect_label.add_theme_color_override("font_color", Color("f7f1e4"))
@@ -320,6 +346,8 @@ func _apply_visual_style() -> void:
 		button.add_theme_color_override("font_pressed_color", Color("ffffff"))
 		button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_style_utility_button(level_list_toggle_button)
+	_style_utility_button(tutorial_ok_button)
 
 func _style_job_button(button: Button, selected: bool, disabled: bool) -> void:
 	var fill := Color(0.025, 0.024, 0.022, 0.94)
@@ -337,6 +365,18 @@ func _style_job_button(button: Button, selected: bool, disabled: bool) -> void:
 	button.add_theme_stylebox_override("hover", _panel_box(fill.lightened(0.10), border.lightened(0.18), 1, 5))
 	button.add_theme_stylebox_override("pressed", _panel_box(fill.darkened(0.08), border.lightened(0.28), 2, 5))
 	button.add_theme_stylebox_override("disabled", _panel_box(fill, border, 1, 5))
+
+func _style_utility_button(button: Button) -> void:
+	button.add_theme_font_override("font", _spooky_font)
+	button.add_theme_font_size_override("font_size", 11)
+	button.add_theme_color_override("font_color", Color("eee7d8"))
+	button.add_theme_color_override("font_hover_color", Color("ffffff"))
+	button.add_theme_color_override("font_pressed_color", Color("080807"))
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	button.add_theme_stylebox_override("normal", _panel_box(Color(0.025, 0.024, 0.022, 0.94), Color(0.72, 0.69, 0.61, 0.70), 1, 5))
+	button.add_theme_stylebox_override("hover", _panel_box(Color(0.075, 0.072, 0.066, 0.96), Color(0.90, 0.86, 0.75, 0.85), 1, 5))
+	button.add_theme_stylebox_override("pressed", _panel_box(Color(0.82, 0.78, 0.68, 0.96), Color(1.0, 0.98, 0.90, 1.0), 2, 5))
+	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 func _panel_box(fill: Color, border: Color, border_width: int, corner_radius: int) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()

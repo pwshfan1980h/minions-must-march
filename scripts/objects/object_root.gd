@@ -13,8 +13,10 @@ var exit_position := Vector2.ZERO
 var _time := 0.0
 var _redraw_elapsed := 0.0
 var _mote_specs: Array[Dictionary] = []
-var _spawn_portal_waiting := false
+var _spawn_portal_waiting := true
 var _spawn_portal_voom := 0.0
+var _spawn_portal_attention := 0.0
+var _spawn_portal_attention_tween: Tween
 var _spawn_portal_area: Area2D
 
 func _ready() -> void:
@@ -59,6 +61,17 @@ func _add_spawn_portal() -> void:
 	shape.shape = rect
 	shape.disabled = not _spawn_portal_waiting
 	_spawn_portal_area.add_child(shape)
+	_start_spawn_portal_attention_tween()
+
+func _start_spawn_portal_attention_tween() -> void:
+	if not _spawn_portal_waiting:
+		return
+	if _spawn_portal_attention_tween != null:
+		_spawn_portal_attention_tween.kill()
+	_spawn_portal_attention_tween = create_tween()
+	_spawn_portal_attention_tween.set_loops()
+	_spawn_portal_attention_tween.tween_property(self, "_spawn_portal_attention", 1.0, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_spawn_portal_attention_tween.tween_property(self, "_spawn_portal_attention", 0.0, 0.55).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _on_spawn_portal_input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> void:
 	if not _spawn_portal_waiting:
@@ -66,6 +79,9 @@ func _on_spawn_portal_input_event(_viewport: Viewport, event: InputEvent, _shape
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_spawn_portal_waiting = false
 		_spawn_portal_voom = 1.0
+		_spawn_portal_attention = 0.0
+		if _spawn_portal_attention_tween != null:
+			_spawn_portal_attention_tween.kill()
 		if _spawn_portal_area != null:
 			_spawn_portal_area.set_deferred("input_pickable", false)
 			var shape := _spawn_portal_area.get_node_or_null("CollisionShape2D")
@@ -122,12 +138,11 @@ func _draw() -> void:
 	_draw_exit_light(exit_position)
 
 func _draw_spawn_portal() -> void:
-	# The portal is now decorative only: minions march immediately when the level
-	# loads, but keeping the green crypt gate grounds the spawn point visually.
 	var pulse := 0.5 + sin(_time * 3.6) * 0.5
 	var voom := _spawn_portal_voom
-	var alpha := clampf(1.0 if _spawn_portal_waiting else 0.72 + pulse * 0.10 + voom * 0.18, 0.0, 1.0)
-	var squash := Vector2(1.0 + voom * 0.85, 1.0 - voom * 0.55)
+	var attention := _spawn_portal_attention if _spawn_portal_waiting else 0.0
+	var alpha := clampf(0.95 + attention * 0.25 if _spawn_portal_waiting else 0.72 + pulse * 0.10 + voom * 0.18, 0.0, 1.0)
+	var squash := Vector2(1.0 + attention * 0.16 + voom * 0.85, 1.0 + attention * 0.10 - voom * 0.55)
 	var pos := spawn_portal_pos + Vector2(voom * 34.0, -voom * 8.0)
 	draw_set_transform(pos, voom * 0.45, squash)
 

@@ -31,7 +31,7 @@ offset_top = 58.0
 offset_right = 356.0
 offset_bottom = 101.0
 autowrap_mode = 3
-text = "Pick a skeleton skill below, then click a skeleton."
+text = "Click the spawn portal to begin. Use A/D or arrows to pan."
 
 [node name="ObjectiveCollapsedLabel" type="Label" parent="JobBar"]
 visible = false
@@ -61,6 +61,14 @@ offset_right = 252.0
 offset_bottom = 40.0
 horizontal_alignment = 1
 text = "SCORE\n0000"
+
+[node name="LevelListToggleButton" type="Button" parent="."]
+offset_left = 1134.0
+offset_top = 64.0
+offset_right = 1268.0
+offset_bottom = 94.0
+focus_mode = 0
+text = "F4 LEVELS"
 
 [node name="SkillDock" type="Panel" parent="."]
 offset_left = 354.0
@@ -104,30 +112,31 @@ disabled = true
 text = "4  FEATHER  x0"
 
 [node name="ChamberMap" type="Panel" parent="."]
-offset_left = 1030.0
-offset_top = 64.0
+visible = false
+offset_left = 970.0
+offset_top = 102.0
 offset_right = 1268.0
-offset_bottom = 230.0
+offset_bottom = 380.0
 
 [node name="ChamberTitle" type="Label" parent="ChamberMap"]
-offset_left = 8.0
-offset_top = 6.0
-offset_right = 228.0
-offset_bottom = 23.0
-text = "CAMPAIGN TRACK"
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 284.0
+offset_bottom = 28.0
+text = "LEVEL LIST"
 
 [node name="CampaignTrackLabel" type="Label" parent="ChamberMap"]
-offset_left = 8.0
-offset_top = 25.0
-offset_right = 228.0
-offset_bottom = 45.0
-text = "●──●──●──●──●──●"
+offset_left = 10.0
+offset_top = 31.0
+offset_right = 284.0
+offset_bottom = 51.0
+text = "F4 CLOSE"
 
 [node name="LevelButtonContainer" type="VBoxContainer" parent="ChamberMap"]
-offset_left = 8.0
-offset_top = 48.0
-offset_right = 228.0
-offset_bottom = 158.0
+offset_left = 10.0
+offset_top = 58.0
+offset_right = 286.0
+offset_bottom = 266.0
 clip_contents = true
 
 [node name="EventLogLabel" type="Label" parent="."]
@@ -137,6 +146,44 @@ offset_right = 340.0
 offset_bottom = 176.0
 autowrap_mode = 3
 text = "March log sleeps."
+
+[node name="TutorialPopup" type="Panel" parent="."]
+offset_left = 318.0
+offset_top = 118.0
+offset_right = 962.0
+offset_bottom = 518.0
+
+[node name="SkullLabel" type="Label" parent="TutorialPopup"]
+offset_left = 22.0
+offset_top = 18.0
+offset_right = 150.0
+offset_bottom = 146.0
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "☠"
+
+[node name="TutorialTitle" type="Label" parent="TutorialPopup"]
+offset_left = 160.0
+offset_top = 22.0
+offset_right = 608.0
+offset_bottom = 54.0
+text = "WELCOME TO MINIONS MUST MARCH"
+
+[node name="TutorialText" type="Label" parent="TutorialPopup"]
+offset_left = 160.0
+offset_top = 66.0
+offset_right = 606.0
+offset_bottom = 300.0
+autowrap_mode = 3
+text = "I am the skull in charge of this miserable little march.\n\nGet enough skeletons to the exit light. Click a skeleton skill, then click a skeleton to use it.\n\nUse A/D or the arrow keys to pan the camera. Press Space to pause and inspect. Press R to restart. Press F4 or the LEVELS button to open the level list.\n\nEach level begins at the spawn portal. When it pulses, click the portal to start the march."
+
+[node name="TutorialOkButton" type="Button" parent="TutorialPopup"]
+offset_left = 448.0
+offset_top = 330.0
+offset_right = 606.0
+offset_bottom = 374.0
+focus_mode = 0
+text = "OK"
 
 [node name="ResultLabel" type="Label" parent="."]
 anchors_preset = 8
