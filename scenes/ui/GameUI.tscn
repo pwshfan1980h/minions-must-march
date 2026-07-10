@@ -62,6 +62,23 @@ offset_bottom = 40.0
 horizontal_alignment = 1
 text = "SCORE\n0000"
 
+[node name="RescueProgress" type="ProgressBar" parent="StatsPanel"]
+offset_left = 10.0
+offset_top = 42.0
+offset_right = 252.0
+offset_bottom = 50.0
+mouse_filter = 1
+show_percentage = false
+
+[node name="SpeedButton" type="Button" parent="."]
+offset_left = 1004.0
+offset_top = 64.0
+offset_right = 1128.0
+offset_bottom = 94.0
+focus_mode = 0
+tooltip_text = "March speed: 1× (F cycles)"
+text = "F SPEED 1×"
+
 [node name="LevelListToggleButton" type="Button" parent="."]
 offset_left = 1134.0
 offset_top = 64.0
@@ -175,7 +192,7 @@ offset_top = 66.0
 offset_right = 606.0
 offset_bottom = 300.0
 autowrap_mode = 3
-text = "I am the skull in charge of this miserable little march.\n\nGet enough skeletons to the exit light. Click a skeleton skill, then click a skeleton to use it.\n\nUse A/D or the arrow keys to pan the camera. Press Space to pause and inspect. Press R to restart. Press F4 or the LEVELS button to open the level list.\n\nEach level begins at the spawn portal. When it pulses, click the portal to start the march."
+text = "I am the skull in charge of this miserable little march.\n\nSave enough skeletons by guiding them into the exit light. Pick a skill, then click a skeleton to assign it.\n\nUse A/D or the mouse wheel to pan. Space pauses. F changes march speed. R restarts. F4 opens the chamber map.\n\nWhen it pulses, click the portal to begin."
 
 [node name="TutorialOkButton" type="Button" parent="TutorialPopup"]
 offset_left = 448.0

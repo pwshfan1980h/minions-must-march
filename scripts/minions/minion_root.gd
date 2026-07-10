@@ -1,5 +1,7 @@
 extends Node2D
 
+const LevelState := preload("res://scripts/core/level_state.gd")
+
 signal minion_spawned(minion: Node)
 signal minion_rescued(minion: Node)
 signal minion_lost(minion: Node)
@@ -56,6 +58,19 @@ func _ready() -> void:
 	spawn_position = cfg.get("spawn_position", spawn_position)
 	spawn_direction = float(cfg.get("spawn_direction", spawn_direction))
 	reset_spawner()
+	_select_first_available_job()
+
+func _select_first_available_job() -> void:
+	# Start each chamber on a skill the player can actually use. This matters on
+	# single-tool teaching maps such as Turn, You Fools and Bone Basement.
+	if builders_remaining > 0:
+		selected_job = "builder"
+	elif blockers_remaining > 0:
+		selected_job = "blocker"
+	elif diggers_remaining > 0:
+		selected_job = "digger"
+	elif featherfalls_remaining > 0:
+		selected_job = "featherfall"
 
 func _process(delta: float) -> void:
 	if not _spawn_started or _spawning_done:

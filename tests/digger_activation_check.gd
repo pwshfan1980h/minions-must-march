@@ -1,5 +1,6 @@
 extends SceneTree
 
+const LevelState := preload("res://scripts/core/level_state.gd")
 const GAME_ROOT_SCENE := preload("res://scenes/GameRoot.tscn")
 const DIG_PLUG_RECT := Rect2(584, 320, 96, 32)
 

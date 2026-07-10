@@ -1,5 +1,7 @@
 extends Node2D
 
+const LevelState := preload("res://scripts/core/level_state.gd")
+
 const TILE_SIZE := 32
 const WORLD_WIDTH := 2400
 const PLAYFIELD_HEIGHT := 720
@@ -39,6 +41,9 @@ func _ready() -> void:
 		"level_007": _build_level_007_terrain()
 		"level_008": _build_level_008_terrain()
 		"level_009": _build_level_009_terrain()
+		"level_010": _build_level_010_terrain()
+		"level_011": _build_level_011_terrain()
+		"level_012": _build_level_012_terrain()
 		_: _build_level_001_terrain()
 	_add_styx_death_area()
 	queue_redraw()
@@ -240,6 +245,59 @@ func _build_level_009_terrain() -> void:
 	_add_solid(Rect2(1392, 416, 32, 160), Color("252222"), "ash_wall")
 	_add_solid(Rect2(1030, 340, 188, 22), Color("3a3144"), "chain")
 	_add_ash_catacombs_markers_at(Vector2(492, 236), [470.0, 1130.0, 1325.0])
+
+func _build_level_010_terrain() -> void:
+	# Gravebell Descent: an upper ash aisle teaches the player to identify the
+	# cracked plug under a moving crowd. The safe drop feeds a broad regrouping
+	# floor, followed by one natural builder-rise to the gravebell exit shelf.
+	_add_solid(Rect2(128, 288, 392, 32), Color("665c54"), "ash_floor")
+	_add_diggable_plug(Rect2(520, 288, 88, 32), Color("3c332f"))
+	_add_solid(Rect2(608, 288, 180, 32), Color("5a514c"), "ash_floor")
+	_add_solid(Rect2(96, 224, 32, 352), Color("252222"), "ash_wall")
+	_add_solid(Rect2(788, 224, 32, 224), Color("2b2828"), "ash_wall")
+
+	_add_solid(Rect2(408, 416, 480, 32), Color("443b38"), "lower_catacomb")
+	_add_solid(Rect2(376, 368, 32, 208), Color("252222"), "ash_wall")
+	_add_solid(Rect2(1000, 368, 424, 32), Color("241d2f"), "obsidian")
+	_add_solid(Rect2(1000, 400, 32, 176), Color("252222"), "ash_wall")
+	_add_solid(Rect2(1392, 400, 32, 176), Color("252222"), "ash_wall")
+	_add_solid(Rect2(1120, 492, 176, 22), Color("312827"), "lower_catacomb")
+	_add_ash_catacombs_markers_at(Vector2(564, 236), [450.0, 760.0, 1250.0])
+
+func _build_level_011_terrain() -> void:
+	# Ashen Switchback: the upper-left edge intentionally drops the left-facing
+	# march onto a lower runway. A blocker reverses the flow before the Styx edge;
+	# one builder then climbs the single gap to the lantern shelf.
+	_add_solid(Rect2(400, 288, 520, 32), Color("625a52"), "ash_floor")
+	_add_solid(Rect2(920, 224, 32, 224), Color("262323"), "ash_wall")
+	_add_crumbling_solid(Rect2(240, 416, 88, 32), Color("443b38"))
+	_add_solid(Rect2(328, 416, 572, 32), Color("443b38"), "lower_catacomb")
+	_add_solid(Rect2(1012, 368, 448, 32), Color("241d2f"), "obsidian")
+	_add_solid(Rect2(1012, 400, 32, 176), Color("252222"), "ash_wall")
+	_add_solid(Rect2(1428, 400, 32, 176), Color("252222"), "ash_wall")
+	_add_solid(Rect2(610, 506, 208, 22), Color("312827"), "lower_catacomb")
+	_add_ash_catacombs_markers_at(Vector2(286, 364), [350.0, 820.0, 1320.0])
+
+func _build_level_012_terrain() -> void:
+	# The Last Lantern combines the complete campaign vocabulary in one readable
+	# left-to-right finale: a controlled dig, a safe procession hall, and two
+	# consecutive builder pitches that rise toward the final uplight.
+	_add_solid(Rect2(128, 288, 360, 32), Color("665c54"), "ash_floor")
+	_add_diggable_plug(Rect2(488, 288, 88, 32), Color("3c332f"))
+	_add_solid(Rect2(576, 288, 184, 32), Color("5a514c"), "ash_floor")
+	_add_solid(Rect2(96, 224, 32, 352), Color("252222"), "ash_wall")
+	_add_solid(Rect2(760, 224, 32, 224), Color("2b2828"), "ash_wall")
+
+	_add_solid(Rect2(400, 416, 400, 32), Color("443b38"), "lower_catacomb")
+	_add_solid(Rect2(368, 368, 32, 208), Color("252222"), "ash_wall")
+	_add_solid(Rect2(912, 368, 280, 32), Color("342b3e"), "chain")
+	_add_solid(Rect2(912, 400, 32, 176), Color("252222"), "ash_wall")
+	_add_crumbling_solid(Rect2(1088, 368, 104, 32), Color("342b3e"))
+	_add_solid(Rect2(1304, 320, 420, 32), Color("241d2f"), "obsidian")
+	_add_solid(Rect2(1304, 352, 32, 224), Color("252222"), "ash_wall")
+	_add_solid(Rect2(1692, 352, 32, 224), Color("252222"), "ash_wall")
+	_add_solid(Rect2(1410, 472, 206, 22), Color("312827"), "lower_catacomb")
+	_add_ash_catacombs_markers_at(Vector2(532, 236), [450.0, 720.0, 1035.0, 1510.0])
 
 func _add_ash_catacombs_markers_at(sign_origin: Vector2, candle_xs: Array[float]) -> void:
 	var sign := Line2D.new()
@@ -1325,4 +1383,3 @@ func _draw_soft_ellipse(rect: Rect2, color: Color) -> void:
 		var angle := TAU * float(i) / 28.0
 		points.append(center + Vector2(cos(angle) * radius.x, sin(angle) * radius.y))
 	draw_colored_polygon(points, color)
-

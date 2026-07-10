@@ -1,5 +1,7 @@
 extends Node2D
 
+const LevelState := preload("res://scripts/core/level_state.gd")
+
 signal stats_changed(stats: Dictionary)
 signal level_finished(success: bool, stats: Dictionary)
 signal sfx_requested(sound_id: String)
@@ -34,7 +36,12 @@ func _ready() -> void:
 	_emit_stats()
 
 func _process(_delta: float) -> void:
-	if not finished and minion_root.all_done():
+	if finished:
+		return
+	if _maximum_possible_rescues() < rescue_required:
+		event_logged.emit("Rescue target is no longer reachable")
+		_finish_level(false)
+	elif minion_root.all_done():
 		_finish_level(minion_root.rescued_count >= rescue_required)
 
 func restart_level() -> void:
@@ -76,7 +83,12 @@ func get_stats() -> Dictionary:
 		"bonus_text": "Bonus: +100 saved, +50 unused bone, -25 lost",
 		"finished": finished,
 		"debug_click_areas": debug_click_areas,
+		"possible": _maximum_possible_rescues(),
 	}
+
+func _maximum_possible_rescues() -> int:
+	var waiting: int = maxi(0, minion_root.total_to_spawn - minion_root.spawned_count)
+	return minion_root.rescued_count + minion_root.active_count + waiting
 
 func _calculate_score() -> int:
 	var score: int = minion_root.rescued_count * 100 - minion_root.lost_count * 25

@@ -1,5 +1,7 @@
 extends Node2D
 
+const LevelState := preload("res://scripts/core/level_state.gd")
+
 signal minion_entered_exit(minion: Node)
 signal spawn_portal_clicked
 

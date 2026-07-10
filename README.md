@@ -4,17 +4,35 @@ A Godot 4 Lemmings-inspired puzzle game about little lanky skeleton minions doin
 
 ## Current Status
 
-Early playable prototype baseline:
+Playable 12-level campaign:
 
-- Godot 4 project with main scene: `scenes/GameRoot.tscn`
-- Lanky skeleton minions spawn, walk, fall, turn around on walls/blockers, and exit
-- Fall-death handling with bone-splash feedback
-- First job-selection UI foundation with Blocker support
-- Web export preset included for early browser testing
+- Four assignable skills: Block, Build, Dig, and Featherfall
+- Multi-tier crypt and Ash Catacombs puzzles with crumbling terrain and Styx hazards
+- Campaign map, rescue scoring/progress, pause-and-inspect mode, and 1×–3× march speed
+- Procedural skeleton animation, terrain art, atmosphere, particles, and sound feedback
+- Headless feature, skill-activation, audio, and full-campaign configuration checks
+- Web export preset for browser testing
+
+## Controls
+
+- Click the spawn portal to begin; choose a skill and click a skeleton to assign it
+- `1`–`4`: select Block, Build, Dig, or Featherfall
+- `A`/`D`, arrows, or mouse wheel: pan the chamber
+- `F`: cycle march speed; `Space`: pause and inspect; `R`: restart
+- `F4`: open the chamber map
 
 ## Open in Godot
 
 Open this repository folder in Godot 4.x and run the main scene.
+
+Run the automated checks with:
+
+```bash
+python3 scripts/tools/headless_feature_checks.py
+godot --headless --path . -s tests/campaign_smoke_check.gd
+godot --headless --path . -s tests/builder_activation_check.gd
+godot --headless --path . -s tests/digger_activation_check.gd
+```
 
 ## Web Export
 

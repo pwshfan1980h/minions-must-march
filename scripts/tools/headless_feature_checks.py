@@ -148,6 +148,21 @@ def test_additional_campaign_maps_exist() -> None:
     require("_add_ash_catacombs_markers_at" in terrain, "new ash maps should reuse compact marker helper")
 
 
+def test_campaign_finale_expansion_exists() -> None:
+    state = read("scripts/core/level_state.gd")
+    terrain = read("scripts/terrain/terrain_root.gd")
+    ui = read("scripts/ui/game_ui.gd")
+    scene = read("scenes/ui/GameUI.tscn")
+
+    for number, name in [(10, "Gravebell Descent"), (11, "Ashen Switchback"), (12, "The Last Lantern")]:
+        require(f'{number}: {{' in state and f'"name": "{name}"' in state, f"missing expanded campaign level {number}: {name}")
+        require(f'"level_{number:03d}": _build_level_{number:03d}_terrain()' in terrain, f"terrain dispatcher missing level {number}")
+        require(f"func _build_level_{number:03d}_terrain()" in terrain, f"terrain builder missing level {number}")
+    require("signal speed_requested" in ui and "_cycle_march_speed" in ui and "SpeedButton" in scene, "HUD should provide a march speed control")
+    require("RescueProgress" in scene and "rescue_progress.value" in ui, "HUD should visualize rescue progress")
+    require("tutorial_seen_this_session" in ui, "tutorial should not reopen on every level reload")
+
+
 def test_river_has_bubbles_hands_and_pop_animation() -> None:
     terrain = read("scripts/terrain/terrain_root.gd")
     for token in ["_bubble_specs", "_bubble_pops", "_build_bubbles", "_draw_styx_bubbles", "_draw_bubble_pop", "_draw_styx_hands", "_draw_soul"]:
@@ -225,6 +240,7 @@ def main() -> None:
         test_featherfall_skill_contract_exists,
         test_multilevel_drop_crypt_level_exists,
         test_additional_campaign_maps_exist,
+        test_campaign_finale_expansion_exists,
         test_river_has_bubbles_hands_and_pop_animation,
         test_platforms_are_jagged_and_emit_motes,
         test_levels_have_extra_hellish_atmosphere,

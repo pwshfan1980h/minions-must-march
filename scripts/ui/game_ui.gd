@@ -1,9 +1,12 @@
 extends CanvasLayer
 
+const LevelState := preload("res://scripts/core/level_state.gd")
+
 signal restart_requested
 signal job_selected(job_id: String)
 signal level_selected(level_number: int)
 signal pause_toggled
+signal speed_requested(multiplier: float)
 
 @onready var job_bar: Panel = $JobBar
 @onready var mission_label: Label = $JobBar/MissionLabel
@@ -13,7 +16,9 @@ signal pause_toggled
 @onready var stats_panel: Panel = $StatsPanel
 @onready var score_label: Label = $StatsPanel/ScoreLabel
 @onready var stats_label: Label = $StatsPanel/StatsLabel
+@onready var rescue_progress: ProgressBar = $StatsPanel/RescueProgress
 @onready var level_list_toggle_button: Button = $LevelListToggleButton
+@onready var speed_button: Button = $SpeedButton
 @onready var skill_dock: Panel = $SkillDock
 @onready var chamber_map: Panel = $ChamberMap
 @onready var chamber_title: Label = $ChamberMap/ChamberTitle
@@ -47,6 +52,8 @@ var _objective_collapsed := false
 var _objective_collapse_pending := false
 var _objective_collapse_elapsed := 0.0
 var _last_level_number := -1
+var _march_speed := 1
+static var tutorial_seen_this_session := false
 
 func _ready() -> void:
 	print("GameUI ready")
@@ -60,7 +67,13 @@ func _ready() -> void:
 	digger_button.pressed.connect(_select_digger)
 	featherfall_button.pressed.connect(_select_featherfall)
 	level_list_toggle_button.pressed.connect(_toggle_level_list)
+	speed_button.pressed.connect(_cycle_march_speed)
 	tutorial_ok_button.pressed.connect(_dismiss_tutorial_popup)
+	if tutorial_seen_this_session:
+		tutorial_popup.hide()
+	else:
+		tutorial_popup.show()
+		tutorial_seen_this_session = true
 	chamber_map.hide()
 	_populate_chamber_map()
 	_update_event_log()
@@ -90,6 +103,9 @@ func update_stats(stats: Dictionary) -> void:
 		stats.get("required", 0),
 		stats.get("lost", 0),
 	]
+	rescue_progress.max_value = maxi(1, int(stats.get("required", 1)))
+	rescue_progress.value = int(stats.get("rescued", 0))
+	rescue_progress.tooltip_text = "%d of %d required skeletons rescued" % [stats.get("rescued", 0), stats.get("required", 0)]
 
 	blocker_button.text = "1  BLOCK  x%d" % blockers_remaining
 	builder_button.text = "2  BUILD  x%d" % builders_remaining
@@ -220,6 +236,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			pause_toggled.emit()
 		elif event.keycode == KEY_F4:
 			_toggle_level_list()
+		elif event.keycode == KEY_F:
+			_cycle_march_speed()
 
 func _dismiss_tutorial_popup() -> void:
 	tutorial_popup.hide()
@@ -227,6 +245,12 @@ func _dismiss_tutorial_popup() -> void:
 func _toggle_level_list() -> void:
 	chamber_map.visible = not chamber_map.visible
 	level_list_toggle_button.text = "F4 CLOSE" if chamber_map.visible else "F4 LEVELS"
+
+func _cycle_march_speed() -> void:
+	_march_speed = 1 if _march_speed >= 3 else _march_speed + 1
+	speed_button.text = "F SPEED %d×" % _march_speed
+	speed_button.tooltip_text = "March speed: %d× (F cycles)" % _march_speed
+	speed_requested.emit(float(_march_speed))
 
 func _select_blocker() -> void:
 	if blockers_remaining <= 0:
@@ -347,7 +371,11 @@ func _apply_visual_style() -> void:
 		button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_style_utility_button(level_list_toggle_button)
+	_style_utility_button(speed_button)
 	_style_utility_button(tutorial_ok_button)
+	rescue_progress.show_percentage = false
+	rescue_progress.add_theme_stylebox_override("background", _panel_box(Color(0.04, 0.035, 0.03, 0.95), Color(0.36, 0.34, 0.30, 0.9), 1, 3))
+	rescue_progress.add_theme_stylebox_override("fill", _panel_box(Color("a6d77b"), Color("d9f0b0"), 1, 3))
 
 func _style_job_button(button: Button, selected: bool, disabled: bool) -> void:
 	var fill := Color(0.025, 0.024, 0.022, 0.94)
@@ -398,7 +426,7 @@ func _panel_box(fill: Color, border: Color, border_width: int, corner_radius: in
 
 func _make_spooky_font() -> SystemFont:
 	var font := SystemFont.new()
-	font.font_names = PackedStringArray(["Papyrus", "Chalkduster", "Marker Felt", "Georgia", "Times New Roman"])
+	font.font_names = PackedStringArray(["Copperplate", "Avenir Next Condensed", "Georgia", "Times New Roman"])
 	font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
 	return font
 

@@ -1,5 +1,7 @@
 extends Node2D
 
+const LevelState := preload("res://scripts/core/level_state.gd")
+
 const GAME_ROOT_PATH := "res://scenes/GameRoot.tscn"
 const SCREEN_WIDTH := 1280
 const SCREEN_HEIGHT := 720
