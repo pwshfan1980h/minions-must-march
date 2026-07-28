@@ -17,6 +17,7 @@ var _shake_time := 0.0
 var _shake_strength := 0.0
 var _shake_rng := RandomNumberGenerator.new()
 var _reduced_motion := false
+var _proximity_update_elapsed := 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -47,6 +48,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_update_camera_pan(delta)
 	_update_camera_feedback(delta)
+	_update_styx_soundscape(delta)
 
 func _on_world_sfx_requested(sound_id: String, world_position: Vector2) -> void:
 	sfx.play_at(sound_id, world_position)
@@ -102,6 +104,19 @@ func _apply_accessibility_settings(settings: Dictionary) -> void:
 		terrain.set_accessibility_settings(settings)
 	if object_root.has_method("set_accessibility_settings"):
 		object_root.set_accessibility_settings(settings)
+
+func _update_styx_soundscape(delta: float) -> void:
+	_proximity_update_elapsed += delta
+	if _proximity_update_elapsed < 0.16:
+		return
+	_proximity_update_elapsed = 0.0
+	var proximity := 0.0
+	for minion in get_tree().get_nodes_in_group("minions"):
+		if minion.get("alive") != true or minion.get("rescued") == true:
+			continue
+		var y: float = float(minion.global_position.y)
+		proximity = maxf(proximity, clampf((y - 390.0) / 170.0, 0.0, 1.0))
+	sfx.set_styx_proximity(proximity)
 
 func _on_job_selected(job_id: String) -> void:
 	sfx.play("job_select")

@@ -178,6 +178,7 @@ def test_river_has_bubbles_hands_and_pop_animation() -> None:
         require(token in terrain, f"terrain river polish missing {token}")
     for token in ["add_styx_impact", "_styx_impact_displacement", "_draw_styx_impact_wakes"]:
         require(token in terrain, f"reactive Styx impact feedback missing {token}")
+    require("_styx_hand_reaction" in terrain, "nearby river hands should react to fresh impacts")
 
 
 def test_platforms_are_jagged_and_emit_motes() -> None:
@@ -216,6 +217,7 @@ def test_audio_feedback_assets_and_hooks_exist() -> None:
         require(f'sfx_requested.emit("{sound_id}",' in minions, f"skill action should emit {sound_id}")
     require("AudioStreamPlayer2D" in sfx and "play_at" in sfx and "panning_strength" in sfx, "world SFX should use camera-relative spatial audio")
     require("apply_mix_settings" in sfx and "dynamic_range" in sfx, "audio buses should support persistent mix and night mode")
+    require("set_styx_proximity" in sfx and "_duck_ambience" in sfx, "ambience should react to river proximity and major cues")
     game_root = read("scripts/core/game_root.gd")
     require("_on_world_sfx_requested" in game_root and "_kick_camera" in game_root, "world cues should drive restrained camera feedback")
     require("play_feedback" in ui and "FeedbackFlash" in ui and "_pulse_button" in ui, "HUD should react to skill and outcome cues")

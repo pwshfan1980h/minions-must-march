@@ -71,6 +71,8 @@ var _active_players: Array[Dictionary] = []
 var _ambience_player: AudioStreamPlayer
 var _ambience_tween: Tween
 var _biome_profile := ""
+var _styx_proximity := 0.0
+var _ambience_ducking := false
 var _mix_settings := {
 	"master_db": 0.0,
 	"sfx_db": 0.0,
@@ -107,6 +109,8 @@ func play_at(sound_id: String, world_position: Vector2, volume_db := 0.0, pitch_
 	if not STREAMS.has(sound_id):
 		push_warning("Unknown SFX id: %s" % sound_id)
 		return
+	if sound_id == "level_success" or sound_id == "level_fail":
+		_duck_ambience()
 
 	_enforce_polyphony(sound_id)
 	var spatial := world_position != Vector2.INF and WORLD_SOUNDS.has(sound_id)
@@ -178,8 +182,31 @@ func set_biome_profile(profile: String) -> void:
 	add_child(_ambience_player)
 	_ambience_player.play()
 	_ambience_tween = create_tween()
-	var target_volume := -14.5 if normalized == "ash_catacombs" else -13.0
+	var target_volume := _ambience_target_volume()
 	_ambience_tween.tween_property(_ambience_player, "volume_db", target_volume, 2.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+func set_styx_proximity(amount: float) -> void:
+	_styx_proximity = clampf(amount, 0.0, 1.0)
+	if not is_instance_valid(_ambience_player) or _ambience_ducking:
+		return
+	_ambience_player.volume_db = lerpf(_ambience_player.volume_db, _ambience_target_volume(), 0.08)
+	_ambience_player.pitch_scale = lerpf(_ambience_player.pitch_scale, 1.0 + _styx_proximity * 0.025, 0.06)
+
+func _ambience_target_volume() -> float:
+	var base := -14.5 if _biome_profile == "ash_catacombs" else -13.0
+	return base + _styx_proximity * 4.0
+
+func _duck_ambience() -> void:
+	if not is_instance_valid(_ambience_player):
+		return
+	if _ambience_tween != null:
+		_ambience_tween.kill()
+	_ambience_ducking = true
+	_ambience_tween = create_tween()
+	_ambience_tween.tween_property(_ambience_player, "volume_db", _ambience_target_volume() - 10.0, 0.14)
+	_ambience_tween.tween_interval(0.72)
+	_ambience_tween.tween_property(_ambience_player, "volume_db", _ambience_target_volume(), 0.75).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	_ambience_tween.tween_callback(func() -> void: _ambience_ducking = false)
 
 func _enforce_polyphony(sound_id: String) -> void:
 	var matches: Array[Node] = []

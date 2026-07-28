@@ -1449,12 +1449,25 @@ func _draw_styx_hands() -> void:
 		var cycle_seconds := float(hand["cycle"])
 		var t := fposmod(_time + float(hand["phase"]), cycle_seconds) / cycle_seconds
 		var emerge := smoothstep(0.04, 0.22, t) * (1.0 - smoothstep(0.58, 0.86, t))
+		var reaction := _styx_hand_reaction(float(hand["x"]))
+		emerge = maxf(emerge, reaction)
 		if emerge <= 0.01:
 			continue
 		var bob := sin(t * TAU * 1.8) * 2.0
-		var x := float(hand["x"]) + sin(_time * 0.23 + float(hand["phase"])) * 8.0
-		var y := STYX_WATERLINE_Y + 10.0 - emerge * (34.0 * float(hand["scale"])) + bob
+		var x := float(hand["x"]) + sin(_time * 0.23 + float(hand["phase"])) * 8.0 + sin(_time * 31.0) * reaction * 5.0
+		var y := STYX_WATERLINE_Y + 10.0 - emerge * (34.0 * float(hand["scale"]) + reaction * 18.0) + bob
 		_draw_grasping_hand(Vector2(x, y), float(hand["scale"]), float(hand["lean"]), emerge)
+
+func _styx_hand_reaction(hand_x: float) -> float:
+	var reaction := 0.0
+	for impact in _styx_impacts:
+		var age := _time - float(impact["born"])
+		var distance := absf(hand_x - float(impact["x"]))
+		if age < 0.85 and distance < 150.0:
+			var time_envelope := sin(clampf(age / 0.85, 0.0, 1.0) * PI)
+			var distance_envelope := 1.0 - distance / 150.0
+			reaction = maxf(reaction, time_envelope * distance_envelope)
+	return reaction
 
 func _draw_grasping_hand(pos: Vector2, scale: float, lean: float, alpha: float) -> void:
 	var skin := Color(0.58, 0.72, 0.45, 0.46 * alpha)

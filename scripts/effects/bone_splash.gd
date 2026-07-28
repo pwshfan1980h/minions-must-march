@@ -79,6 +79,12 @@ func _draw() -> void:
 func _draw_styx_impact(fade: float) -> void:
 	var surface_local_y := STYX_SURFACE_Y - global_position.y
 	var impact_fade := clampf(1.0 - (_age / 0.62), 0.0, 1.0)
+	var shadow_width := lerpf(8.0, 34.0, clampf(_age / 0.7, 0.0, 1.0))
+	var shadow := PackedVector2Array()
+	for i in 20:
+		var angle := TAU * float(i) / 20.0
+		shadow.append(Vector2(cos(angle) * shadow_width, surface_local_y + 5.0 + sin(angle) * 4.0))
+	draw_colored_polygon(shadow, Color(0.01, 0.02, 0.015, impact_fade * 0.48))
 	for jet in _goop_jets:
 		var delay := float(jet["delay"])
 		if _age < delay:
