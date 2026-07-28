@@ -20,6 +20,20 @@ const STYX_SULFUR := Color("b7cb62")
 const STYX_SOUL := Color("9af1d2")
 const CRYPT_EDGE := Color("a58ab2")
 const ASH_EDGE := Color("c2a079")
+const BIOME_PROFILES := {
+	"crypt": {
+		"sky_top": Color("030307"),
+		"sky_bottom": Color("21142a"),
+		"haze": Color("661533"),
+		"haze_secondary": Color("3b1957"),
+	},
+	"ash_catacombs": {
+		"sky_top": Color("070302"),
+		"sky_bottom": Color("2b1710"),
+		"haze": Color("8c2512"),
+		"haze_secondary": Color("5a3219"),
+	},
+}
 
 var collision_rects: Array[Rect2] = []
 var diggable_plugs: Array[Dictionary] = []
@@ -34,8 +48,10 @@ var _crumbling_sections: Array[Dictionary] = []
 var _platform_ash_specs: Array[Dictionary] = []
 var _ember_specs: Array[Dictionary] = []
 var _monster_flock_specs: Array[Dictionary] = []
+var _biome := "crypt"
 
 func _ready() -> void:
+	_biome = String(LevelState.config().get("biome", "crypt"))
 	_build_souls()
 	_build_hands()
 	_build_bubbles()
@@ -903,10 +919,13 @@ func _draw() -> void:
 	_draw_platform_ash_motes()
 
 func _draw_crypt_gradient() -> void:
+	var profile: Dictionary = BIOME_PROFILES.get(_biome, BIOME_PROFILES["crypt"])
+	var sky_top: Color = profile["sky_top"]
+	var sky_bottom: Color = profile["sky_bottom"]
 	var bands := 36
 	for i in bands:
 		var t := float(i) / float(bands - 1)
-		var color := Color(0.012 + t * 0.115, 0.009 + t * 0.075, 0.020 + t * 0.145, 1.0)
+		var color := sky_top.lerp(sky_bottom, t)
 		var y := t * PLAYFIELD_HEIGHT
 		draw_rect(Rect2(0, y, WORLD_WIDTH, PLAYFIELD_HEIGHT / bands + 2.0), color)
 
@@ -972,20 +991,18 @@ func _build_monster_flocks() -> void:
 
 func _draw_horizon_haze() -> void:
 	# Stronger red/purple hell-horizon, still behind the playable layer.
+	var profile: Dictionary = BIOME_PROFILES.get(_biome, BIOME_PROFILES["crypt"])
+	var haze: Color = profile["haze"]
+	var haze_secondary: Color = profile["haze_secondary"]
 	for i in 30:
 		var t := float(i) / 29.0
-		var color := Color(
-			0.18 - t * 0.08,
-			0.028 + t * 0.018,
-			0.105 + t * 0.070,
-			0.30 - t * 0.105
-		)
+		var color := Color(haze.lerp(haze_secondary, t), 0.30 - t * 0.105)
 		draw_rect(Rect2(0, 66.0 + i * 10.4, WORLD_WIDTH, 12.0), color)
 	for i in 7:
 		var x := 120.0 + float(i) * 350.0
 		var pulse := 0.72 + 0.28 * sin(_time * 0.18 + float(i) * 1.4)
-		draw_circle(Vector2(x, 315.0 + sin(float(i)) * 22.0), 190.0, Color(0.58, 0.055, 0.11, 0.045 * pulse))
-		draw_circle(Vector2(x + 72.0, 285.0), 155.0, Color(0.31, 0.09, 0.48, 0.040 * pulse))
+		draw_circle(Vector2(x, 315.0 + sin(float(i)) * 22.0), 190.0, Color(haze, 0.055 * pulse))
+		draw_circle(Vector2(x + 72.0, 285.0), 155.0, Color(haze_secondary, 0.050 * pulse))
 
 func _draw_monster_flocks() -> void:
 	for flock in _monster_flock_specs:

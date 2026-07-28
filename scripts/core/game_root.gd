@@ -1,5 +1,6 @@
 extends Node2D
 
+const LevelState := preload("res://scripts/core/level_state.gd")
 const WORLD_WIDTH := 2400.0
 const VIEWPORT_WIDTH := 1280.0
 const CAMERA_PAN_SPEED := 520.0
@@ -33,6 +34,7 @@ func _ready() -> void:
 	game_ui.pause_toggled.connect(_toggle_pause_inspect)
 	game_ui.speed_requested.connect(_set_march_speed)
 	game_ui.job_selected.connect(_on_job_selected)
+	sfx.set_biome_profile(String(LevelState.config().get("biome", "crypt")))
 	game_ui.update_stats(level_controller.get_stats())
 	_maybe_capture_screenshot()
 

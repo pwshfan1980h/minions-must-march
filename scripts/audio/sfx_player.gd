@@ -19,6 +19,7 @@ const STREAMS := {
 	"job_select": preload("res://assets/audio/generated/job_select.wav"),
 	"level_success": preload("res://assets/audio/generated/level_success.wav"),
 	"level_fail": preload("res://assets/audio/generated/level_fail.wav"),
+	"ash_ambience": preload("res://assets/audio/generated/ash_ambience.wav"),
 	"styx_ambience": preload("res://assets/audio/generated/styx_ambience.wav"),
 }
 
@@ -69,13 +70,14 @@ var _rng := RandomNumberGenerator.new()
 var _active_players: Array[Dictionary] = []
 var _ambience_player: AudioStreamPlayer
 var _ambience_tween: Tween
+var _biome_profile := ""
 
 func _ready() -> void:
 	_rng.randomize()
 	_ensure_bus("World SFX", -1.5)
 	_ensure_bus("UI SFX", -3.0)
 	_ensure_bus("Ambience", -4.0)
-	_start_styx_ambience()
+	set_biome_profile("crypt")
 
 func _exit_tree() -> void:
 	if _ambience_tween != null:
@@ -129,10 +131,20 @@ func _ensure_bus(bus_name: String, volume_db: float) -> void:
 		AudioServer.set_bus_name(index, bus_name)
 	AudioServer.set_bus_volume_db(index, volume_db)
 
-func _start_styx_ambience() -> void:
+func set_biome_profile(profile: String) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
-	var loop_stream: AudioStreamWAV = STREAMS["styx_ambience"].duplicate()
+	var normalized := "ash_catacombs" if profile == "ash_catacombs" else "crypt"
+	if normalized == _biome_profile and is_instance_valid(_ambience_player):
+		return
+	_biome_profile = normalized
+	if _ambience_tween != null:
+		_ambience_tween.kill()
+	if is_instance_valid(_ambience_player):
+		_ambience_player.stop()
+		_ambience_player.queue_free()
+	var stream_id := "ash_ambience" if normalized == "ash_catacombs" else "styx_ambience"
+	var loop_stream: AudioStreamWAV = STREAMS[stream_id].duplicate()
 	loop_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	loop_stream.loop_begin = 0
 	loop_stream.loop_end = int(loop_stream.get_length() * float(loop_stream.mix_rate))
@@ -144,7 +156,8 @@ func _start_styx_ambience() -> void:
 	add_child(_ambience_player)
 	_ambience_player.play()
 	_ambience_tween = create_tween()
-	_ambience_tween.tween_property(_ambience_player, "volume_db", -13.0, 2.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	var target_volume := -14.5 if normalized == "ash_catacombs" else -13.0
+	_ambience_tween.tween_property(_ambience_player, "volume_db", target_volume, 2.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _enforce_polyphony(sound_id: String) -> void:
 	var matches: Array[Node] = []

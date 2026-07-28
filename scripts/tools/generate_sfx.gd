@@ -6,6 +6,7 @@ const MASTER_GAIN := 0.55
 
 var _rng := RandomNumberGenerator.new()
 var _ambience_noise_state := 0.0
+var _ash_noise_state := 0.0
 
 func _init() -> void:
 	_rng.seed = 0xB10C_FEED
@@ -24,6 +25,7 @@ func _init() -> void:
 	_write_wav("digger_crack", 0.42, _sample_digger_crack)
 	_write_wav("feather_chime", 0.62, _sample_feather_chime)
 	_write_wav("styx_ambience", 5.0, _sample_styx_ambience)
+	_write_wav("ash_ambience", 5.0, _sample_ash_ambience)
 
 	print("Generated procedural SFX in %s" % OUT_DIR)
 	quit()
@@ -167,6 +169,17 @@ func _sample_styx_ambience(t: float, duration: float) -> float:
 	var sludge := _ambience_noise_state * noise_window * (0.10 + breath * 0.055)
 	var bubbles := sin(TAU * 90.0 * t) * pow(maxf(0.0, sin(TAU * 3.0 * t)), 12.0) * 0.035
 	return rumble * (0.55 + breath * 0.28) + churn + sludge + bubbles
+
+func _sample_ash_ambience(t: float, duration: float) -> float:
+	var loop_phase := t / duration
+	var edge_window := pow(sin(PI * loop_phase), 2.0)
+	var breath := 0.62 + 0.38 * sin(TAU * loop_phase + 0.4)
+	_ash_noise_state = lerpf(_ash_noise_state, _noise(), 0.018)
+	var hot_air := _ash_noise_state * edge_window * (0.16 + breath * 0.06)
+	var stone_hum := (sin(TAU * 42.0 * t) * 0.10 + sin(TAU * 58.0 * t + 1.1) * 0.065) * breath
+	var ember_ticks := sin(TAU * 530.0 * t) * pow(maxf(0.0, sin(TAU * 2.0 * t + 0.7)), 22.0) * 0.026
+	var distant_bell := sin(TAU * 118.0 * t) * pow(maxf(0.0, sin(TAU * loop_phase)), 8.0) * 0.035
+	return hot_air + stone_hum + ember_ticks + distant_bell
 
 func _tone(t: float, hz: float, length: float) -> float:
 	if t < 0.0 or t > length:

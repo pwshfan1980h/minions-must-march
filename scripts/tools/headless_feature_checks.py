@@ -183,6 +183,8 @@ def test_levels_have_extra_hellish_atmosphere() -> None:
     for token in ["InfernalEmbers", "_draw_blood_moon", "_draw_lavafalls", "_draw_bone_spike_ridge", "_draw_infernal_embers", "MonsterFlockSilhouettes", "_build_monster_flocks", "_draw_monster_flocks", "_draw_monster_boid", "red/purple hell-horizon"]:
         require(token in terrain, f"hellish atmospheric layer missing {token}")
     require("visual-only" in terrain and "puzzle geometry less readable" in terrain, "hellish polish must document that it does not alter collision")
+    for token in ["BIOME_PROFILES", "sky_top", "sky_bottom", "ash_catacombs"]:
+        require(token in terrain, f"biome color profiles missing {token}")
 
 
 def test_audio_feedback_assets_and_hooks_exist() -> None:
@@ -196,11 +198,11 @@ def test_audio_feedback_assets_and_hooks_exist() -> None:
     require("death_voice_id" in skeleton, "skeleton should expose body-height voice variant")
     require("death_voice_id()" in minions and "death_knell" in minions, "minion root should emit death yelp + knell")
     require(minions.count('sfx_requested.emit("command_clatter",') >= 2, "builder/blocker commands should both clatter")
-    for sound_id in ["builder_snap", "digger_crack", "feather_chime", "styx_ambience"]:
+    for sound_id in ["builder_snap", "digger_crack", "feather_chime", "styx_ambience", "ash_ambience"]:
         require(sound_id in sfx, f"SfxPlayer missing polished sound {sound_id}")
         require((ROOT / f"assets/audio/generated/{sound_id}.wav").exists(), f"missing polished wav for {sound_id}")
     require("MAX_INSTANCES" in sfx and "_enforce_polyphony" in sfx, "crowd sounds should be voice-limited")
-    require("_start_styx_ambience" in sfx and 'bus = "Ambience"' in sfx, "Styx should have a restrained ambient bed")
+    require("set_biome_profile" in sfx and 'bus = "Ambience"' in sfx, "each biome should have a restrained ambient bed")
     for sound_id in ["builder_snap", "digger_crack", "feather_chime"]:
         require(f'sfx_requested.emit("{sound_id}",' in minions, f"skill action should emit {sound_id}")
     require("AudioStreamPlayer2D" in sfx and "play_at" in sfx and "panning_strength" in sfx, "world SFX should use camera-relative spatial audio")
