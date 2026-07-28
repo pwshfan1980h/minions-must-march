@@ -6,6 +6,8 @@ const LIFE_SECONDS := 0.85
 const GRAVITY := 620.0
 const STYX_SURFACE_Y := 560.0
 const REDRAW_FPS := 30.0
+const STYX_SULFUR := Color("b7cb62")
+const STYX_SLUDGE := Color("526334")
 
 var _age := 0.0
 var _fragments: Array[Dictionary] = []
@@ -87,8 +89,8 @@ func _draw_styx_impact(fade: float) -> void:
 		var lean := float(jet["lean"]) * t
 		var base := Vector2(x, surface_local_y + 4.0)
 		var tip := Vector2(x + lean, surface_local_y - height)
-		draw_line(base, tip, Color(0.18, 0.14, 0.09, impact_fade * 0.58), float(jet["width"]), true)
-		draw_line(base + Vector2(2, 0), tip + Vector2(2, 1), Color(0.42, 0.33, 0.16, impact_fade * 0.18), 1.2, true)
+		draw_line(base, tip, Color(STYX_SLUDGE, impact_fade * 0.74), float(jet["width"]), true)
+		draw_line(base + Vector2(2, 0), tip + Vector2(2, 1), Color(STYX_SULFUR, impact_fade * 0.30), 1.2, true)
 
 	for ripple in _ripples:
 		var delay := float(ripple["delay"])
@@ -104,7 +106,7 @@ func _draw_styx_impact(fade: float) -> void:
 			var x := lerpf(-half_width, half_width, u)
 			var wave := sin(float(ripple["phase"]) + u * TAU * 1.4 + _age * 8.0) * 2.8 * (1.0 - t)
 			points.append(Vector2(x, y + wave))
-		draw_polyline(points, Color(0.55, 0.44, 0.22, alpha), 2.2, true)
+		draw_polyline(points, Color(STYX_SULFUR, alpha * 1.15), 2.2, true)
 
 func _draw_bone_fragments(fade: float) -> void:
 	var bone := Color(0.91, 0.86, 0.72, fade)

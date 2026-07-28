@@ -11,6 +11,16 @@ const TERRAIN_REDRAW_FPS := 30.0
 const CRUMBLE_FUSE_MIN := 15.0
 const CRUMBLE_FUSE_MAX := 30.0
 
+# Color language: violet stone stays neutral, gold marks player-authored routes,
+# cool mint belongs to rescue/souls, and the Styx owns the sour olive hazard range.
+const STYX_DEEP := Color("080d0b")
+const STYX_MID := Color("101b13")
+const STYX_SKIN := Color("344126")
+const STYX_SULFUR := Color("b7cb62")
+const STYX_SOUL := Color("9af1d2")
+const CRYPT_EDGE := Color("a58ab2")
+const ASH_EDGE := Color("c2a079")
+
 var collision_rects: Array[Rect2] = []
 var diggable_plugs: Array[Dictionary] = []
 var _time := 0.0
@@ -550,7 +560,7 @@ func _add_pillar_capstone(rect: Rect2, body: Node2D, color: Color) -> void:
 
 func _add_block_underworld_detail(rect: Rect2, body: Node2D, variant: String) -> void:
 	var top_line := Line2D.new()
-	top_line.default_color = Color("76637f")
+	top_line.default_color = CRYPT_EDGE
 	top_line.width = 2.0
 	top_line.points = PackedVector2Array([
 		Vector2(-rect.size.x / 2.0, -rect.size.y / 2.0 + 2.0),
@@ -603,7 +613,7 @@ func _add_block_underworld_detail(rect: Rect2, body: Node2D, variant: String) ->
 			body.add_child(rib)
 	elif variant == "obsidian":
 		var gleam := Line2D.new()
-		gleam.default_color = Color(0.46, 0.34, 0.72, 0.22)
+		gleam.default_color = Color(0.62, 0.43, 0.86, 0.34)
 		gleam.width = 1.6
 		gleam.points = PackedVector2Array([Vector2(-rect.size.x / 2.0 + 18.0, -8.0), Vector2(rect.size.x / 2.0 - 18.0, -13.0)])
 		body.add_child(gleam)
@@ -615,7 +625,7 @@ func _add_block_underworld_detail(rect: Rect2, body: Node2D, variant: String) ->
 			chain.points = PackedVector2Array([Vector2(x, -rect.size.y / 2.0), Vector2(x, -rect.size.y / 2.0 - 138.0)])
 			body.add_child(chain)
 	elif variant == "ash_floor" or variant == "lower_catacomb":
-		top_line.default_color = Color("9a8771") if variant == "ash_floor" else Color("74635a")
+		top_line.default_color = ASH_EDGE if variant == "ash_floor" else Color("967866")
 		for i in range(18, int(rect.size.x), 74):
 			var seam := Line2D.new()
 			seam.default_color = Color(0.12, 0.095, 0.080, 0.32)
@@ -626,7 +636,7 @@ func _add_block_underworld_detail(rect: Rect2, body: Node2D, variant: String) ->
 			])
 			body.add_child(seam)
 	elif variant == "ash_wall":
-		top_line.default_color = Color("6e6258")
+		top_line.default_color = Color("8d7769")
 		for y in range(-int(rect.size.y / 2.0) + 22, int(rect.size.y / 2.0), 44):
 			var slab := Line2D.new()
 			slab.default_color = Color(0.08, 0.065, 0.060, 0.38)
@@ -879,7 +889,7 @@ func _draw_crypt_gradient() -> void:
 	var bands := 36
 	for i in bands:
 		var t := float(i) / float(bands - 1)
-		var color := Color(0.010 + t * 0.10, 0.010 + t * 0.09, 0.014 + t * 0.14, 1.0)
+		var color := Color(0.012 + t * 0.115, 0.009 + t * 0.075, 0.020 + t * 0.145, 1.0)
 		var y := t * PLAYFIELD_HEIGHT
 		draw_rect(Rect2(0, y, WORLD_WIDTH, PLAYFIELD_HEIGHT / bands + 2.0), color)
 
@@ -1238,8 +1248,9 @@ func _draw_light_shards(pos: Vector2, width: float, height: float, color: Color,
 
 func _draw_styx_water() -> void:
 	var rect := Rect2(0, STYX_WATERLINE_Y, WORLD_WIDTH, STYX_DEPTH)
-	draw_rect(rect, Color(0.030, 0.018, 0.014, 1.0))
+	draw_rect(rect, STYX_DEEP)
 	_draw_styx_surface_skin()
+	_draw_styx_caustics()
 	_draw_styx_currents()
 	_draw_styx_bubbles()
 	_draw_styx_hands()
@@ -1262,9 +1273,40 @@ func _draw_styx_surface_skin() -> void:
 		skin.append(point)
 	for i in range(bottom.size() - 1, -1, -1):
 		skin.append(bottom[i])
-	draw_colored_polygon(skin, Color(0.112, 0.078, 0.046, 0.82))
-	draw_rect(Rect2(0, STYX_WATERLINE_Y + 24, WORLD_WIDTH, 32), Color(0.024, 0.015, 0.012, 0.62))
-	draw_rect(Rect2(0, STYX_WATERLINE_Y + 56, WORLD_WIDTH, STYX_DEPTH - 56), Color(0.018, 0.011, 0.010, 0.68))
+	draw_colored_polygon(skin, STYX_SKIN)
+	draw_rect(Rect2(0, STYX_WATERLINE_Y + 24, WORLD_WIDTH, 34), Color(STYX_MID, 0.96))
+	draw_rect(Rect2(0, STYX_WATERLINE_Y + 58, WORLD_WIDTH, STYX_DEPTH - 58), Color(STYX_DEEP, 0.98))
+
+	# A broken, luminous meniscus makes the lethal boundary readable at a glance.
+	# Two offset strokes keep it organic without changing the collision waterline.
+	for pass_index in 2:
+		var rim := PackedVector2Array()
+		for x in range(-24, WORLD_WIDTH + 49, 18):
+			var wave := sin(float(x) * 0.023 + _time * 0.72) * 3.0 + sin(float(x) * 0.011 - _time * 0.38) * 2.1
+			var breakup := sin(float(x) * 0.071 + _time * 0.24)
+			if breakup < -0.72:
+				continue
+			rim.append(Vector2(x, STYX_WATERLINE_Y + wave + float(pass_index) * 2.6))
+		var rim_color := Color(STYX_SULFUR, 0.34 if pass_index == 0 else 0.12)
+		draw_polyline(rim, rim_color, 2.1 if pass_index == 0 else 4.8, true)
+
+func _draw_styx_caustics() -> void:
+	# Slow diagonal ribbons reveal the river's depth and opposing undertow.
+	for ribbon in 9:
+		var y := STYX_WATERLINE_Y + 32.0 + float(ribbon) * 14.5
+		var points := PackedVector2Array()
+		var travel := _time * (13.0 + float(ribbon % 3) * 4.0) * (-1.0 if ribbon % 2 == 0 else 1.0)
+		for x in range(-80, WORLD_WIDTH + 81, 32):
+			var fx := float(x)
+			var stagger := fposmod(fx + travel + float(ribbon) * 73.0, 260.0)
+			if stagger > 176.0:
+				continue
+			var wave := sin(fx * 0.018 + _time * 0.44 + float(ribbon)) * (3.0 + float(ribbon) * 0.24)
+			points.append(Vector2(fx, y + wave))
+		if points.size() > 1:
+			var fade := 1.0 - float(ribbon) / 11.0
+			var color := Color(STYX_SULFUR, 0.075 * fade) if ribbon < 4 else Color(STYX_SOUL, 0.038 * fade)
+			draw_polyline(points, color, 2.8 if ribbon < 3 else 1.6, true)
 
 func _draw_styx_currents() -> void:
 	for band in 7:
@@ -1276,7 +1318,7 @@ func _draw_styx_currents() -> void:
 			var wave := sin(fx * (0.019 + band * 0.002) + _time * direction * (0.72 + band * 0.08) + band) * (2.2 + band * 0.42)
 			var undertow := sin(fx * 0.006 - _time * 0.36 + band * 1.7) * 1.8
 			points.append(Vector2(fx, y + wave + undertow))
-		var color := Color(0.30, 0.22, 0.12, 0.23 - band * 0.018) if band < 3 else Color(0.10, 0.20, 0.16, 0.12)
+		var color := Color(0.55, 0.62, 0.25, 0.25 - band * 0.018) if band < 3 else Color(0.18, 0.43, 0.32, 0.14)
 		draw_polyline(points, color, 1.7 + float(band % 3) * 0.35, true)
 
 	# Slow eddies: angular current marks, not oval bubbles.
@@ -1290,7 +1332,7 @@ func _draw_styx_currents() -> void:
 			Vector2(x + 14.0, y - 2.0),
 			Vector2(x + 2.0, y + 6.0),
 		])
-		draw_polyline(eddy, Color(0.53, 0.43, 0.22, 0.070), 1.4, true)
+		draw_polyline(eddy, Color(STYX_SULFUR, 0.10), 1.4, true)
 
 func _draw_styx_bubbles() -> void:
 	for spec in _bubble_specs:
@@ -1302,8 +1344,8 @@ func _draw_styx_bubbles() -> void:
 		)
 		var alpha := sin(cycle * PI) * 0.22
 		var size := float(spec["size"]) * lerpf(0.55, 1.15, cycle)
-		var rim := Color(0.68, 0.86, 0.62, alpha)
-		draw_circle(pos, size * 1.8, Color(0.15, 0.26, 0.17, alpha * 0.28))
+		var rim := Color(STYX_SULFUR, alpha * 1.15)
+		draw_circle(pos, size * 1.8, Color(0.15, 0.34, 0.23, alpha * 0.32))
 		draw_arc(pos, size, -0.4, PI * 1.36, 12, rim, 1.1, true)
 		draw_circle(pos + Vector2(-size * 0.28, -size * 0.24), maxf(0.7, size * 0.18), Color(0.92, 0.98, 0.76, alpha * 0.55))
 	for pop in _bubble_pops:
@@ -1314,9 +1356,9 @@ func _draw_bubble_pop(pop: Dictionary) -> void:
 	var pos: Vector2 = pop["pos"]
 	var radius := float(pop["size"]) * lerpf(1.1, 5.6, age)
 	var alpha := (1.0 - age) * 0.26
-	draw_arc(pos, radius, 0.0, TAU, 18, Color(0.82, 0.95, 0.62, alpha), 1.2, true)
-	draw_line(pos + Vector2(-radius * 0.7, 0), pos + Vector2(-radius * 1.15, -radius * 0.45), Color(0.82, 0.95, 0.62, alpha * 0.75), 1.0, true)
-	draw_line(pos + Vector2(radius * 0.6, -radius * 0.1), pos + Vector2(radius * 1.05, -radius * 0.55), Color(0.82, 0.95, 0.62, alpha * 0.75), 1.0, true)
+	draw_arc(pos, radius, 0.0, TAU, 18, Color(STYX_SULFUR, alpha), 1.2, true)
+	draw_line(pos + Vector2(-radius * 0.7, 0), pos + Vector2(-radius * 1.15, -radius * 0.45), Color(STYX_SULFUR, alpha * 0.75), 1.0, true)
+	draw_line(pos + Vector2(radius * 0.6, -radius * 0.1), pos + Vector2(radius * 1.05, -radius * 0.55), Color(STYX_SULFUR, alpha * 0.75), 1.0, true)
 
 func _draw_styx_hands() -> void:
 	for hand in _hand_specs:
@@ -1331,7 +1373,7 @@ func _draw_styx_hands() -> void:
 		_draw_grasping_hand(Vector2(x, y), float(hand["scale"]), float(hand["lean"]), emerge)
 
 func _draw_grasping_hand(pos: Vector2, scale: float, lean: float, alpha: float) -> void:
-	var skin := Color(0.50, 0.58, 0.45, 0.34 * alpha)
+	var skin := Color(0.58, 0.72, 0.45, 0.46 * alpha)
 	var shadow := Color(0.035, 0.027, 0.020, 0.42 * alpha)
 	var wrist := pos + Vector2(lean * 16.0, 26.0 * scale)
 	var palm := pos + Vector2(lean * 8.0, 5.0 * scale)
@@ -1349,15 +1391,15 @@ func _draw_grasping_hand(pos: Vector2, scale: float, lean: float, alpha: float) 
 
 func _draw_soul(pos: Vector2, scale: float, phase: float, angle: float) -> void:
 	var visible_pulse := 0.5 + 0.5 * sin(phase * 0.72)
-	var alpha := 0.035 + visible_pulse * 0.105
+	var alpha := 0.055 + visible_pulse * 0.15
 	var dir := Vector2.RIGHT.rotated(angle)
 	var side := dir.orthogonal()
 	var head := pos + dir * sin(phase) * 2.0
 	var garment_start := head - dir * 8.0 * scale
 
 	# Sparse tadpole/soul: clearer head, then a fading cloth-like tail.
-	draw_circle(head, 5.2 * scale, Color(0.76, 0.96, 0.88, alpha))
-	draw_circle(head, 11.5 * scale, Color(0.50, 0.86, 0.76, alpha * 0.18))
+	draw_circle(head, 5.2 * scale, Color(STYX_SOUL, alpha))
+	draw_circle(head, 12.5 * scale, Color(STYX_SOUL, alpha * 0.20))
 	for i in 5:
 		var t := float(i) / 4.0
 		var center := garment_start - dir * (10.0 + t * 34.0) * scale + side * sin(phase + t * 3.0) * 3.2 * scale
@@ -1369,7 +1411,7 @@ func _draw_soul(pos: Vector2, scale: float, phase: float, angle: float) -> void:
 			center - dir * 10.0 * scale - side * half_width * 0.38,
 			center - side * half_width,
 		])
-		draw_colored_polygon(poly, Color(0.72, 0.94, 0.86, a))
+		draw_colored_polygon(poly, Color(STYX_SOUL, a))
 
 	var eye_color := Color(0.04, 0.035, 0.05, alpha * 0.8)
 	draw_circle(head + dir * 1.5 * scale + side * 1.8 * scale, 0.9 * scale, eye_color)

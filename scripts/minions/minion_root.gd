@@ -215,7 +215,6 @@ func _on_minion_clicked(minion: Node) -> void:
 	if minion.become_blocker():
 		blockers_remaining -= 1
 		sfx_requested.emit("command_clatter")
-		sfx_requested.emit("bone_clack")
 		sfx_requested.emit("blocker_brace")
 		minion_spawned.emit(minion)
 		_refresh_target_affordances()
@@ -228,7 +227,7 @@ func _try_assign_featherfall(minion: Node) -> void:
 		return
 	featherfalls_remaining -= 1
 	sfx_requested.emit("command_clatter")
-	sfx_requested.emit("bone_clack")
+	sfx_requested.emit("feather_chime")
 	minion_spawned.emit(minion)
 	_refresh_target_affordances()
 
@@ -245,7 +244,7 @@ func _try_assign_digger(minion: Node) -> void:
 		return
 	diggers_remaining -= 1
 	sfx_requested.emit("command_clatter")
-	sfx_requested.emit("bone_clack")
+	sfx_requested.emit("digger_crack")
 	if minion.has_method("play_digger_dust"):
 		minion.play_digger_dust()
 	minion_spawned.emit(minion)
@@ -256,7 +255,7 @@ func _try_assign_builder(minion: Node) -> void:
 		return
 	builders_remaining -= 1
 	sfx_requested.emit("command_clatter")
-	sfx_requested.emit("bone_clack")
+	sfx_requested.emit("builder_snap")
 	minion_spawned.emit(minion)
 	_refresh_target_affordances()
 	_run_builder_sequence(minion)

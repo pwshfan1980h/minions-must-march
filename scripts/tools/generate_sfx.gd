@@ -5,6 +5,7 @@ const OUT_DIR := "res://assets/audio/generated"
 const MASTER_GAIN := 0.55
 
 var _rng := RandomNumberGenerator.new()
+var _ambience_noise_state := 0.0
 
 func _init() -> void:
 	_rng.seed = 0xB10C_FEED
@@ -19,6 +20,10 @@ func _init() -> void:
 	_write_wav("job_select", 0.14, _sample_job_select)
 	_write_wav("level_success", 0.82, _sample_level_success)
 	_write_wav("level_fail", 0.72, _sample_level_fail)
+	_write_wav("builder_snap", 0.34, _sample_builder_snap)
+	_write_wav("digger_crack", 0.42, _sample_digger_crack)
+	_write_wav("feather_chime", 0.62, _sample_feather_chime)
+	_write_wav("styx_ambience", 5.0, _sample_styx_ambience)
 
 	print("Generated procedural SFX in %s" % OUT_DIR)
 	quit()
@@ -124,6 +129,44 @@ func _sample_level_fail(t: float, _duration: float) -> float:
 	var moan := sin(TAU * drop * t) * _decay(t, 0.45) * 0.55
 	var dust := _noise() * _decay(t, 0.22) * 0.18
 	return moan + dust
+
+func _sample_builder_snap(t: float, _duration: float) -> float:
+	var wood_bone := sin(TAU * 340.0 * t) * _decay(t, 0.055) * 0.52
+	var seat := sin(TAU * 128.0 * t) * _decay(t, 0.11) * 0.38
+	var sparkle := sin(TAU * 1020.0 * maxf(t - 0.035, 0.0)) * _decay(maxf(t - 0.035, 0.0), 0.035) * 0.16
+	return wood_bone + seat + sparkle
+
+func _sample_digger_crack(t: float, _duration: float) -> float:
+	var split := _noise() * _decay(t, 0.10) * 0.58
+	var stone := sin(TAU * 82.0 * t) * _decay(t, 0.18) * 0.48
+	var debris := 0.0
+	for n in 5:
+		var lt := t - 0.055 - float(n) * 0.047
+		if lt >= 0.0:
+			debris += sin(TAU * (270.0 + float(n) * 61.0) * lt) * _decay(lt, 0.026) * 0.20
+	return split + stone + debris
+
+func _sample_feather_chime(t: float, duration: float) -> float:
+	var out := 0.0
+	var notes := [659.25, 987.77, 1318.51]
+	for n in notes.size():
+		var lt := t - float(n) * 0.065
+		if lt >= 0.0:
+			out += sin(TAU * notes[n] * lt) * _decay(lt, 0.20) * 0.19
+			out += sin(TAU * notes[n] * 2.01 * lt) * _decay(lt, 0.11) * 0.055
+	return out * _fade_out(t, duration)
+
+func _sample_styx_ambience(t: float, duration: float) -> float:
+	# Integer-cycle layers and an edge-faded noise bed make a seamless loop.
+	var loop_phase := t / duration
+	var rumble := sin(TAU * 25.0 * t) * 0.14 + sin(TAU * 35.0 * t + 0.8) * 0.09
+	var breath := 0.55 + 0.45 * sin(TAU * loop_phase - 0.6)
+	var churn := (sin(TAU * 55.0 * t + sin(TAU * loop_phase) * 1.8) + sin(TAU * 67.0 * t + 1.2)) * 0.045 * breath
+	var noise_window := pow(sin(PI * loop_phase), 2.0)
+	_ambience_noise_state = lerpf(_ambience_noise_state, _noise(), 0.025)
+	var sludge := _ambience_noise_state * noise_window * (0.10 + breath * 0.055)
+	var bubbles := sin(TAU * 90.0 * t) * pow(maxf(0.0, sin(TAU * 3.0 * t)), 12.0) * 0.035
+	return rumble * (0.55 + breath * 0.28) + churn + sludge + bubbles
 
 func _tone(t: float, hz: float, length: float) -> float:
 	if t < 0.0 or t > length:

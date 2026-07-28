@@ -55,6 +55,14 @@ var _last_level_number := -1
 var _march_speed := 1
 static var tutorial_seen_this_session := false
 
+const COLOR_BONE := Color("f1eadb")
+const COLOR_MUTED_BONE := Color("cfc5b1")
+const COLOR_BUILD := Color("f0bd52")
+const COLOR_BLOCK := Color("e77b69")
+const COLOR_DIG := Color("d98945")
+const COLOR_FEATHER := Color("82d9eb")
+const COLOR_RESCUE := Color("8ce3c5")
+
 func _ready() -> void:
 	print("GameUI ready")
 	result_label.hide()
@@ -304,10 +312,10 @@ func _update_job_buttons() -> void:
 	builder_button.disabled = builders_remaining <= 0
 	digger_button.disabled = diggers_remaining <= 0
 	featherfall_button.disabled = featherfalls_remaining <= 0
-	_style_job_button(blocker_button, selected_job == "blocker", blocker_button.disabled)
-	_style_job_button(builder_button, selected_job == "builder", builder_button.disabled)
-	_style_job_button(digger_button, selected_job == "digger", digger_button.disabled)
-	_style_job_button(featherfall_button, selected_job == "featherfall", featherfall_button.disabled)
+	_style_job_button(blocker_button, selected_job == "blocker", blocker_button.disabled, COLOR_BLOCK)
+	_style_job_button(builder_button, selected_job == "builder", builder_button.disabled, COLOR_BUILD)
+	_style_job_button(digger_button, selected_job == "digger", digger_button.disabled, COLOR_DIG)
+	_style_job_button(featherfall_button, selected_job == "featherfall", featherfall_button.disabled, COLOR_FEATHER)
 
 func _apply_visual_style() -> void:
 	# Corner-and-bottom bone UI: objective appears in the upper-left then collapses;
@@ -324,19 +332,19 @@ func _apply_visual_style() -> void:
 		label.add_theme_constant_override("shadow_offset_x", 1)
 		label.add_theme_constant_override("shadow_offset_y", 1)
 
-	mission_label.add_theme_color_override("font_color", Color("f1eadb"))
+	mission_label.add_theme_color_override("font_color", COLOR_BONE)
 	mission_label.add_theme_font_size_override("font_size", 15)
-	goal_label.add_theme_color_override("font_color", Color("d8d1c2"))
+	goal_label.add_theme_color_override("font_color", COLOR_RESCUE)
 	goal_label.add_theme_font_size_override("font_size", 10)
-	objective_collapsed_label.add_theme_color_override("font_color", Color("f1eadb"))
+	objective_collapsed_label.add_theme_color_override("font_color", COLOR_BONE)
 	objective_collapsed_label.add_theme_font_size_override("font_size", 12)
 	score_label.add_theme_color_override("font_color", Color("f7f1e4"))
 	score_label.add_theme_font_size_override("font_size", 11)
-	stats_label.add_theme_color_override("font_color", Color("cfc8ba"))
+	stats_label.add_theme_color_override("font_color", COLOR_MUTED_BONE)
 	stats_label.add_theme_font_size_override("font_size", 10)
 	hint_label.add_theme_color_override("font_color", Color("e8e1d4"))
 	hint_label.add_theme_font_size_override("font_size", 10)
-	event_log_label.add_theme_color_override("font_color", Color("c8c1b4"))
+	event_log_label.add_theme_color_override("font_color", COLOR_MUTED_BONE)
 	event_log_label.add_theme_font_size_override("font_size", 9)
 	chamber_title.add_theme_color_override("font_color", Color("f0eadc"))
 	chamber_title.add_theme_font_size_override("font_size", 11)
@@ -375,22 +383,23 @@ func _apply_visual_style() -> void:
 	_style_utility_button(tutorial_ok_button)
 	rescue_progress.show_percentage = false
 	rescue_progress.add_theme_stylebox_override("background", _panel_box(Color(0.04, 0.035, 0.03, 0.95), Color(0.36, 0.34, 0.30, 0.9), 1, 3))
-	rescue_progress.add_theme_stylebox_override("fill", _panel_box(Color("a6d77b"), Color("d9f0b0"), 1, 3))
+	rescue_progress.add_theme_stylebox_override("fill", _panel_box(COLOR_RESCUE.darkened(0.18), COLOR_RESCUE.lightened(0.22), 1, 3))
 
-func _style_job_button(button: Button, selected: bool, disabled: bool) -> void:
+func _style_job_button(button: Button, selected: bool, disabled: bool, accent: Color) -> void:
 	var fill := Color(0.025, 0.024, 0.022, 0.94)
-	var border := Color(0.72, 0.69, 0.61, 0.70)
+	var border := Color(accent, 0.58)
 	if disabled:
 		fill = Color(0.012, 0.012, 0.012, 0.70)
 		border = Color(0.28, 0.27, 0.25, 0.70)
+		button.add_theme_color_override("font_color", Color(0.42, 0.40, 0.37, 0.9))
 	elif selected:
-		fill = Color(0.82, 0.78, 0.68, 0.96)
-		border = Color(1.0, 0.98, 0.90, 1.0)
-		button.add_theme_color_override("font_color", Color("080807"))
+		fill = Color(accent.darkened(0.66), 0.98)
+		border = accent.lightened(0.16)
+		button.add_theme_color_override("font_color", accent.lightened(0.38))
 	else:
-		button.add_theme_color_override("font_color", Color("eee7d8"))
+		button.add_theme_color_override("font_color", accent.lightened(0.25))
 	button.add_theme_stylebox_override("normal", _panel_box(fill, border, 1 if not selected else 2, 5))
-	button.add_theme_stylebox_override("hover", _panel_box(fill.lightened(0.10), border.lightened(0.18), 1, 5))
+	button.add_theme_stylebox_override("hover", _panel_box(fill.lightened(0.10), border.lightened(0.18), 2, 5))
 	button.add_theme_stylebox_override("pressed", _panel_box(fill.darkened(0.08), border.lightened(0.28), 2, 5))
 	button.add_theme_stylebox_override("disabled", _panel_box(fill, border, 1, 5))
 

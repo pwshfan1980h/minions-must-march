@@ -3,7 +3,10 @@ class_name SfxPlayer
 
 const STREAMS := {
 	"bone_clack": preload("res://assets/audio/generated/bone_clack.wav"),
+	"builder_snap": preload("res://assets/audio/generated/builder_snap.wav"),
 	"command_clatter": preload("res://assets/audio/generated/command_clatter.wav"),
+	"digger_crack": preload("res://assets/audio/generated/digger_crack.wav"),
+	"feather_chime": preload("res://assets/audio/generated/feather_chime.wav"),
 	"death_yelp_tall": preload("res://assets/audio/generated/death_yelp_tall.wav"),
 	"death_yelp_wiry": preload("res://assets/audio/generated/death_yelp_wiry.wav"),
 	"death_yelp_stocky": preload("res://assets/audio/generated/death_yelp_stocky.wav"),
@@ -16,31 +19,75 @@ const STREAMS := {
 	"job_select": preload("res://assets/audio/generated/job_select.wav"),
 	"level_success": preload("res://assets/audio/generated/level_success.wav"),
 	"level_fail": preload("res://assets/audio/generated/level_fail.wav"),
+	"styx_ambience": preload("res://assets/audio/generated/styx_ambience.wav"),
 }
 
 const VOLUME_OFFSETS_DB := {
-	"bone_splash": -7.5,
-	"command_clatter": -3.0,
+	"bone_clack": -2.0,
+	"bone_splash": -9.0,
+	"builder_snap": -3.0,
+	"command_clatter": -5.0,
+	"digger_crack": -3.5,
+	"feather_chime": -4.0,
 	"death_yelp_tall": -4.5,
 	"death_yelp_wiry": -5.0,
 	"death_yelp_stocky": -4.0,
-	"death_knell": -10.0,
-	"styx_impact": -9.0,
-	"exit_rescue": -5.5,
+	"death_knell": -12.0,
+	"styx_impact": -7.5,
+	"exit_rescue": -7.0,
+	"level_success": -1.0,
+}
+
+const MAX_INSTANCES := {
+	"bone_clack": 4,
+	"bone_splash": 2,
+	"command_clatter": 2,
+	"death_knell": 2,
+	"death_yelp_tall": 2,
+	"death_yelp_wiry": 2,
+	"death_yelp_stocky": 2,
+	"exit_rescue": 3,
+	"styx_impact": 2,
+}
+
+const WORLD_SOUNDS := {
+	"bone_clack": true,
+	"bone_splash": true,
+	"builder_snap": true,
+	"command_clatter": true,
+	"death_knell": true,
+	"death_yelp_tall": true,
+	"death_yelp_wiry": true,
+	"death_yelp_stocky": true,
+	"digger_crack": true,
+	"exit_rescue": true,
+	"feather_chime": true,
+	"styx_impact": true,
 }
 
 var _rng := RandomNumberGenerator.new()
-var _active_players: Array[AudioStreamPlayer] = []
+var _active_players: Array[Dictionary] = []
+var _ambience_player: AudioStreamPlayer
+var _ambience_tween: Tween
 
 func _ready() -> void:
 	_rng.randomize()
+	_ensure_bus("World SFX", -1.5)
+	_ensure_bus("UI SFX", -3.0)
+	_ensure_bus("Ambience", -4.0)
+	_start_styx_ambience()
 
 func _exit_tree() -> void:
-	for player in _active_players:
+	if _ambience_tween != null:
+		_ambience_tween.kill()
+	for entry in _active_players:
+		var player: AudioStreamPlayer = entry["player"]
 		if is_instance_valid(player):
 			player.stop()
 			player.queue_free()
 	_active_players.clear()
+	if is_instance_valid(_ambience_player):
+		_ambience_player.stop()
 
 func play(sound_id: String, volume_db := 0.0, pitch_jitter := 0.04) -> void:
 	if DisplayServer.get_name() == "headless":
@@ -49,15 +96,54 @@ func play(sound_id: String, volume_db := 0.0, pitch_jitter := 0.04) -> void:
 		push_warning("Unknown SFX id: %s" % sound_id)
 		return
 
+	_enforce_polyphony(sound_id)
 	var player := AudioStreamPlayer.new()
 	player.stream = STREAMS[sound_id]
 	player.volume_db = volume_db + float(VOLUME_OFFSETS_DB.get(sound_id, 0.0))
 	player.pitch_scale = _rng.randf_range(1.0 - pitch_jitter, 1.0 + pitch_jitter)
-	_active_players.append(player)
+	player.bus = "World SFX" if WORLD_SOUNDS.has(sound_id) else "UI SFX"
+	_active_players.append({"id": sound_id, "player": player})
 	player.finished.connect(_on_player_finished.bind(player))
 	add_child(player)
 	player.play()
 
+func _ensure_bus(bus_name: String, volume_db: float) -> void:
+	var index := AudioServer.get_bus_index(bus_name)
+	if index < 0:
+		AudioServer.add_bus()
+		index = AudioServer.bus_count - 1
+		AudioServer.set_bus_name(index, bus_name)
+	AudioServer.set_bus_volume_db(index, volume_db)
+
+func _start_styx_ambience() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	var loop_stream: AudioStreamWAV = STREAMS["styx_ambience"].duplicate()
+	loop_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	loop_stream.loop_begin = 0
+	loop_stream.loop_end = int(loop_stream.get_length() * float(loop_stream.mix_rate))
+	_ambience_player = AudioStreamPlayer.new()
+	_ambience_player.name = "StyxAmbience"
+	_ambience_player.stream = loop_stream
+	_ambience_player.bus = "Ambience"
+	_ambience_player.volume_db = -42.0
+	add_child(_ambience_player)
+	_ambience_player.play()
+	_ambience_tween = create_tween()
+	_ambience_tween.tween_property(_ambience_player, "volume_db", -13.0, 2.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+func _enforce_polyphony(sound_id: String) -> void:
+	var matches: Array[AudioStreamPlayer] = []
+	for entry in _active_players:
+		if String(entry["id"]) == sound_id and is_instance_valid(entry["player"]):
+			matches.append(entry["player"])
+	var limit := int(MAX_INSTANCES.get(sound_id, 3))
+	while matches.size() >= limit:
+		var oldest: AudioStreamPlayer = matches.pop_front()
+		_active_players = _active_players.filter(func(entry: Dictionary) -> bool: return entry["player"] != oldest)
+		oldest.stop()
+		oldest.queue_free()
+
 func _on_player_finished(player: AudioStreamPlayer) -> void:
-	_active_players.erase(player)
+	_active_players = _active_players.filter(func(entry: Dictionary) -> bool: return entry["player"] != player)
 	player.queue_free()

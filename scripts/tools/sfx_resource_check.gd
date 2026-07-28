@@ -2,7 +2,10 @@ extends SceneTree
 
 const SOUND_PATHS := [
 	"res://assets/audio/generated/bone_clack.wav",
+	"res://assets/audio/generated/builder_snap.wav",
 	"res://assets/audio/generated/command_clatter.wav",
+	"res://assets/audio/generated/digger_crack.wav",
+	"res://assets/audio/generated/feather_chime.wav",
 	"res://assets/audio/generated/death_yelp_tall.wav",
 	"res://assets/audio/generated/death_yelp_wiry.wav",
 	"res://assets/audio/generated/death_yelp_stocky.wav",
@@ -15,6 +18,7 @@ const SOUND_PATHS := [
 	"res://assets/audio/generated/job_select.wav",
 	"res://assets/audio/generated/level_success.wav",
 	"res://assets/audio/generated/level_fail.wav",
+	"res://assets/audio/generated/styx_ambience.wav",
 ]
 
 func _init() -> void:

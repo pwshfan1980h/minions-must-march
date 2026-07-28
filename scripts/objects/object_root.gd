@@ -8,6 +8,10 @@ signal spawn_portal_clicked
 const EXIT_LIGHT_HEIGHT := 210.0
 const EXIT_LIGHT_WIDTH := 68.0
 const EXIT_REDRAW_FPS := 30.0
+const PORTAL_GREEN := Color("82e45f")
+const PORTAL_LIME := Color("d5f06a")
+const EXIT_MINT := Color("9af1d2")
+const EXIT_IVORY := Color("f4efc3")
 
 var spawn_portal_pos := Vector2(232, 382)
 var exit_area: Area2D
@@ -148,14 +152,14 @@ func _draw_spawn_portal() -> void:
 	var pos := spawn_portal_pos + Vector2(voom * 34.0, -voom * 8.0)
 	draw_set_transform(pos, voom * 0.45, squash)
 
-	draw_circle(Vector2.ZERO, 60.0 + pulse * 5.0, Color(0.40, 0.90, 0.38, (0.09 + pulse * 0.06) * alpha))
-	draw_circle(Vector2(0, 4), 42.0 + pulse * 3.0, Color(0.78, 0.95, 0.45, (0.12 + pulse * 0.07) * alpha))
+	draw_circle(Vector2.ZERO, 60.0 + pulse * 5.0, Color(PORTAL_GREEN, (0.11 + pulse * 0.07) * alpha))
+	draw_circle(Vector2(0, 4), 42.0 + pulse * 3.0, Color(PORTAL_LIME, (0.14 + pulse * 0.08) * alpha))
 	_draw_soft_ellipse(Rect2(Vector2(-31, -42), Vector2(62, 84)), Color(0.08, 0.055, 0.11, 0.94 * alpha))
-	_draw_soft_ellipse(Rect2(Vector2(-22, -31), Vector2(44, 62)), Color(0.28, 0.78, 0.34, (0.22 + pulse * 0.09) * alpha))
+	_draw_soft_ellipse(Rect2(Vector2(-22, -31), Vector2(44, 62)), Color(PORTAL_GREEN, (0.24 + pulse * 0.11) * alpha))
 	for i in 5:
 		var a := _time * (1.8 + i * 0.18) + float(i) * 1.21
 		var r := 13.0 + float(i) * 5.2 + pulse * 2.0
-		draw_arc(Vector2.ZERO, r, a, a + PI * 0.82, 18, Color(0.78, 1.0, 0.45, (0.26 - i * 0.027) * alpha), 2.0)
+		draw_arc(Vector2.ZERO, r, a, a + PI * 0.82, 18, Color(PORTAL_LIME, (0.29 - i * 0.027) * alpha), 2.0)
 
 	var stones := [Vector2(-35,-38), Vector2(-12,-52), Vector2(16,-50), Vector2(38,-28), Vector2(43,3), Vector2(31,35), Vector2(2,49), Vector2(-29,40), Vector2(-44,8)]
 	for i in stones.size():
@@ -167,8 +171,8 @@ func _draw_spawn_portal() -> void:
 		draw_line(Vector2(-22.0 + i * 1.4, y), Vector2(20.0 + i * 2.5, y + 5.0), Color(0.86, 0.77, 0.58, 0.42 * alpha), 2.0, true)
 	if _spawn_portal_waiting:
 		var chevron_y := 67.0 + sin(_time * 4.0) * 3.0
-		draw_line(Vector2(-16, chevron_y), Vector2(0, chevron_y + 9), Color(0.95, 0.83, 0.34, 0.62), 2.0)
-		draw_line(Vector2(16, chevron_y), Vector2(0, chevron_y + 9), Color(0.95, 0.83, 0.34, 0.62), 2.0)
+		draw_line(Vector2(-16, chevron_y), Vector2(0, chevron_y + 9), Color(PORTAL_LIME, 0.76), 2.0)
+		draw_line(Vector2(16, chevron_y), Vector2(0, chevron_y + 9), Color(PORTAL_LIME, 0.76), 2.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	_draw_spawn_chute_dust(spawn_portal_pos + Vector2(0, 38))
 
@@ -193,7 +197,7 @@ func _draw_exit_light(pos: Vector2) -> void:
 		top + Vector2(EXIT_LIGHT_WIDTH * 0.28, -20),
 		top + Vector2(-EXIT_LIGHT_WIDTH * 0.28, -20),
 	])
-	draw_colored_polygon(outer, Color(0.54, 0.82, 0.78, 0.105))
+	draw_colored_polygon(outer, Color(EXIT_MINT, 0.13))
 
 	var core := PackedVector2Array([
 		base + Vector2(-EXIT_LIGHT_WIDTH * 0.32, 0),
@@ -201,7 +205,7 @@ func _draw_exit_light(pos: Vector2) -> void:
 		top + Vector2(EXIT_LIGHT_WIDTH * 0.13, -28),
 		top + Vector2(-EXIT_LIGHT_WIDTH * 0.13, -28),
 	])
-	draw_colored_polygon(core, Color(0.86, 0.95, 0.78, 0.19))
+	draw_colored_polygon(core, Color(EXIT_IVORY, 0.24))
 
 	for i in 5:
 		var t := float(i) / 4.0
@@ -214,7 +218,7 @@ func _draw_exit_light(pos: Vector2) -> void:
 			Vector2(pos.x + width * 0.38, y - 3.0),
 			Vector2(pos.x + width * 0.18, y + 6.0),
 		])
-		draw_colored_polygon(shard, Color(0.95, 0.95, 0.72, alpha))
+		draw_colored_polygon(shard, Color(EXIT_IVORY, alpha * 1.18))
 
 	var base_glow := PackedVector2Array([
 		Vector2(pos.x - 42.0, base.y - 7.0),
@@ -223,7 +227,7 @@ func _draw_exit_light(pos: Vector2) -> void:
 		Vector2(pos.x + 18.0, base.y + 8.0),
 		Vector2(pos.x - 30.0, base.y + 6.0),
 	])
-	draw_colored_polygon(base_glow, Color(0.78, 0.95, 0.70, 0.14))
+	draw_colored_polygon(base_glow, Color(EXIT_MINT, 0.19))
 
 	for spec in _mote_specs:
 		var phase := _time * float(spec["speed"]) + float(spec["phase"])
@@ -232,8 +236,8 @@ func _draw_exit_light(pos: Vector2) -> void:
 		var x := pos.x + float(spec["x"]) + sin(phase * TAU) * float(spec["drift"])
 		var alpha := sin(cycle * PI) * 0.58
 		var size := float(spec["size"]) * (0.75 + sin(phase * TAU * 0.7) * 0.18)
-		draw_circle(Vector2(x, y), size * 2.8, Color(0.55, 0.88, 0.76, alpha * 0.14))
-		draw_circle(Vector2(x, y), size, Color(0.95, 0.96, 0.76, alpha * 0.42))
+		draw_circle(Vector2(x, y), size * 2.8, Color(EXIT_MINT, alpha * 0.17))
+		draw_circle(Vector2(x, y), size, Color(EXIT_IVORY, alpha * 0.52))
 
 func _draw_soft_ellipse(rect: Rect2, color: Color) -> void:
 	var points := PackedVector2Array()
