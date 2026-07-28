@@ -91,6 +91,8 @@ const AMBIENT_ONE_SHOTS := {"ambient_whisper": true}
 
 var _rng := RandomNumberGenerator.new()
 var _active_players: Array[Dictionary] = []
+var _audio_pool: Array[AudioStreamPlayer] = []
+var _spatial_pool: Array[AudioStreamPlayer2D] = []
 var _ambience_player: AudioStreamPlayer
 var _ambience_tween: Tween
 var _biome_profile := ""
@@ -128,8 +130,9 @@ func _exit_tree() -> void:
 		var player: Node = entry["player"]
 		if is_instance_valid(player):
 			player.stop()
-			player.queue_free()
 	_active_players.clear()
+	_audio_pool.clear()
+	_spatial_pool.clear()
 	if is_instance_valid(_ambience_player):
 		_ambience_player.stop()
 
@@ -147,25 +150,33 @@ func play_at(sound_id: String, world_position: Vector2, volume_db := 0.0, pitch_
 
 	_enforce_polyphony(sound_id)
 	var spatial := world_position != Vector2.INF and WORLD_SOUNDS.has(sound_id)
-	var player: Variant
-	if spatial:
-		var player_2d := AudioStreamPlayer2D.new()
-		player_2d.max_distance = 1450.0
-		player_2d.attenuation = 0.35
-		player_2d.panning_strength = 0.72
-		player = player_2d
-	else:
-		player = AudioStreamPlayer.new()
+	var player: Variant = _acquire_player(spatial)
 	player.stream = _pick_stream(sound_id)
 	player.volume_db = volume_db + float(VOLUME_OFFSETS_DB.get(sound_id, 0.0))
 	player.pitch_scale = _rng.randf_range(1.0 - pitch_jitter, 1.0 + pitch_jitter)
 	player.bus = "Ambience" if AMBIENT_ONE_SHOTS.has(sound_id) else ("World SFX" if WORLD_SOUNDS.has(sound_id) else "UI SFX")
 	_active_players.append({"id": sound_id, "player": player})
-	player.finished.connect(_on_player_finished.bind(player))
-	add_child(player)
 	if spatial:
 		player.global_position = world_position
 	player.play()
+
+func _acquire_player(spatial: bool) -> Variant:
+	if spatial:
+		if not _spatial_pool.is_empty():
+			return _spatial_pool.pop_back()
+		var player_2d := AudioStreamPlayer2D.new()
+		player_2d.max_distance = 1450.0
+		player_2d.attenuation = 0.35
+		player_2d.panning_strength = 0.72
+		add_child(player_2d)
+		player_2d.finished.connect(_on_player_finished.bind(player_2d))
+		return player_2d
+	if not _audio_pool.is_empty():
+		return _audio_pool.pop_back()
+	var player := AudioStreamPlayer.new()
+	add_child(player)
+	player.finished.connect(_on_player_finished.bind(player))
+	return player
 
 func _pick_stream(sound_id: String) -> AudioStream:
 	if not STREAM_VARIANTS.has(sound_id):
@@ -256,10 +267,28 @@ func _enforce_polyphony(sound_id: String) -> void:
 	var limit := int(MAX_INSTANCES.get(sound_id, 3))
 	while matches.size() >= limit:
 		var oldest: Node = matches.pop_front()
-		_active_players = _active_players.filter(func(entry: Dictionary) -> bool: return entry["player"] != oldest)
 		oldest.stop()
-		oldest.queue_free()
+		_recycle_player(oldest)
 
 func _on_player_finished(player: Node) -> void:
+	_recycle_player(player)
+
+func _recycle_player(player: Node) -> void:
 	_active_players = _active_players.filter(func(entry: Dictionary) -> bool: return entry["player"] != player)
-	player.queue_free()
+	if not is_instance_valid(player):
+		return
+	player.stop()
+	player.stream = null
+	player.pitch_scale = 1.0
+	player.volume_db = 0.0
+	if player is AudioStreamPlayer2D:
+		player.position = Vector2.ZERO
+		if _spatial_pool.size() < 12:
+			_spatial_pool.append(player)
+		else:
+			player.queue_free()
+	elif player is AudioStreamPlayer:
+		if _audio_pool.size() < 8:
+			_audio_pool.append(player)
+		else:
+			player.queue_free()

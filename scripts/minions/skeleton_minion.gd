@@ -423,9 +423,13 @@ func _stop_tumble() -> void:
 	_request_visual_redraw(true)
 
 func _spawn_bone_splash(spawn_position := Vector2.INF) -> void:
+	var resolved_position := global_position if spawn_position == Vector2.INF else spawn_position
+	if get_parent().has_method("spawn_bone_splash"):
+		get_parent().spawn_bone_splash(resolved_position)
+		return
 	var splash := BoneSplashScene.instantiate()
-	splash.global_position = global_position if spawn_position == Vector2.INF else spawn_position
 	get_parent().add_child(splash)
+	splash.restart(resolved_position)
 
 func _turn_around() -> void:
 	direction *= -1.0

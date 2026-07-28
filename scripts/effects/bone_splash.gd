@@ -1,5 +1,7 @@
 extends Node2D
 
+signal recycle_requested(effect: Node2D)
+
 const FRAGMENT_COUNT := 6
 const RIPPLE_COUNT := 3
 const LIFE_SECONDS := 0.85
@@ -16,8 +18,20 @@ var _goop_jets: Array[Dictionary] = []
 var _redraw_timer := 0.0
 
 func _ready() -> void:
+	hide()
+	set_process(false)
+
+func restart(world_position: Vector2) -> void:
+	global_position = world_position
+	_age = 0.0
+	_redraw_timer = 0.0
+	_fragments.clear()
+	_ripples.clear()
+	_goop_jets.clear()
 	_build_fragments()
 	_build_styx_impact()
+	show()
+	set_process(true)
 	queue_redraw()
 
 func _process(delta: float) -> void:
@@ -29,7 +43,9 @@ func _process(delta: float) -> void:
 		fragment["rotation"] += fragment["spin"] * delta
 
 	if _age >= LIFE_SECONDS:
-		queue_free()
+		hide()
+		set_process(false)
+		recycle_requested.emit(self)
 		return
 
 	if _redraw_timer >= 1.0 / REDRAW_FPS:

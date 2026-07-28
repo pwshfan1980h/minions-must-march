@@ -9,6 +9,7 @@ signal spawn_complete
 signal sfx_requested(sound_id: String, world_position: Vector2)
 
 const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
+const BoneSplashScene := preload("res://scenes/effects/BoneSplash.tscn")
 
 @export var total_to_spawn := 1
 @export var spawn_interval := 1.0
@@ -35,6 +36,7 @@ var _spawn_started := false
 var debug_click_areas := false
 var _footstep_cooldown := 0.0
 var _foley_rng := RandomNumberGenerator.new()
+var _bone_splash_pool: Array[Node2D] = []
 
 const BUILDER_PIECE_COUNT := 6
 const BUILDER_PIECE_SIZE := Vector2(28.0, 8.0)
@@ -134,6 +136,20 @@ func _on_minion_footstep(minion: Node) -> void:
 		return
 	_footstep_cooldown = _foley_rng.randf_range(0.14, 0.26)
 	sfx_requested.emit("bone_step", minion.global_position)
+
+func spawn_bone_splash(world_position: Vector2) -> void:
+	var splash: Node2D
+	if _bone_splash_pool.is_empty():
+		splash = BoneSplashScene.instantiate()
+		add_child(splash)
+		splash.recycle_requested.connect(_on_bone_splash_recycled)
+	else:
+		splash = _bone_splash_pool.pop_back()
+	splash.restart(world_position)
+
+func _on_bone_splash_recycled(effect: Node2D) -> void:
+	if not _bone_splash_pool.has(effect):
+		_bone_splash_pool.append(effect)
 
 func _on_minion_exited(minion: Node) -> void:
 	rescued_count += 1

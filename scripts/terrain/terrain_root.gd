@@ -8,7 +8,7 @@ const WORLD_WIDTH := 2400
 const PLAYFIELD_HEIGHT := 720
 const STYX_WATERLINE_Y := 560.0
 const STYX_DEPTH := 176.0
-const TERRAIN_REDRAW_FPS := 30.0
+const TERRAIN_REDRAW_FPS := 24.0
 const CRUMBLE_FUSE_MIN := 15.0
 const CRUMBLE_FUSE_MAX := 30.0
 
@@ -52,6 +52,7 @@ var _monster_flock_specs: Array[Dictionary] = []
 var _biome := "crypt"
 var _reduced_motion := false
 var _high_contrast := false
+static var _silhouette_cache: Dictionary = {}
 
 func _ready() -> void:
 	_biome = String(LevelState.config().get("biome", "crypt"))
@@ -503,6 +504,9 @@ func _build_chipped_silhouette(rect: Rect2) -> PackedVector2Array:
 	# Generate a mostly-rectangular collision footprint with a more organic visual
 	# shell: chipped top edge, slanted sides, and a ragged underside. Deterministic
 	# per-rect via a position-derived seed so the level is stable between runs.
+	var cache_key := "%d:%d:%d:%d" % [int(rect.position.x), int(rect.position.y), int(rect.size.x), int(rect.size.y)]
+	if _silhouette_cache.has(cache_key):
+		return PackedVector2Array(_silhouette_cache[cache_key])
 	var hw := rect.size.x * 0.5
 	var hh := rect.size.y * 0.5
 	var rng := RandomNumberGenerator.new()
@@ -529,7 +533,8 @@ func _build_chipped_silhouette(rect: Rect2) -> PackedVector2Array:
 		var drop := rng.randf_range(0.0, minf(12.0, rect.size.y * 0.35))
 		pts.append(Vector2(x + rng.randf_range(-4.0, 4.0), hh + drop))
 	pts.append(Vector2(-hw + rng.randf_range(-3.0, 2.0), hh - rng.randf_range(1.0, 5.0)))
-	return pts
+	_silhouette_cache[cache_key] = pts
+	return PackedVector2Array(pts)
 
 func _add_hanging_shards(rect: Rect2, body: Node2D, color: Color, variant: String) -> void:
 	if variant == "skull_end" or rect.size.x < 72.0:

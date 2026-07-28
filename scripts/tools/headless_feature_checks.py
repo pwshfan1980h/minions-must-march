@@ -188,6 +188,7 @@ def test_platforms_are_jagged_and_emit_motes() -> None:
     for token in ["_build_chipped_silhouette", "ragged underside", "HangingJaggedShard", "_platform_ash_specs", "_add_platform_ash_emitter", "_draw_platform_ash_motes"]:
         require(token in terrain, f"terrain platform polish missing {token}")
     require("collision stays a clean rect" in terrain, "platform visual cleanup should not change puzzle collision rectangles")
+    require("_silhouette_cache" in terrain, "deterministic terrain silhouettes should be cached")
 
 
 def test_levels_have_extra_hellish_atmosphere() -> None:
@@ -225,6 +226,10 @@ def test_audio_feedback_assets_and_hooks_exist() -> None:
         require(token in sfx, f"expanded sound variation missing {token}")
     require("footstep.emit" in skeleton and "_footstep_cooldown" in minions, "crowd footstep foley should stay asynchronous and voice-limited")
     require('sfx_requested.emit("crumble_warning"' in terrain, "crumbling terrain should provide an audible warning")
+    require("_audio_pool" in sfx and "_spatial_pool" in sfx and "_recycle_player" in sfx, "one-shot audio players should be pooled")
+    effect = read("scripts/effects/bone_splash.gd")
+    require("recycle_requested" in effect and "restart(world_position" in effect, "Styx impact effects should be recyclable")
+    require("_bone_splash_pool" in minions, "MinionRoot should pool Styx impact effects")
     game_root = read("scripts/core/game_root.gd")
     require("_on_world_sfx_requested" in game_root and "_kick_camera" in game_root, "world cues should drive restrained camera feedback")
     require("play_feedback" in ui and "FeedbackFlash" in ui and "_pulse_button" in ui, "HUD should react to skill and outcome cues")

@@ -7,7 +7,7 @@ signal spawn_portal_clicked
 
 const EXIT_LIGHT_HEIGHT := 210.0
 const EXIT_LIGHT_WIDTH := 68.0
-const EXIT_REDRAW_FPS := 30.0
+const EXIT_REDRAW_FPS := 24.0
 const PORTAL_GREEN := Color("82e45f")
 const PORTAL_LIME := Color("d5f06a")
 const EXIT_MINT := Color("9af1d2")
