@@ -4,7 +4,7 @@ const LevelState := preload("res://scripts/core/level_state.gd")
 
 signal stats_changed(stats: Dictionary)
 signal level_finished(success: bool, stats: Dictionary)
-signal sfx_requested(sound_id: String)
+signal sfx_requested(sound_id: String, world_position: Vector2)
 signal event_logged(text: String)
 
 const LEVEL_WIDTH := 2400
@@ -110,13 +110,13 @@ func _on_minion_lost(_minion: Node = null) -> void:
 func _on_spawn_complete() -> void:
 	_emit_stats()
 
-func _on_sfx_requested(sound_id: String) -> void:
-	sfx_requested.emit(sound_id)
+func _on_sfx_requested(sound_id: String, world_position: Vector2) -> void:
+	sfx_requested.emit(sound_id, world_position)
 
 func _on_spawn_portal_clicked() -> void:
 	if minion_root.has_method("start_spawning"):
 		minion_root.start_spawning()
-	sfx_requested.emit("resume_march")
+	sfx_requested.emit("resume_march", object_root.spawn_portal_pos)
 	_emit_stats()
 
 func _on_exit_entered(_minion: Node) -> void:
@@ -130,7 +130,7 @@ func _finish_level(success: bool) -> void:
 	finished = true
 	var stats := get_stats()
 	stats["finished"] = true
-	sfx_requested.emit("level_success" if success else "level_fail")
+	sfx_requested.emit("level_success" if success else "level_fail", Vector2.INF)
 	level_finished.emit(success, stats)
 	_emit_stats()
 	if success and LevelState.has_next_level():

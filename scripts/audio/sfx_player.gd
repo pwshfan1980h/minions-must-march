@@ -90,6 +90,9 @@ func _exit_tree() -> void:
 		_ambience_player.stop()
 
 func play(sound_id: String, volume_db := 0.0, pitch_jitter := 0.04) -> void:
+	play_at(sound_id, Vector2.INF, volume_db, pitch_jitter)
+
+func play_at(sound_id: String, world_position: Vector2, volume_db := 0.0, pitch_jitter := 0.04) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 	if not STREAMS.has(sound_id):
@@ -97,7 +100,16 @@ func play(sound_id: String, volume_db := 0.0, pitch_jitter := 0.04) -> void:
 		return
 
 	_enforce_polyphony(sound_id)
-	var player := AudioStreamPlayer.new()
+	var spatial := world_position != Vector2.INF and WORLD_SOUNDS.has(sound_id)
+	var player: Variant
+	if spatial:
+		var player_2d := AudioStreamPlayer2D.new()
+		player_2d.max_distance = 1450.0
+		player_2d.attenuation = 0.35
+		player_2d.panning_strength = 0.72
+		player = player_2d
+	else:
+		player = AudioStreamPlayer.new()
 	player.stream = STREAMS[sound_id]
 	player.volume_db = volume_db + float(VOLUME_OFFSETS_DB.get(sound_id, 0.0))
 	player.pitch_scale = _rng.randf_range(1.0 - pitch_jitter, 1.0 + pitch_jitter)
@@ -105,6 +117,8 @@ func play(sound_id: String, volume_db := 0.0, pitch_jitter := 0.04) -> void:
 	_active_players.append({"id": sound_id, "player": player})
 	player.finished.connect(_on_player_finished.bind(player))
 	add_child(player)
+	if spatial:
+		player.global_position = world_position
 	player.play()
 
 func _ensure_bus(bus_name: String, volume_db: float) -> void:
@@ -133,17 +147,17 @@ func _start_styx_ambience() -> void:
 	_ambience_tween.tween_property(_ambience_player, "volume_db", -13.0, 2.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _enforce_polyphony(sound_id: String) -> void:
-	var matches: Array[AudioStreamPlayer] = []
+	var matches: Array[Node] = []
 	for entry in _active_players:
 		if String(entry["id"]) == sound_id and is_instance_valid(entry["player"]):
 			matches.append(entry["player"])
 	var limit := int(MAX_INSTANCES.get(sound_id, 3))
 	while matches.size() >= limit:
-		var oldest: AudioStreamPlayer = matches.pop_front()
+		var oldest: Node = matches.pop_front()
 		_active_players = _active_players.filter(func(entry: Dictionary) -> bool: return entry["player"] != oldest)
 		oldest.stop()
 		oldest.queue_free()
 
-func _on_player_finished(player: AudioStreamPlayer) -> void:
+func _on_player_finished(player: Node) -> void:
 	_active_players = _active_players.filter(func(entry: Dictionary) -> bool: return entry["player"] != player)
 	player.queue_free()

@@ -20,7 +20,7 @@ func _ready() -> void:
 	camera.limit_bottom = 720
 	level_controller.stats_changed.connect(game_ui.update_stats)
 	level_controller.level_finished.connect(game_ui.show_level_finished)
-	level_controller.sfx_requested.connect(sfx.play)
+	level_controller.sfx_requested.connect(sfx.play_at)
 	level_controller.event_logged.connect(game_ui.add_event_log)
 	game_ui.restart_requested.connect(level_controller.restart_level)
 	game_ui.level_selected.connect(level_controller.select_level)

@@ -192,14 +192,15 @@ def test_audio_feedback_assets_and_hooks_exist() -> None:
         require((ROOT / f"assets/audio/generated/{sound_id}.wav").exists(), f"missing generated wav for {sound_id}")
     require("death_voice_id" in skeleton, "skeleton should expose body-height voice variant")
     require("death_voice_id()" in minions and "death_knell" in minions, "minion root should emit death yelp + knell")
-    require(minions.count('sfx_requested.emit("command_clatter")') >= 2, "builder/blocker commands should both clatter")
+    require(minions.count('sfx_requested.emit("command_clatter",') >= 2, "builder/blocker commands should both clatter")
     for sound_id in ["builder_snap", "digger_crack", "feather_chime", "styx_ambience"]:
         require(sound_id in sfx, f"SfxPlayer missing polished sound {sound_id}")
         require((ROOT / f"assets/audio/generated/{sound_id}.wav").exists(), f"missing polished wav for {sound_id}")
     require("MAX_INSTANCES" in sfx and "_enforce_polyphony" in sfx, "crowd sounds should be voice-limited")
     require("_start_styx_ambience" in sfx and 'bus = "Ambience"' in sfx, "Styx should have a restrained ambient bed")
     for sound_id in ["builder_snap", "digger_crack", "feather_chime"]:
-        require(f'sfx_requested.emit("{sound_id}")' in minions, f"skill action should emit {sound_id}")
+        require(f'sfx_requested.emit("{sound_id}",' in minions, f"skill action should emit {sound_id}")
+    require("AudioStreamPlayer2D" in sfx and "play_at" in sfx and "panning_strength" in sfx, "world SFX should use camera-relative spatial audio")
 
 
 def test_async_gait_no_beat_conductor() -> None:

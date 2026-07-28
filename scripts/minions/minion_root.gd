@@ -6,7 +6,7 @@ signal minion_spawned(minion: Node)
 signal minion_rescued(minion: Node)
 signal minion_lost(minion: Node)
 signal spawn_complete
-signal sfx_requested(sound_id: String)
+signal sfx_requested(sound_id: String, world_position: Vector2)
 
 const SkeletonMinionScene := preload("res://scenes/minions/SkeletonMinion.tscn")
 
@@ -127,19 +127,20 @@ func _spawn_minion() -> void:
 func _on_minion_exited(minion: Node) -> void:
 	rescued_count += 1
 	active_count = max(0, active_count - 1)
-	sfx_requested.emit("exit_rescue")
+	sfx_requested.emit("exit_rescue", minion.global_position)
 	minion_rescued.emit(minion)
 	_refresh_target_affordances()
 
 func _on_minion_death_started(_minion: Node, death_kind: String) -> void:
+	var sound_position: Vector2 = _minion.global_position
 	if _minion.has_method("death_voice_id"):
-		sfx_requested.emit(_minion.death_voice_id())
+		sfx_requested.emit(_minion.death_voice_id(), sound_position)
 	else:
-		sfx_requested.emit("death_yelp_wiry")
-	sfx_requested.emit("death_knell")
+		sfx_requested.emit("death_yelp_wiry", sound_position)
+	sfx_requested.emit("death_knell", sound_position)
 	if death_kind == "styx_water":
-		sfx_requested.emit("styx_impact")
-	sfx_requested.emit("bone_splash")
+		sfx_requested.emit("styx_impact", sound_position)
+	sfx_requested.emit("bone_splash", sound_position)
 
 func _on_minion_died(minion: Node) -> void:
 	lost_count += 1
@@ -205,7 +206,7 @@ func _on_minion_clicked(minion: Node) -> void:
 	if minion.get("is_blocker") == true and minion.has_method("resume_march"):
 		if minion.resume_march():
 			blockers_remaining = mini(blockers_remaining + 1, blockers_available)
-			sfx_requested.emit("resume_march")
+			sfx_requested.emit("resume_march", minion.global_position)
 			minion_spawned.emit(minion)
 			_refresh_target_affordances()
 		return
@@ -214,8 +215,8 @@ func _on_minion_clicked(minion: Node) -> void:
 		return
 	if minion.become_blocker():
 		blockers_remaining -= 1
-		sfx_requested.emit("command_clatter")
-		sfx_requested.emit("blocker_brace")
+		sfx_requested.emit("command_clatter", minion.global_position)
+		sfx_requested.emit("blocker_brace", minion.global_position)
 		minion_spawned.emit(minion)
 		_refresh_target_affordances()
 
@@ -226,8 +227,8 @@ func _try_assign_featherfall(minion: Node) -> void:
 	if not minion.activate_featherfall():
 		return
 	featherfalls_remaining -= 1
-	sfx_requested.emit("command_clatter")
-	sfx_requested.emit("feather_chime")
+	sfx_requested.emit("command_clatter", minion.global_position)
+	sfx_requested.emit("feather_chime", minion.global_position)
 	minion_spawned.emit(minion)
 	_refresh_target_affordances()
 
@@ -243,8 +244,8 @@ func _try_assign_digger(minion: Node) -> void:
 	if not terrain.remove_diggable_plug(plug):
 		return
 	diggers_remaining -= 1
-	sfx_requested.emit("command_clatter")
-	sfx_requested.emit("digger_crack")
+	sfx_requested.emit("command_clatter", minion.global_position)
+	sfx_requested.emit("digger_crack", minion.global_position)
 	if minion.has_method("play_digger_dust"):
 		minion.play_digger_dust()
 	minion_spawned.emit(minion)
@@ -254,8 +255,8 @@ func _try_assign_builder(minion: Node) -> void:
 	if builders_remaining <= 0 or not minion.has_method("can_become_builder") or not minion.can_become_builder():
 		return
 	builders_remaining -= 1
-	sfx_requested.emit("command_clatter")
-	sfx_requested.emit("builder_snap")
+	sfx_requested.emit("command_clatter", minion.global_position)
+	sfx_requested.emit("builder_snap", minion.global_position)
 	minion_spawned.emit(minion)
 	_refresh_target_affordances()
 	_run_builder_sequence(minion)
@@ -288,7 +289,7 @@ func _run_builder_sequence(minion: Node) -> void:
 			return
 		var piece := _add_builder_piece(center, facing, i + 1)
 		_crossfade_to_piece(throw_visual, piece)
-		sfx_requested.emit("bone_clack")
+		sfx_requested.emit("bone_clack", center)
 		await get_tree().create_timer(BUILDER_SETTLE_SECONDS).timeout
 	if is_instance_valid(minion) and minion.has_method("set_builder_active"):
 		minion.set_builder_active(false)
