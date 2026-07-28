@@ -26,6 +26,12 @@ func _init() -> void:
 	_write_wav("feather_chime", 0.62, _sample_feather_chime)
 	_write_wav("styx_ambience", 5.0, _sample_styx_ambience)
 	_write_wav("ash_ambience", 5.0, _sample_ash_ambience)
+	_write_wav("bone_step", 0.11, _sample_bone_step)
+	_write_wav("builder_snap_alt", 0.36, _sample_builder_snap_alt)
+	_write_wav("digger_crack_alt", 0.45, _sample_digger_crack_alt)
+	_write_wav("portal_whoosh", 0.74, _sample_portal_whoosh)
+	_write_wav("crumble_warning", 0.58, _sample_crumble_warning)
+	_write_wav("ambient_whisper", 1.8, _sample_ambient_whisper)
 
 	print("Generated procedural SFX in %s" % OUT_DIR)
 	quit()
@@ -180,6 +186,43 @@ func _sample_ash_ambience(t: float, duration: float) -> float:
 	var ember_ticks := sin(TAU * 530.0 * t) * pow(maxf(0.0, sin(TAU * 2.0 * t + 0.7)), 22.0) * 0.026
 	var distant_bell := sin(TAU * 118.0 * t) * pow(maxf(0.0, sin(TAU * loop_phase)), 8.0) * 0.035
 	return hot_air + stone_hum + ember_ticks + distant_bell
+
+func _sample_bone_step(t: float, _duration: float) -> float:
+	var tap := sin(TAU * 760.0 * t) * _decay(t, 0.022) * 0.34
+	var heel := sin(TAU * 210.0 * t) * _decay(t, 0.038) * 0.18
+	return tap + heel
+
+func _sample_builder_snap_alt(t: float, _duration: float) -> float:
+	var snap := sin(TAU * 430.0 * t) * _decay(t, 0.046) * 0.46
+	var joint := sin(TAU * 152.0 * t) * _decay(t, 0.13) * 0.34
+	var second := sin(TAU * 820.0 * maxf(t - 0.058, 0.0)) * _decay(maxf(t - 0.058, 0.0), 0.032) * 0.15
+	return snap + joint + second
+
+func _sample_digger_crack_alt(t: float, _duration: float) -> float:
+	var fracture := _noise() * _decay(t, 0.13) * 0.48
+	var slab := sin(TAU * 68.0 * t) * _decay(t, 0.22) * 0.52
+	var grit := sin(TAU * 330.0 * maxf(t - 0.09, 0.0)) * _decay(maxf(t - 0.09, 0.0), 0.065) * 0.18
+	return fracture + slab + grit
+
+func _sample_portal_whoosh(t: float, duration: float) -> float:
+	var envelope := sin(clampf(t / duration, 0.0, 1.0) * PI)
+	var sweep_hz := lerpf(90.0, 520.0, t / duration)
+	var sweep := sin(TAU * sweep_hz * t) * envelope * 0.22
+	var air := _noise() * envelope * 0.13
+	var low_gate := sin(TAU * 48.0 * t) * _decay(t, 0.34) * 0.30
+	return sweep + air + low_gate
+
+func _sample_crumble_warning(t: float, duration: float) -> float:
+	var knock := sin(TAU * 74.0 * t) * _decay(t, 0.15) * 0.48
+	var crack := _noise() * _decay(t, 0.11) * 0.28
+	var pulse := sin(TAU * 148.0 * t) * pow(maxf(0.0, sin(TAU * 4.0 * t)), 5.0) * _fade_out(t, duration) * 0.16
+	return knock + crack + pulse
+
+func _sample_ambient_whisper(t: float, duration: float) -> float:
+	var envelope := pow(sin(clampf(t / duration, 0.0, 1.0) * PI), 1.7)
+	var breath := _noise() * envelope * 0.065
+	var hollow := (sin(TAU * 176.0 * t + sin(TAU * 0.7 * t)) + sin(TAU * 233.0 * t + 1.4)) * envelope * 0.024
+	return breath + hollow
 
 func _tone(t: float, hz: float, length: float) -> float:
 	if t < 0.0 or t > length:

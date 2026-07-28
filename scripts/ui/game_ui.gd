@@ -104,6 +104,8 @@ const SOUND_CAPTIONS := {
 	"exit_rescue": "SOUL RESCUED",
 	"level_success": "CRYPT CLEARED",
 	"level_fail": "MARCH FAILED",
+	"portal_whoosh": "PORTAL OPENS",
+	"crumble_warning": "STONE STRAINS",
 }
 static var tutorial_seen_this_session := false
 

@@ -204,6 +204,7 @@ def test_audio_feedback_assets_and_hooks_exist() -> None:
     minions = read("scripts/minions/minion_root.gd")
     skeleton = read("scripts/minions/skeleton_minion.gd")
     ui = read("scripts/ui/game_ui.gd")
+    terrain = read("scripts/terrain/terrain_root.gd")
     for sound_id in ["command_clatter", "death_yelp_tall", "death_yelp_wiry", "death_yelp_stocky", "death_knell"]:
         require(sound_id in sfx, f"SfxPlayer missing stream {sound_id}")
         require((ROOT / f"assets/audio/generated/{sound_id}.wav").exists(), f"missing generated wav for {sound_id}")
@@ -220,6 +221,10 @@ def test_audio_feedback_assets_and_hooks_exist() -> None:
     require("AudioStreamPlayer2D" in sfx and "play_at" in sfx and "panning_strength" in sfx, "world SFX should use camera-relative spatial audio")
     require("apply_mix_settings" in sfx and "dynamic_range" in sfx, "audio buses should support persistent mix and night mode")
     require("set_styx_proximity" in sfx and "_duck_ambience" in sfx, "ambience should react to river proximity and major cues")
+    for token in ["STREAM_VARIANTS", "ambient_whisper", "portal_whoosh", "crumble_warning", "bone_step"]:
+        require(token in sfx, f"expanded sound variation missing {token}")
+    require("footstep.emit" in skeleton and "_footstep_cooldown" in minions, "crowd footstep foley should stay asynchronous and voice-limited")
+    require('sfx_requested.emit("crumble_warning"' in terrain, "crumbling terrain should provide an audible warning")
     game_root = read("scripts/core/game_root.gd")
     require("_on_world_sfx_requested" in game_root and "_kick_camera" in game_root, "world cues should drive restrained camera feedback")
     require("play_feedback" in ui and "FeedbackFlash" in ui and "_pulse_button" in ui, "HUD should react to skill and outcome cues")

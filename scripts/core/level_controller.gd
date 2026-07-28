@@ -19,6 +19,7 @@ var debug_click_areas := false
 
 @onready var minion_root: Node = $MinionRoot
 @onready var object_root: Node = $ObjectRoot
+@onready var terrain_root: Node = $TerrainRoot
 
 func _ready() -> void:
 	var cfg: Dictionary = LevelState.config()
@@ -30,6 +31,7 @@ func _ready() -> void:
 	minion_root.minion_lost.connect(_on_minion_lost)
 	minion_root.spawn_complete.connect(_on_spawn_complete)
 	minion_root.sfx_requested.connect(_on_sfx_requested)
+	terrain_root.sfx_requested.connect(_on_sfx_requested)
 	object_root.minion_entered_exit.connect(_on_exit_entered)
 	if object_root.has_signal("spawn_portal_clicked"):
 		object_root.spawn_portal_clicked.connect(_on_spawn_portal_clicked)
@@ -117,6 +119,7 @@ func _on_spawn_portal_clicked() -> void:
 	if minion_root.has_method("start_spawning"):
 		minion_root.start_spawning()
 	sfx_requested.emit("resume_march", object_root.spawn_portal_pos)
+	sfx_requested.emit("portal_whoosh", object_root.spawn_portal_pos)
 	_emit_stats()
 
 func _on_exit_entered(_minion: Node) -> void:

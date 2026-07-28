@@ -33,6 +33,8 @@ var _spawn_timer := 0.0
 var _spawning_done := false
 var _spawn_started := false
 var debug_click_areas := false
+var _footstep_cooldown := 0.0
+var _foley_rng := RandomNumberGenerator.new()
 
 const BUILDER_PIECE_COUNT := 6
 const BUILDER_PIECE_SIZE := Vector2(28.0, 8.0)
@@ -48,6 +50,7 @@ const BUILDER_PIECE_COLOR := Color(0.78, 0.66, 0.46, 0.96)
 const BUILDER_THROW_COLOR := Color(1.00, 0.88, 0.56, 0.95)
 
 func _ready() -> void:
+	_foley_rng.randomize()
 	var cfg: Dictionary = LevelState.config()
 	total_to_spawn = int(cfg.get("minions", total_to_spawn))
 	spawn_interval = float(cfg.get("spawn_interval", spawn_interval))
@@ -73,6 +76,7 @@ func _select_first_available_job() -> void:
 		selected_job = "featherfall"
 
 func _process(delta: float) -> void:
+	_footstep_cooldown = maxf(0.0, _footstep_cooldown - delta)
 	if not _spawn_started or _spawning_done:
 		return
 
@@ -115,6 +119,7 @@ func _spawn_minion() -> void:
 	minion.death_started.connect(_on_minion_death_started)
 	minion.died.connect(_on_minion_died)
 	minion.clicked.connect(_on_minion_clicked)
+	minion.footstep.connect(_on_minion_footstep)
 	if minion.has_method("set_debug_click_area"):
 		minion.set_debug_click_area(debug_click_areas)
 	add_child(minion)
@@ -123,6 +128,12 @@ func _spawn_minion() -> void:
 	active_count += 1
 	minion_spawned.emit(minion)
 	_refresh_target_affordances()
+
+func _on_minion_footstep(minion: Node) -> void:
+	if _footstep_cooldown > 0.0 or not is_instance_valid(minion):
+		return
+	_footstep_cooldown = _foley_rng.randf_range(0.14, 0.26)
+	sfx_requested.emit("bone_step", minion.global_position)
 
 func _on_minion_exited(minion: Node) -> void:
 	rescued_count += 1

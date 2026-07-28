@@ -3,9 +3,12 @@ class_name SfxPlayer
 
 const STREAMS := {
 	"bone_clack": preload("res://assets/audio/generated/bone_clack.wav"),
+	"bone_step": preload("res://assets/audio/generated/bone_step.wav"),
 	"builder_snap": preload("res://assets/audio/generated/builder_snap.wav"),
+	"builder_snap_alt": preload("res://assets/audio/generated/builder_snap_alt.wav"),
 	"command_clatter": preload("res://assets/audio/generated/command_clatter.wav"),
 	"digger_crack": preload("res://assets/audio/generated/digger_crack.wav"),
+	"digger_crack_alt": preload("res://assets/audio/generated/digger_crack_alt.wav"),
 	"feather_chime": preload("res://assets/audio/generated/feather_chime.wav"),
 	"death_yelp_tall": preload("res://assets/audio/generated/death_yelp_tall.wav"),
 	"death_yelp_wiry": preload("res://assets/audio/generated/death_yelp_wiry.wav"),
@@ -21,10 +24,19 @@ const STREAMS := {
 	"level_fail": preload("res://assets/audio/generated/level_fail.wav"),
 	"ash_ambience": preload("res://assets/audio/generated/ash_ambience.wav"),
 	"styx_ambience": preload("res://assets/audio/generated/styx_ambience.wav"),
+	"portal_whoosh": preload("res://assets/audio/generated/portal_whoosh.wav"),
+	"crumble_warning": preload("res://assets/audio/generated/crumble_warning.wav"),
+	"ambient_whisper": preload("res://assets/audio/generated/ambient_whisper.wav"),
+}
+
+const STREAM_VARIANTS := {
+	"builder_snap": ["builder_snap", "builder_snap_alt"],
+	"digger_crack": ["digger_crack", "digger_crack_alt"],
 }
 
 const VOLUME_OFFSETS_DB := {
 	"bone_clack": -2.0,
+	"bone_step": -15.0,
 	"bone_splash": -9.0,
 	"builder_snap": -3.0,
 	"command_clatter": -5.0,
@@ -37,10 +49,14 @@ const VOLUME_OFFSETS_DB := {
 	"styx_impact": -7.5,
 	"exit_rescue": -7.0,
 	"level_success": -1.0,
+	"portal_whoosh": -5.0,
+	"crumble_warning": -7.0,
+	"ambient_whisper": -1.0,
 }
 
 const MAX_INSTANCES := {
 	"bone_clack": 4,
+	"bone_step": 2,
 	"bone_splash": 2,
 	"command_clatter": 2,
 	"death_knell": 2,
@@ -49,10 +65,13 @@ const MAX_INSTANCES := {
 	"death_yelp_stocky": 2,
 	"exit_rescue": 3,
 	"styx_impact": 2,
+	"crumble_warning": 1,
+	"ambient_whisper": 1,
 }
 
 const WORLD_SOUNDS := {
 	"bone_clack": true,
+	"bone_step": true,
 	"bone_splash": true,
 	"builder_snap": true,
 	"command_clatter": true,
@@ -64,7 +83,11 @@ const WORLD_SOUNDS := {
 	"exit_rescue": true,
 	"feather_chime": true,
 	"styx_impact": true,
+	"portal_whoosh": true,
+	"crumble_warning": true,
 }
+
+const AMBIENT_ONE_SHOTS := {"ambient_whisper": true}
 
 var _rng := RandomNumberGenerator.new()
 var _active_players: Array[Dictionary] = []
@@ -80,6 +103,7 @@ var _mix_settings := {
 	"muted": false,
 	"dynamic_range": "full",
 }
+var _rare_ambience_seconds := 0.0
 
 func _ready() -> void:
 	_rng.randomize()
@@ -87,12 +111,21 @@ func _ready() -> void:
 	_ensure_bus("UI SFX", -3.0)
 	_ensure_bus("Ambience", -4.0)
 	set_biome_profile("crypt")
+	_rare_ambience_seconds = _rng.randf_range(16.0, 32.0)
+
+func _process(delta: float) -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	_rare_ambience_seconds -= delta
+	if _rare_ambience_seconds <= 0.0:
+		play("ambient_whisper", 0.0, 0.08)
+		_rare_ambience_seconds = _rng.randf_range(19.0, 38.0)
 
 func _exit_tree() -> void:
 	if _ambience_tween != null:
 		_ambience_tween.kill()
 	for entry in _active_players:
-		var player: AudioStreamPlayer = entry["player"]
+		var player: Node = entry["player"]
 		if is_instance_valid(player):
 			player.stop()
 			player.queue_free()
@@ -123,16 +156,23 @@ func play_at(sound_id: String, world_position: Vector2, volume_db := 0.0, pitch_
 		player = player_2d
 	else:
 		player = AudioStreamPlayer.new()
-	player.stream = STREAMS[sound_id]
+	player.stream = _pick_stream(sound_id)
 	player.volume_db = volume_db + float(VOLUME_OFFSETS_DB.get(sound_id, 0.0))
 	player.pitch_scale = _rng.randf_range(1.0 - pitch_jitter, 1.0 + pitch_jitter)
-	player.bus = "World SFX" if WORLD_SOUNDS.has(sound_id) else "UI SFX"
+	player.bus = "Ambience" if AMBIENT_ONE_SHOTS.has(sound_id) else ("World SFX" if WORLD_SOUNDS.has(sound_id) else "UI SFX")
 	_active_players.append({"id": sound_id, "player": player})
 	player.finished.connect(_on_player_finished.bind(player))
 	add_child(player)
 	if spatial:
 		player.global_position = world_position
 	player.play()
+
+func _pick_stream(sound_id: String) -> AudioStream:
+	if not STREAM_VARIANTS.has(sound_id):
+		return STREAMS[sound_id]
+	var variants: Array = STREAM_VARIANTS[sound_id]
+	var picked_id := String(variants[_rng.randi_range(0, variants.size() - 1)])
+	return STREAMS[picked_id]
 
 func _ensure_bus(bus_name: String, volume_db: float) -> void:
 	var index := AudioServer.get_bus_index(bus_name)

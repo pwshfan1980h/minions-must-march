@@ -4,6 +4,7 @@ signal exited(minion: Node)
 signal died(minion: Node)
 signal death_started(minion: Node, death_kind: String)
 signal clicked(minion: Node)
+signal footstep(minion: Node)
 
 const BoneSplashScene := preload("res://scenes/effects/BoneSplash.tscn")
 
@@ -81,6 +82,7 @@ var _head_scale := 1.0
 var _leg_length := 1.0
 var _bob_scale := 1.0
 var _last_anim_frame := -1
+var _last_step_phase := -1
 var _is_tumbling := false
 var _visual_tumble_rotation := 0.0
 var _tumble_speed := 0.0
@@ -142,6 +144,7 @@ func _ready() -> void:
 	_stride_variant = float(bt["stride_speed"]) * rng.randf_range(0.82, 1.18)
 	_spine_variant = float(bt["spine_bias"]) + rng.randf_range(-0.05, 0.05)
 	_walk_time = rng.randf_range(0.0, TAU)
+	_last_step_phase = int(floor(fposmod(_walk_time, TAU) / PI))
 	_request_visual_redraw(true)
 
 func _process(delta: float) -> void:
@@ -180,6 +183,10 @@ func _physics_process(delta: float) -> void:
 		if anim_frame != _last_anim_frame:
 			_last_anim_frame = anim_frame
 			_request_visual_redraw()
+		var step_phase := int(floor(fposmod(_walk_time, TAU) / PI))
+		if step_phase != _last_step_phase:
+			_last_step_phase = step_phase
+			footstep.emit(self)
 	if not is_blocker and not is_builder:
 		highest_fall_speed = maxf(highest_fall_speed, velocity.y)
 		if _is_tumbling:

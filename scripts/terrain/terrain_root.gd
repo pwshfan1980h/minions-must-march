@@ -1,6 +1,7 @@
 extends Node2D
 
 const LevelState := preload("res://scripts/core/level_state.gd")
+signal sfx_requested(sound_id: String, world_position: Vector2)
 
 const TILE_SIZE := 32
 const WORLD_WIDTH := 2400
@@ -772,6 +773,7 @@ func _add_crumbling_solid(rect: Rect2, color: Color) -> StaticBody2D:
 		"fuse_started": false,
 		"fuse_at": -1.0,
 		"fuse_seconds": fuse_seconds,
+		"warning_sounded": false,
 		"crumbled": false,
 	}
 	_crumbling_sections.append(section)
@@ -784,6 +786,8 @@ func _on_crumble_trigger_entered(_body: Node, section: Dictionary) -> void:
 		return
 	section["fuse_started"] = true
 	section["fuse_at"] = _time + section["fuse_seconds"]
+	var rect: Rect2 = section["rect"]
+	sfx_requested.emit("crumble_warning", rect.get_center())
 
 func _tick_crumbling_sections() -> void:
 	for section in _crumbling_sections:
@@ -796,6 +800,10 @@ func _tick_crumbling_sections() -> void:
 			section["crumbled"] = true
 			continue
 		var time_left: float = section["fuse_at"] - _time
+		if time_left <= 3.0 and not bool(section["warning_sounded"]):
+			section["warning_sounded"] = true
+			var rect: Rect2 = section["rect"]
+			sfx_requested.emit("crumble_warning", rect.get_center())
 		if time_left <= 0.0:
 			_trigger_crumble(section)
 			continue

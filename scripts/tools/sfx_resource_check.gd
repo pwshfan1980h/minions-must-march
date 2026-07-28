@@ -3,6 +3,12 @@ extends SceneTree
 const SOUND_PATHS := [
 	"res://assets/audio/generated/bone_clack.wav",
 	"res://assets/audio/generated/ash_ambience.wav",
+	"res://assets/audio/generated/ambient_whisper.wav",
+	"res://assets/audio/generated/bone_step.wav",
+	"res://assets/audio/generated/builder_snap_alt.wav",
+	"res://assets/audio/generated/crumble_warning.wav",
+	"res://assets/audio/generated/digger_crack_alt.wav",
+	"res://assets/audio/generated/portal_whoosh.wav",
 	"res://assets/audio/generated/builder_snap.wav",
 	"res://assets/audio/generated/command_clatter.wav",
 	"res://assets/audio/generated/digger_crack.wav",
