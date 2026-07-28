@@ -55,6 +55,10 @@ def test_hud_is_compact_and_no_long_startup_copy() -> None:
         require(token in ui, f"bottom action button copy missing {token}")
     for token in ["Corner-and-bottom bone UI", "stats_panel.add_theme_stylebox_override", "Color(\"f1eadb\")", "font_size\", 10", "_panel_box(fill, border, 1 if not selected else 2, 5)"]:
         require(token in ui, f"black/white bone compact HUD styling missing {token}")
+    for token in ["SettingsPanel", "MasterSlider", "SfxSlider", "AmbienceSlider", "MuteCheck", "RangeOption"]:
+        require(token in scene, f"audio settings UI missing {token}")
+    for token in ["user://settings.cfg", "audio_settings_changed", "KEY_F2", "_save_audio_settings"]:
+        require(token in ui, f"persistent audio settings behavior missing {token}")
 
 
 def test_chamber_map_objective_and_event_log_ui() -> None:
@@ -206,6 +210,7 @@ def test_audio_feedback_assets_and_hooks_exist() -> None:
     for sound_id in ["builder_snap", "digger_crack", "feather_chime"]:
         require(f'sfx_requested.emit("{sound_id}",' in minions, f"skill action should emit {sound_id}")
     require("AudioStreamPlayer2D" in sfx and "play_at" in sfx and "panning_strength" in sfx, "world SFX should use camera-relative spatial audio")
+    require("apply_mix_settings" in sfx and "dynamic_range" in sfx, "audio buses should support persistent mix and night mode")
     game_root = read("scripts/core/game_root.gd")
     require("_on_world_sfx_requested" in game_root and "_kick_camera" in game_root, "world cues should drive restrained camera feedback")
     require("play_feedback" in ui and "FeedbackFlash" in ui and "_pulse_button" in ui, "HUD should react to skill and outcome cues")

@@ -34,7 +34,9 @@ func _ready() -> void:
 	game_ui.pause_toggled.connect(_toggle_pause_inspect)
 	game_ui.speed_requested.connect(_set_march_speed)
 	game_ui.job_selected.connect(_on_job_selected)
+	game_ui.audio_settings_changed.connect(sfx.apply_mix_settings)
 	sfx.set_biome_profile(String(LevelState.config().get("biome", "crypt")))
+	sfx.apply_mix_settings(game_ui.get_audio_settings())
 	game_ui.update_stats(level_controller.get_stats())
 	_maybe_capture_screenshot()
 

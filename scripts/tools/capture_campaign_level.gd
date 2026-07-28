@@ -15,3 +15,5 @@ func _prepare_playfield_capture(game_root: Node) -> void:
 	await process_frame
 	game_root.get_node("GameUI/TutorialPopup").hide()
 	game_root.get_node("LevelController/MinionRoot").start_spawning()
+	if OS.get_environment("MMM_CAPTURE_SETTINGS") == "1":
+		game_root.get_node("GameUI").call("_toggle_audio_settings")

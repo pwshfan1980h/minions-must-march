@@ -79,6 +79,14 @@ focus_mode = 0
 tooltip_text = "March speed: 1× (F cycles)"
 text = "F SPEED 1×"
 
+[node name="SettingsButton" type="Button" parent="."]
+offset_left = 874.0
+offset_top = 64.0
+offset_right = 998.0
+offset_bottom = 94.0
+focus_mode = 0
+text = "F2 AUDIO"
+
 [node name="LevelListToggleButton" type="Button" parent="."]
 offset_left = 1134.0
 offset_top = 64.0
@@ -86,6 +94,90 @@ offset_right = 1268.0
 offset_bottom = 94.0
 focus_mode = 0
 text = "F4 LEVELS"
+
+[node name="SettingsPanel" type="Panel" parent="."]
+visible = false
+offset_left = 884.0
+offset_top = 102.0
+offset_right = 1268.0
+offset_bottom = 354.0
+
+[node name="SettingsTitle" type="Label" parent="SettingsPanel"]
+offset_left = 14.0
+offset_top = 10.0
+offset_right = 370.0
+offset_bottom = 32.0
+text = "AUDIO MIX"
+
+[node name="MasterLabel" type="Label" parent="SettingsPanel"]
+offset_left = 14.0
+offset_top = 44.0
+offset_right = 118.0
+offset_bottom = 64.0
+text = "MASTER"
+
+[node name="MasterSlider" type="HSlider" parent="SettingsPanel"]
+offset_left = 122.0
+offset_top = 42.0
+offset_right = 366.0
+offset_bottom = 64.0
+min_value = -30.0
+max_value = 0.0
+step = 1.0
+
+[node name="SfxLabel" type="Label" parent="SettingsPanel"]
+offset_left = 14.0
+offset_top = 78.0
+offset_right = 118.0
+offset_bottom = 98.0
+text = "SFX"
+
+[node name="SfxSlider" type="HSlider" parent="SettingsPanel"]
+offset_left = 122.0
+offset_top = 76.0
+offset_right = 366.0
+offset_bottom = 98.0
+min_value = -24.0
+max_value = 6.0
+step = 1.0
+
+[node name="AmbienceLabel" type="Label" parent="SettingsPanel"]
+offset_left = 14.0
+offset_top = 112.0
+offset_right = 118.0
+offset_bottom = 132.0
+text = "AMBIENCE"
+
+[node name="AmbienceSlider" type="HSlider" parent="SettingsPanel"]
+offset_left = 122.0
+offset_top = 110.0
+offset_right = 366.0
+offset_bottom = 132.0
+min_value = -24.0
+max_value = 6.0
+step = 1.0
+
+[node name="MuteCheck" type="CheckButton" parent="SettingsPanel"]
+offset_left = 14.0
+offset_top = 148.0
+offset_right = 176.0
+offset_bottom = 180.0
+focus_mode = 0
+text = "MUTE ALL"
+
+[node name="RangeLabel" type="Label" parent="SettingsPanel"]
+offset_left = 14.0
+offset_top = 194.0
+offset_right = 118.0
+offset_bottom = 216.0
+text = "RANGE"
+
+[node name="RangeOption" type="OptionButton" parent="SettingsPanel"]
+offset_left = 122.0
+offset_top = 188.0
+offset_right = 366.0
+offset_bottom = 224.0
+focus_mode = 0
 
 [node name="SkillDock" type="Panel" parent="."]
 offset_left = 354.0

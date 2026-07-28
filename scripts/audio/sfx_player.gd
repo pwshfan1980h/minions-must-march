@@ -71,6 +71,13 @@ var _active_players: Array[Dictionary] = []
 var _ambience_player: AudioStreamPlayer
 var _ambience_tween: Tween
 var _biome_profile := ""
+var _mix_settings := {
+	"master_db": 0.0,
+	"sfx_db": 0.0,
+	"ambience_db": 0.0,
+	"muted": false,
+	"dynamic_range": "full",
+}
 
 func _ready() -> void:
 	_rng.randomize()
@@ -130,6 +137,21 @@ func _ensure_bus(bus_name: String, volume_db: float) -> void:
 		index = AudioServer.bus_count - 1
 		AudioServer.set_bus_name(index, bus_name)
 	AudioServer.set_bus_volume_db(index, volume_db)
+
+func apply_mix_settings(settings: Dictionary) -> void:
+	for key in _mix_settings.keys():
+		if settings.has(key):
+			_mix_settings[key] = settings[key]
+	var night_mode := String(_mix_settings["dynamic_range"]) == "night"
+	var master_index := AudioServer.get_bus_index("Master")
+	var world_index := AudioServer.get_bus_index("World SFX")
+	var ui_index := AudioServer.get_bus_index("UI SFX")
+	var ambience_index := AudioServer.get_bus_index("Ambience")
+	AudioServer.set_bus_mute(master_index, bool(_mix_settings["muted"]))
+	AudioServer.set_bus_volume_db(master_index, float(_mix_settings["master_db"]))
+	AudioServer.set_bus_volume_db(world_index, (-5.0 if night_mode else -1.5) + float(_mix_settings["sfx_db"]))
+	AudioServer.set_bus_volume_db(ui_index, (-5.0 if night_mode else -3.0) + float(_mix_settings["sfx_db"]))
+	AudioServer.set_bus_volume_db(ambience_index, (-2.0 if night_mode else -4.0) + float(_mix_settings["ambience_db"]))
 
 func set_biome_profile(profile: String) -> void:
 	if DisplayServer.get_name() == "headless":

@@ -7,6 +7,7 @@ signal job_selected(job_id: String)
 signal level_selected(level_number: int)
 signal pause_toggled
 signal speed_requested(multiplier: float)
+signal audio_settings_changed(settings: Dictionary)
 
 @onready var job_bar: Panel = $JobBar
 @onready var mission_label: Label = $JobBar/MissionLabel
@@ -19,6 +20,18 @@ signal speed_requested(multiplier: float)
 @onready var rescue_progress: ProgressBar = $StatsPanel/RescueProgress
 @onready var level_list_toggle_button: Button = $LevelListToggleButton
 @onready var speed_button: Button = $SpeedButton
+@onready var settings_button: Button = $SettingsButton
+@onready var settings_panel: Panel = $SettingsPanel
+@onready var settings_title: Label = $SettingsPanel/SettingsTitle
+@onready var master_label: Label = $SettingsPanel/MasterLabel
+@onready var master_slider: HSlider = $SettingsPanel/MasterSlider
+@onready var sfx_label: Label = $SettingsPanel/SfxLabel
+@onready var sfx_slider: HSlider = $SettingsPanel/SfxSlider
+@onready var ambience_label: Label = $SettingsPanel/AmbienceLabel
+@onready var ambience_slider: HSlider = $SettingsPanel/AmbienceSlider
+@onready var mute_check: CheckButton = $SettingsPanel/MuteCheck
+@onready var range_label: Label = $SettingsPanel/RangeLabel
+@onready var range_option: OptionButton = $SettingsPanel/RangeOption
 @onready var skill_dock: Panel = $SkillDock
 @onready var chamber_map: Panel = $ChamberMap
 @onready var chamber_title: Label = $ChamberMap/ChamberTitle
@@ -55,6 +68,13 @@ var _last_level_number := -1
 var _march_speed := 1
 var _feedback_flash: ColorRect
 var _feedback_tween: Tween
+var _audio_settings := {
+	"master_db": 0.0,
+	"sfx_db": 0.0,
+	"ambience_db": 0.0,
+	"muted": false,
+	"dynamic_range": "full",
+}
 static var tutorial_seen_this_session := false
 
 const COLOR_BONE := Color("f1eadb")
@@ -79,13 +99,16 @@ func _ready() -> void:
 	featherfall_button.pressed.connect(_select_featherfall)
 	level_list_toggle_button.pressed.connect(_toggle_level_list)
 	speed_button.pressed.connect(_cycle_march_speed)
+	settings_button.pressed.connect(_toggle_audio_settings)
 	tutorial_ok_button.pressed.connect(_dismiss_tutorial_popup)
+	_configure_audio_settings()
 	if tutorial_seen_this_session:
 		tutorial_popup.hide()
 	else:
 		tutorial_popup.show()
 		tutorial_seen_this_session = true
 	chamber_map.hide()
+	settings_panel.hide()
 	_populate_chamber_map()
 	_update_event_log()
 	_update_job_buttons()
@@ -290,6 +313,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			pause_toggled.emit()
 		elif event.keycode == KEY_F4:
 			_toggle_level_list()
+		elif event.keycode == KEY_F2:
+			_toggle_audio_settings()
 		elif event.keycode == KEY_F:
 			_cycle_march_speed()
 
@@ -298,7 +323,68 @@ func _dismiss_tutorial_popup() -> void:
 
 func _toggle_level_list() -> void:
 	chamber_map.visible = not chamber_map.visible
+	if chamber_map.visible:
+		settings_panel.hide()
 	level_list_toggle_button.text = "F4 CLOSE" if chamber_map.visible else "F4 LEVELS"
+
+func _toggle_audio_settings() -> void:
+	settings_panel.visible = not settings_panel.visible
+	if settings_panel.visible:
+		chamber_map.hide()
+		level_list_toggle_button.text = "F4 LEVELS"
+	settings_button.text = "F2 CLOSE" if settings_panel.visible else "F2 AUDIO"
+
+func get_audio_settings() -> Dictionary:
+	return _audio_settings.duplicate(true)
+
+func _configure_audio_settings() -> void:
+	range_option.add_item("FULL RANGE")
+	range_option.add_item("NIGHT MODE")
+	_load_audio_settings()
+	master_slider.value = float(_audio_settings["master_db"])
+	sfx_slider.value = float(_audio_settings["sfx_db"])
+	ambience_slider.value = float(_audio_settings["ambience_db"])
+	mute_check.button_pressed = bool(_audio_settings["muted"])
+	range_option.select(1 if String(_audio_settings["dynamic_range"]) == "night" else 0)
+	master_slider.value_changed.connect(func(value: float) -> void:
+		_audio_settings["master_db"] = value
+		audio_settings_changed.emit(get_audio_settings())
+	)
+	sfx_slider.value_changed.connect(func(value: float) -> void:
+		_audio_settings["sfx_db"] = value
+		audio_settings_changed.emit(get_audio_settings())
+	)
+	ambience_slider.value_changed.connect(func(value: float) -> void:
+		_audio_settings["ambience_db"] = value
+		audio_settings_changed.emit(get_audio_settings())
+	)
+	master_slider.drag_ended.connect(func(_changed: bool) -> void: _save_audio_settings())
+	sfx_slider.drag_ended.connect(func(_changed: bool) -> void: _save_audio_settings())
+	ambience_slider.drag_ended.connect(func(_changed: bool) -> void: _save_audio_settings())
+	mute_check.toggled.connect(func(enabled: bool) -> void:
+		_audio_settings["muted"] = enabled
+		_save_audio_settings()
+		audio_settings_changed.emit(get_audio_settings())
+	)
+	range_option.item_selected.connect(func(index: int) -> void:
+		_audio_settings["dynamic_range"] = "night" if index == 1 else "full"
+		_save_audio_settings()
+		audio_settings_changed.emit(get_audio_settings())
+	)
+
+func _load_audio_settings() -> void:
+	var config := ConfigFile.new()
+	if config.load("user://settings.cfg") != OK:
+		return
+	for key in _audio_settings.keys():
+		_audio_settings[key] = config.get_value("audio", key, _audio_settings[key])
+
+func _save_audio_settings() -> void:
+	var config := ConfigFile.new()
+	config.load("user://settings.cfg")
+	for key in _audio_settings.keys():
+		config.set_value("audio", key, _audio_settings[key])
+	config.save("user://settings.cfg")
 
 func _cycle_march_speed() -> void:
 	_march_speed = 1 if _march_speed >= 3 else _march_speed + 1
@@ -372,7 +458,7 @@ func _apply_visual_style() -> void:
 	chamber_map.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.012, 0.011, 0.86), Color(0.70, 0.68, 0.62, 0.54), 1, 6))
 	tutorial_popup.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.011, 0.010, 0.96), Color(0.88, 0.84, 0.74, 0.82), 2, 12))
 
-	for label in [mission_label, goal_label, objective_collapsed_label, score_label, stats_label, hint_label, event_log_label, chamber_title, campaign_track_label, inspect_label, result_label, tutorial_skull_label, tutorial_title, tutorial_text]:
+	for label in [mission_label, goal_label, objective_collapsed_label, score_label, stats_label, hint_label, event_log_label, chamber_title, campaign_track_label, inspect_label, result_label, tutorial_skull_label, tutorial_title, tutorial_text, settings_title, master_label, sfx_label, ambience_label, range_label]:
 		label.add_theme_font_override("font", _spooky_font)
 		label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.88))
 		label.add_theme_constant_override("shadow_offset_x", 1)
@@ -426,7 +512,12 @@ func _apply_visual_style() -> void:
 		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_style_utility_button(level_list_toggle_button)
 	_style_utility_button(speed_button)
+	_style_utility_button(settings_button)
+	_style_utility_button(mute_check)
+	_style_utility_button(range_option)
 	_style_utility_button(tutorial_ok_button)
+	settings_panel.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.011, 0.010, 0.96), Color(0.58, 0.82, 0.72, 0.76), 1, 8))
+	settings_title.add_theme_color_override("font_color", COLOR_RESCUE)
 	rescue_progress.show_percentage = false
 	rescue_progress.add_theme_stylebox_override("background", _panel_box(Color(0.04, 0.035, 0.03, 0.95), Color(0.36, 0.34, 0.30, 0.9), 1, 3))
 	rescue_progress.add_theme_stylebox_override("fill", _panel_box(COLOR_RESCUE.darkened(0.18), COLOR_RESCUE.lightened(0.22), 1, 3))
