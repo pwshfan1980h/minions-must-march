@@ -53,6 +53,8 @@ signal accessibility_settings_changed(settings: Dictionary)
 @onready var builder_button: Button = $SkillDock/BuilderButton
 @onready var digger_button: Button = $SkillDock/DiggerButton
 @onready var featherfall_button: Button = $SkillDock/FeatherfallButton
+@onready var result_backdrop: ColorRect = $ResultBackdrop
+@onready var result_card: Panel = $ResultCard
 @onready var result_label: Label = $ResultLabel
 @onready var inspect_label: Label = $InspectLabel
 @onready var perf_label: Label = $PerfLabel
@@ -75,6 +77,8 @@ var _march_speed := 1
 var _feedback_flash: ColorRect
 var _feedback_tween: Tween
 var _caption_tween: Tween
+var _rescue_tween: Tween
+var _result_tween: Tween
 var _audio_settings := {
 	"master_db": 0.0,
 	"sfx_db": 0.0,
@@ -82,6 +86,7 @@ var _audio_settings := {
 	"muted": false,
 	"dynamic_range": "full",
 }
+var _last_rescued := 0
 var _accessibility_settings := {
 	"high_contrast": false,
 	"reduced_motion": false,
@@ -113,6 +118,8 @@ const COLOR_RESCUE := Color("8ce3c5")
 func _ready() -> void:
 	print("GameUI ready")
 	result_label.hide()
+	result_card.hide()
+	result_backdrop.hide()
 	inspect_label.hide()
 	perf_label.hide()
 	_spooky_font = _make_spooky_font()
@@ -163,7 +170,18 @@ func update_stats(stats: Dictionary) -> void:
 		stats.get("lost", 0),
 	]
 	rescue_progress.max_value = maxi(1, int(stats.get("required", 1)))
-	rescue_progress.value = int(stats.get("rescued", 0))
+	var rescued := int(stats.get("rescued", 0))
+	if _rescue_tween != null:
+		_rescue_tween.kill()
+	_rescue_tween = create_tween()
+	if bool(_accessibility_settings["reduced_motion"]):
+		rescue_progress.value = rescued
+	else:
+		_rescue_tween.tween_property(rescue_progress, "value", float(rescued), 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		if rescued > _last_rescued:
+			rescue_progress.modulate = COLOR_RESCUE.lightened(0.32)
+			_rescue_tween.parallel().tween_property(rescue_progress, "modulate", Color.WHITE, 0.38)
+	_last_rescued = rescued
 	rescue_progress.tooltip_text = "%d of %d required skeletons rescued" % [stats.get("rescued", 0), stats.get("required", 0)]
 
 	blocker_button.text = "1 [] BLOCK x%d" % blockers_remaining
@@ -332,15 +350,39 @@ func _campaign_button_name(level_name: String) -> String:
 	return level_name.substr(0, MAX_CAMPAIGN_NAME_CHARS - 1).rstrip(" ") + "…"
 
 func show_level_finished(success: bool, stats: Dictionary) -> void:
+	result_backdrop.show()
+	result_card.show()
 	result_label.show()
 	if success:
-		result_label.text = "CRYPT CLEARED\nSaved %d/%d  •  Score %04d" % [stats.get("rescued", 0), stats.get("total", 0), stats.get("score", 0)]
-		result_label.add_theme_color_override("font_color", Color("b5ffbf"))
+		result_label.text = "=== CRYPT CLEARED ===\nSaved %d/%d  |  Score %04d\nThe march continues." % [stats.get("rescued", 0), stats.get("total", 0), stats.get("score", 0)]
+		result_label.add_theme_color_override("font_color", COLOR_RESCUE.lightened(0.20))
+		result_card.add_theme_stylebox_override("panel", _panel_box(Color(0.018, 0.055, 0.045, 0.97), Color(COLOR_RESCUE, 0.92), 2, 12))
 	else:
-		result_label.text = "MINIONS SQUANDERED\nSaved %d/%d — need %d  •  Score %04d" % [
+		result_label.text = "=== MINIONS SQUANDERED ===\nSaved %d/%d — need %d  |  Score %04d\nR restarts the miserable march." % [
 			stats.get("rescued", 0), stats.get("total", 0), stats.get("required", 0), stats.get("score", 0)
 		]
-		result_label.add_theme_color_override("font_color", Color("ff9d8f"))
+		result_label.add_theme_color_override("font_color", COLOR_BLOCK.lightened(0.20))
+		result_card.add_theme_stylebox_override("panel", _panel_box(Color(0.07, 0.018, 0.016, 0.97), Color(COLOR_BLOCK, 0.92), 2, 12))
+	_animate_result_card()
+
+func _animate_result_card() -> void:
+	result_card.pivot_offset = result_card.size * 0.5
+	result_label.pivot_offset = result_label.size * 0.5
+	if _result_tween != null:
+		_result_tween.kill()
+	if bool(_accessibility_settings["reduced_motion"]):
+		result_backdrop.color.a = 0.64
+		result_card.scale = Vector2.ONE
+		result_label.modulate.a = 1.0
+		return
+	result_backdrop.color.a = 0.0
+	result_card.scale = Vector2(0.84, 0.84)
+	result_label.modulate.a = 0.0
+	_result_tween = create_tween()
+	_result_tween.set_parallel(true)
+	_result_tween.tween_property(result_backdrop, "color:a", 0.64, 0.28)
+	_result_tween.tween_property(result_card, "scale", Vector2.ONE, 0.38).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_result_tween.tween_property(result_label, "modulate:a", 1.0, 0.24).set_delay(0.10)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:

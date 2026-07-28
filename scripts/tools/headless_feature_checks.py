@@ -169,6 +169,8 @@ def test_campaign_finale_expansion_exists() -> None:
         require(f"func _build_level_{number:03d}_terrain()" in terrain, f"terrain builder missing level {number}")
     require("signal speed_requested" in ui and "_cycle_march_speed" in ui and "SpeedButton" in scene, "HUD should provide a march speed control")
     require("RescueProgress" in scene and "rescue_progress.value" in ui, "HUD should visualize rescue progress")
+    require("ResultBackdrop" in scene and "ResultCard" in scene, "level outcomes should have a dedicated presentation layer")
+    require("_animate_result_card" in ui and "_rescue_tween" in ui, "results and rescue progress should animate")
     require("tutorial_seen_this_session" in ui, "tutorial should not reopen on every level reload")
 
 

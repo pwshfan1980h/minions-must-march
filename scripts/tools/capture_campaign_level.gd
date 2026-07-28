@@ -22,3 +22,11 @@ func _prepare_playfield_capture(game_root: Node) -> void:
 		ui.get_node("SettingsPanel/HighContrastCheck").button_pressed = true
 		ui.get_node("SettingsPanel/CaptionsCheck").button_pressed = true
 		ui.call("show_sound_caption", "styx_impact", -260.0)
+	var result_mode := OS.get_environment("MMM_CAPTURE_RESULT")
+	if result_mode == "success" or result_mode == "failure":
+		game_root.get_node("GameUI").call("show_level_finished", result_mode == "success", {
+			"rescued": 10,
+			"total": 12,
+			"required": 10,
+			"score": 1125,
+		})
