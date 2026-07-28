@@ -24,6 +24,7 @@ var _spawn_portal_voom := 0.0
 var _spawn_portal_attention := 0.0
 var _spawn_portal_attention_tween: Tween
 var _spawn_portal_area: Area2D
+var _reduced_motion := false
 
 func _ready() -> void:
 	_build_motes()
@@ -31,13 +32,18 @@ func _ready() -> void:
 	queue_redraw()
 
 func _process(delta: float) -> void:
-	_time += delta
+	_time += delta * (0.18 if _reduced_motion else 1.0)
 	_redraw_elapsed += delta
 	if _spawn_portal_voom > 0.0:
 		_spawn_portal_voom = maxf(0.0, _spawn_portal_voom - delta * 1.9)
-	if _redraw_elapsed >= 1.0 / EXIT_REDRAW_FPS:
+	var redraw_fps := 8.0 if _reduced_motion else EXIT_REDRAW_FPS
+	if _redraw_elapsed >= 1.0 / redraw_fps:
 		_redraw_elapsed = 0.0
 		queue_redraw()
+
+func set_accessibility_settings(settings: Dictionary) -> void:
+	_reduced_motion = bool(settings.get("reduced_motion", false))
+	queue_redraw()
 
 func _build_placeholder_objects() -> void:
 	var cfg: Dictionary = LevelState.config()

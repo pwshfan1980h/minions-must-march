@@ -100,7 +100,7 @@ visible = false
 offset_left = 884.0
 offset_top = 102.0
 offset_right = 1268.0
-offset_bottom = 354.0
+offset_bottom = 474.0
 
 [node name="SettingsTitle" type="Label" parent="SettingsPanel"]
 offset_left = 14.0
@@ -179,6 +179,37 @@ offset_right = 366.0
 offset_bottom = 224.0
 focus_mode = 0
 
+[node name="AccessibilityTitle" type="Label" parent="SettingsPanel"]
+offset_left = 14.0
+offset_top = 238.0
+offset_right = 370.0
+offset_bottom = 260.0
+text = "ACCESSIBILITY"
+
+[node name="HighContrastCheck" type="CheckButton" parent="SettingsPanel"]
+offset_left = 14.0
+offset_top = 270.0
+offset_right = 366.0
+offset_bottom = 302.0
+focus_mode = 0
+text = "HIGH-CONTRAST EDGES"
+
+[node name="ReducedMotionCheck" type="CheckButton" parent="SettingsPanel"]
+offset_left = 14.0
+offset_top = 308.0
+offset_right = 366.0
+offset_bottom = 340.0
+focus_mode = 0
+text = "REDUCED MOTION"
+
+[node name="CaptionsCheck" type="CheckButton" parent="SettingsPanel"]
+offset_left = 14.0
+offset_top = 346.0
+offset_right = 366.0
+offset_bottom = 378.0
+focus_mode = 0
+text = "SOUND CAPTIONS"
+
 [node name="SkillDock" type="Panel" parent="."]
 offset_left = 354.0
 offset_top = 646.0
@@ -255,6 +286,15 @@ offset_right = 340.0
 offset_bottom = 176.0
 autowrap_mode = 3
 text = "March log sleeps."
+
+[node name="SoundCaptionLabel" type="Label" parent="."]
+visible = false
+offset_left = 390.0
+offset_top = 602.0
+offset_right = 890.0
+offset_bottom = 632.0
+horizontal_alignment = 1
+text = "← STYX SPLASH"
 
 [node name="TutorialPopup" type="Panel" parent="."]
 offset_left = 318.0

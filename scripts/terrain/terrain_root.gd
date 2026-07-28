@@ -49,6 +49,8 @@ var _platform_ash_specs: Array[Dictionary] = []
 var _ember_specs: Array[Dictionary] = []
 var _monster_flock_specs: Array[Dictionary] = []
 var _biome := "crypt"
+var _reduced_motion := false
+var _high_contrast := false
 
 func _ready() -> void:
 	_biome = String(LevelState.config().get("biome", "crypt"))
@@ -78,12 +80,24 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_time += delta
 	_redraw_elapsed += delta
-	if _redraw_elapsed >= 1.0 / TERRAIN_REDRAW_FPS:
+	var redraw_fps := 8.0 if _reduced_motion else TERRAIN_REDRAW_FPS
+	if _redraw_elapsed >= 1.0 / redraw_fps:
 		_redraw_elapsed = 0.0
 		queue_redraw()
 	_tick_bubble_pops()
 	_tick_styx_impacts()
 	_tick_crumbling_sections()
+
+func set_accessibility_settings(settings: Dictionary) -> void:
+	_reduced_motion = bool(settings.get("reduced_motion", false))
+	_high_contrast = bool(settings.get("high_contrast", false))
+	for edge in find_children("TerrainEdge", "Line2D", true, false):
+		var line := edge as Line2D
+		var base_width := float(line.get_meta("base_width", line.width))
+		var base_color: Color = line.get_meta("base_color", line.default_color)
+		line.width = base_width + 1.4 if _high_contrast else base_width
+		line.default_color = base_color.lightened(0.28) if _high_contrast else base_color
+	queue_redraw()
 
 func add_styx_impact(world_position: Vector2, strength := 1.0) -> void:
 	_styx_impacts.append({
@@ -593,6 +607,7 @@ func _add_pillar_capstone(rect: Rect2, body: Node2D, color: Color) -> void:
 
 func _add_block_underworld_detail(rect: Rect2, body: Node2D, variant: String) -> void:
 	var top_line := Line2D.new()
+	top_line.name = "TerrainEdge"
 	top_line.default_color = CRYPT_EDGE
 	top_line.width = 2.0
 	top_line.points = PackedVector2Array([
@@ -702,6 +717,8 @@ func _add_block_underworld_detail(rect: Rect2, body: Node2D, variant: String) ->
 			skull.position = Vector2(0, y)
 			skull.polygon = PackedVector2Array([Vector2(-8,-7), Vector2(8,-7), Vector2(10,3), Vector2(4,10), Vector2(-4,10), Vector2(-10,3)])
 			body.add_child(skull)
+	top_line.set_meta("base_width", top_line.width)
+	top_line.set_meta("base_color", top_line.default_color)
 
 func _add_crumbling_solid(rect: Rect2, color: Color) -> StaticBody2D:
 	# Looks like a normal platform; an Area2D sitting just above its top
@@ -1286,10 +1303,13 @@ func _draw_styx_water() -> void:
 	_draw_styx_surface_skin()
 	_draw_styx_caustics()
 	_draw_styx_currents()
-	_draw_styx_bubbles()
-	_draw_styx_hands()
+	if not _reduced_motion:
+		_draw_styx_bubbles()
+		_draw_styx_hands()
 
 	for soul in _soul_specs:
+		if _reduced_motion and int(float(soul["x"])) % 2 == 0:
+			continue
 		var phase := _time * 0.44 + float(soul["phase"])
 		var drift := Vector2(cos(float(soul["angle"])), sin(float(soul["angle"]))) * sin(phase * 0.7) * float(soul["speed"])
 		var pos := Vector2(float(soul["x"]), float(soul["y"])) + drift + Vector2(sin(phase) * 10.0, cos(phase * 0.6) * 5.0)

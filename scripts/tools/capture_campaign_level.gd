@@ -17,3 +17,8 @@ func _prepare_playfield_capture(game_root: Node) -> void:
 	game_root.get_node("LevelController/MinionRoot").start_spawning()
 	if OS.get_environment("MMM_CAPTURE_SETTINGS") == "1":
 		game_root.get_node("GameUI").call("_toggle_audio_settings")
+	if OS.get_environment("MMM_CAPTURE_ACCESSIBILITY") == "1":
+		var ui := game_root.get_node("GameUI")
+		ui.get_node("SettingsPanel/HighContrastCheck").button_pressed = true
+		ui.get_node("SettingsPanel/CaptionsCheck").button_pressed = true
+		ui.call("show_sound_caption", "styx_impact", -260.0)

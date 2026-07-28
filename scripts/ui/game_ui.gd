@@ -8,6 +8,7 @@ signal level_selected(level_number: int)
 signal pause_toggled
 signal speed_requested(multiplier: float)
 signal audio_settings_changed(settings: Dictionary)
+signal accessibility_settings_changed(settings: Dictionary)
 
 @onready var job_bar: Panel = $JobBar
 @onready var mission_label: Label = $JobBar/MissionLabel
@@ -32,12 +33,17 @@ signal audio_settings_changed(settings: Dictionary)
 @onready var mute_check: CheckButton = $SettingsPanel/MuteCheck
 @onready var range_label: Label = $SettingsPanel/RangeLabel
 @onready var range_option: OptionButton = $SettingsPanel/RangeOption
+@onready var accessibility_title: Label = $SettingsPanel/AccessibilityTitle
+@onready var high_contrast_check: CheckButton = $SettingsPanel/HighContrastCheck
+@onready var reduced_motion_check: CheckButton = $SettingsPanel/ReducedMotionCheck
+@onready var captions_check: CheckButton = $SettingsPanel/CaptionsCheck
 @onready var skill_dock: Panel = $SkillDock
 @onready var chamber_map: Panel = $ChamberMap
 @onready var chamber_title: Label = $ChamberMap/ChamberTitle
 @onready var campaign_track_label: Label = $ChamberMap/CampaignTrackLabel
 @onready var level_button_container: VBoxContainer = $ChamberMap/LevelButtonContainer
 @onready var event_log_label: Label = $EventLogLabel
+@onready var sound_caption_label: Label = $SoundCaptionLabel
 @onready var tutorial_popup: Panel = $TutorialPopup
 @onready var tutorial_skull_label: Label = $TutorialPopup/SkullLabel
 @onready var tutorial_title: Label = $TutorialPopup/TutorialTitle
@@ -68,12 +74,31 @@ var _last_level_number := -1
 var _march_speed := 1
 var _feedback_flash: ColorRect
 var _feedback_tween: Tween
+var _caption_tween: Tween
 var _audio_settings := {
 	"master_db": 0.0,
 	"sfx_db": 0.0,
 	"ambience_db": 0.0,
 	"muted": false,
 	"dynamic_range": "full",
+}
+var _accessibility_settings := {
+	"high_contrast": false,
+	"reduced_motion": false,
+	"sound_captions": false,
+}
+const SOUND_CAPTIONS := {
+	"builder_snap": "RIB BRIDGE SET",
+	"blocker_brace": "BLOCKER BRACES",
+	"digger_crack": "STONE CRACKS",
+	"feather_chime": "FEATHERFALL CHIMES",
+	"styx_impact": "STYX SPLASH",
+	"death_yelp_tall": "SKELETON CRIES OUT",
+	"death_yelp_wiry": "SKELETON CRIES OUT",
+	"death_yelp_stocky": "SKELETON CRIES OUT",
+	"exit_rescue": "SOUL RESCUED",
+	"level_success": "CRYPT CLEARED",
+	"level_fail": "MARCH FAILED",
 }
 static var tutorial_seen_this_session := false
 
@@ -141,10 +166,10 @@ func update_stats(stats: Dictionary) -> void:
 	rescue_progress.value = int(stats.get("rescued", 0))
 	rescue_progress.tooltip_text = "%d of %d required skeletons rescued" % [stats.get("rescued", 0), stats.get("required", 0)]
 
-	blocker_button.text = "1  BLOCK  x%d" % blockers_remaining
-	builder_button.text = "2  BUILD  x%d" % builders_remaining
-	digger_button.text = "3  DIG  x%d" % diggers_remaining
-	featherfall_button.text = "4  FEATHER  x%d" % featherfalls_remaining
+	blocker_button.text = "1 [] BLOCK x%d" % blockers_remaining
+	builder_button.text = "2 // BUILD x%d" % builders_remaining
+	digger_button.text = "3 VV DIG   x%d" % diggers_remaining
+	featherfall_button.text = "4 ** FEATHER x%d" % featherfalls_remaining
 	hint_label.text = _build_hint_text(stats)
 	_update_job_buttons()
 	_update_perf_overlay(true)
@@ -194,6 +219,8 @@ func add_event_log(text: String) -> void:
 	_update_event_log()
 
 func play_feedback(kind: String) -> void:
+	if bool(_accessibility_settings["reduced_motion"]):
+		return
 	var color := Color(1.0, 1.0, 1.0, 0.04)
 	var button: Button
 	match kind:
@@ -235,6 +262,24 @@ func _pulse_button(button: Button) -> void:
 	var tween := create_tween()
 	tween.tween_property(button, "scale", Vector2(1.045, 1.045), 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(button, "scale", Vector2.ONE, 0.13).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+func show_sound_caption(sound_id: String, horizontal_offset: float) -> void:
+	if not bool(_accessibility_settings["sound_captions"]) or not SOUND_CAPTIONS.has(sound_id):
+		return
+	var direction := ""
+	if horizontal_offset < -120.0:
+		direction = "<  "
+	elif horizontal_offset > 120.0:
+		direction = "  >"
+	sound_caption_label.text = direction + String(SOUND_CAPTIONS[sound_id])
+	sound_caption_label.visible = true
+	sound_caption_label.modulate.a = 1.0
+	if _caption_tween != null:
+		_caption_tween.kill()
+	_caption_tween = create_tween()
+	_caption_tween.tween_interval(0.72)
+	_caption_tween.tween_property(sound_caption_label, "modulate:a", 0.0, 0.28)
+	_caption_tween.tween_callback(sound_caption_label.hide)
 
 func _update_event_log() -> void:
 	if _event_lines.is_empty():
@@ -337,6 +382,9 @@ func _toggle_audio_settings() -> void:
 func get_audio_settings() -> Dictionary:
 	return _audio_settings.duplicate(true)
 
+func get_accessibility_settings() -> Dictionary:
+	return _accessibility_settings.duplicate(true)
+
 func _configure_audio_settings() -> void:
 	range_option.add_item("FULL RANGE")
 	range_option.add_item("NIGHT MODE")
@@ -346,6 +394,9 @@ func _configure_audio_settings() -> void:
 	ambience_slider.value = float(_audio_settings["ambience_db"])
 	mute_check.button_pressed = bool(_audio_settings["muted"])
 	range_option.select(1 if String(_audio_settings["dynamic_range"]) == "night" else 0)
+	high_contrast_check.button_pressed = bool(_accessibility_settings["high_contrast"])
+	reduced_motion_check.button_pressed = bool(_accessibility_settings["reduced_motion"])
+	captions_check.button_pressed = bool(_accessibility_settings["sound_captions"])
 	master_slider.value_changed.connect(func(value: float) -> void:
 		_audio_settings["master_db"] = value
 		audio_settings_changed.emit(get_audio_settings())
@@ -371,6 +422,14 @@ func _configure_audio_settings() -> void:
 		_save_audio_settings()
 		audio_settings_changed.emit(get_audio_settings())
 	)
+	high_contrast_check.toggled.connect(_on_accessibility_toggled.bind("high_contrast"))
+	reduced_motion_check.toggled.connect(_on_accessibility_toggled.bind("reduced_motion"))
+	captions_check.toggled.connect(_on_accessibility_toggled.bind("sound_captions"))
+
+func _on_accessibility_toggled(enabled: bool, key: String) -> void:
+	_accessibility_settings[key] = enabled
+	_save_audio_settings()
+	accessibility_settings_changed.emit(get_accessibility_settings())
 
 func _load_audio_settings() -> void:
 	var config := ConfigFile.new()
@@ -378,12 +437,16 @@ func _load_audio_settings() -> void:
 		return
 	for key in _audio_settings.keys():
 		_audio_settings[key] = config.get_value("audio", key, _audio_settings[key])
+	for key in _accessibility_settings.keys():
+		_accessibility_settings[key] = config.get_value("accessibility", key, _accessibility_settings[key])
 
 func _save_audio_settings() -> void:
 	var config := ConfigFile.new()
 	config.load("user://settings.cfg")
 	for key in _audio_settings.keys():
 		config.set_value("audio", key, _audio_settings[key])
+	for key in _accessibility_settings.keys():
+		config.set_value("accessibility", key, _accessibility_settings[key])
 	config.save("user://settings.cfg")
 
 func _cycle_march_speed() -> void:
@@ -458,7 +521,7 @@ func _apply_visual_style() -> void:
 	chamber_map.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.012, 0.011, 0.86), Color(0.70, 0.68, 0.62, 0.54), 1, 6))
 	tutorial_popup.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.011, 0.010, 0.96), Color(0.88, 0.84, 0.74, 0.82), 2, 12))
 
-	for label in [mission_label, goal_label, objective_collapsed_label, score_label, stats_label, hint_label, event_log_label, chamber_title, campaign_track_label, inspect_label, result_label, tutorial_skull_label, tutorial_title, tutorial_text, settings_title, master_label, sfx_label, ambience_label, range_label]:
+	for label in [mission_label, goal_label, objective_collapsed_label, score_label, stats_label, hint_label, event_log_label, chamber_title, campaign_track_label, inspect_label, result_label, tutorial_skull_label, tutorial_title, tutorial_text, settings_title, master_label, sfx_label, ambience_label, range_label, accessibility_title, sound_caption_label]:
 		label.add_theme_font_override("font", _spooky_font)
 		label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.88))
 		label.add_theme_constant_override("shadow_offset_x", 1)
@@ -515,9 +578,15 @@ func _apply_visual_style() -> void:
 	_style_utility_button(settings_button)
 	_style_utility_button(mute_check)
 	_style_utility_button(range_option)
+	_style_utility_button(high_contrast_check)
+	_style_utility_button(reduced_motion_check)
+	_style_utility_button(captions_check)
 	_style_utility_button(tutorial_ok_button)
 	settings_panel.add_theme_stylebox_override("panel", _panel_box(Color(0.012, 0.011, 0.010, 0.96), Color(0.58, 0.82, 0.72, 0.76), 1, 8))
 	settings_title.add_theme_color_override("font_color", COLOR_RESCUE)
+	accessibility_title.add_theme_color_override("font_color", COLOR_FEATHER)
+	sound_caption_label.add_theme_color_override("font_color", COLOR_BONE)
+	sound_caption_label.add_theme_font_size_override("font_size", 13)
 	rescue_progress.show_percentage = false
 	rescue_progress.add_theme_stylebox_override("background", _panel_box(Color(0.04, 0.035, 0.03, 0.95), Color(0.36, 0.34, 0.30, 0.9), 1, 3))
 	rescue_progress.add_theme_stylebox_override("fill", _panel_box(COLOR_RESCUE.darkened(0.18), COLOR_RESCUE.lightened(0.22), 1, 3))

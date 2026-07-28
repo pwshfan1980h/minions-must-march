@@ -51,7 +51,7 @@ def test_hud_is_compact_and_no_long_startup_copy() -> None:
     require("offset_top = 646.0" in scene and "offset_bottom = 710.0" in scene, "action dock should be a horizontal stack along the bottom")
     require("Click the portal" not in scene + ui, "HUD should not tell player to click the portal")
     require("Pick a skeleton skill" in scene + ui, "HUD should name the skeleton skill dock")
-    for token in ["1  BLOCK  x", "2  BUILD  x", "3  DIG  x", "4  FEATHER  x"]:
+    for token in ["1 [] BLOCK x", "2 // BUILD x", "3 VV DIG   x", "4 ** FEATHER x"]:
         require(token in ui, f"bottom action button copy missing {token}")
     for token in ["Corner-and-bottom bone UI", "stats_panel.add_theme_stylebox_override", "Color(\"f1eadb\")", "font_size\", 10", "_panel_box(fill, border, 1 if not selected else 2, 5)"]:
         require(token in ui, f"black/white bone compact HUD styling missing {token}")
@@ -59,6 +59,10 @@ def test_hud_is_compact_and_no_long_startup_copy() -> None:
         require(token in scene, f"audio settings UI missing {token}")
     for token in ["user://settings.cfg", "audio_settings_changed", "KEY_F2", "_save_audio_settings"]:
         require(token in ui, f"persistent audio settings behavior missing {token}")
+    for token in ["HighContrastCheck", "ReducedMotionCheck", "CaptionsCheck", "SoundCaptionLabel"]:
+        require(token in scene, f"accessibility UI missing {token}")
+    for token in ["accessibility_settings_changed", "show_sound_caption", "SOUND_CAPTIONS"]:
+        require(token in ui, f"accessibility behavior missing {token}")
 
 
 def test_chamber_map_objective_and_event_log_ui() -> None:
@@ -86,6 +90,7 @@ def test_selected_skill_affordance_and_builder_preview() -> None:
     for token in ["_refresh_target_affordances", "set_target_affordance", "selected_job", "can_become_builder", "can_become_digger"]:
         require(token in minions + skeleton, f"selected skill targeting affordance missing {token}")
     require("_draw_target_affordance" in skeleton and "_target_affordance_job" in skeleton, "SkeletonMinion should draw a skill-specific targeting halo")
+    require("Shape markers keep targeting readable" in skeleton, "targeting should not rely on color alone")
     require("_draw_builder_preview_ghost" in skeleton and "BuilderPreviewGhost" in skeleton, "Builder affordance should include ghost rib preview lines")
     require('if _target_affordance_job == "builder" and _target_affordance_valid and _target_hovered' in skeleton, "Builder ghost/shadowlines should appear only on hover before click commits")
     require("mouse_entered" in skeleton and "_target_hovered" in skeleton, "target affordance should brighten on hover")

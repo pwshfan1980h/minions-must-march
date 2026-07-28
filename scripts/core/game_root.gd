@@ -11,10 +11,12 @@ const CAMERA_WHEEL_STEP := 220.0
 @onready var sfx: Node = $SfxPlayer
 @onready var camera: Camera2D = $Camera2D
 @onready var terrain: Node = $LevelController/TerrainRoot
+@onready var object_root: Node = $LevelController/ObjectRoot
 
 var _shake_time := 0.0
 var _shake_strength := 0.0
 var _shake_rng := RandomNumberGenerator.new()
+var _reduced_motion := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -35,8 +37,10 @@ func _ready() -> void:
 	game_ui.speed_requested.connect(_set_march_speed)
 	game_ui.job_selected.connect(_on_job_selected)
 	game_ui.audio_settings_changed.connect(sfx.apply_mix_settings)
+	game_ui.accessibility_settings_changed.connect(_apply_accessibility_settings)
 	sfx.set_biome_profile(String(LevelState.config().get("biome", "crypt")))
 	sfx.apply_mix_settings(game_ui.get_audio_settings())
+	_apply_accessibility_settings(game_ui.get_accessibility_settings())
 	game_ui.update_stats(level_controller.get_stats())
 	_maybe_capture_screenshot()
 
@@ -46,6 +50,7 @@ func _process(delta: float) -> void:
 
 func _on_world_sfx_requested(sound_id: String, world_position: Vector2) -> void:
 	sfx.play_at(sound_id, world_position)
+	game_ui.show_sound_caption(sound_id, 0.0 if world_position == Vector2.INF else world_position.x - camera.position.x)
 	match sound_id:
 		"styx_impact":
 			if terrain.has_method("add_styx_impact"):
@@ -70,6 +75,8 @@ func _on_world_sfx_requested(sound_id: String, world_position: Vector2) -> void:
 			game_ui.play_feedback("failure")
 
 func _kick_camera(strength: float, duration: float) -> void:
+	if _reduced_motion:
+		return
 	_shake_strength = maxf(_shake_strength, strength)
 	_shake_time = maxf(_shake_time, duration)
 
@@ -84,6 +91,17 @@ func _update_camera_feedback(delta: float) -> void:
 		_shake_rng.randf_range(-0.7, 0.7)
 	) * _shake_strength * fade
 	_shake_strength = maxf(0.0, _shake_strength - delta * 8.0)
+
+func _apply_accessibility_settings(settings: Dictionary) -> void:
+	_reduced_motion = bool(settings.get("reduced_motion", false))
+	if _reduced_motion:
+		_shake_time = 0.0
+		_shake_strength = 0.0
+		camera.offset = Vector2.ZERO
+	if terrain.has_method("set_accessibility_settings"):
+		terrain.set_accessibility_settings(settings)
+	if object_root.has_method("set_accessibility_settings"):
+		object_root.set_accessibility_settings(settings)
 
 func _on_job_selected(job_id: String) -> void:
 	sfx.play("job_select")

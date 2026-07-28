@@ -715,6 +715,14 @@ func _draw_target_affordance() -> void:
 	var width := 2.6 if _target_hovered else 1.5
 	draw_arc(Vector2(0, -9), 20.0, 0.0, TAU, 28, color, width)
 	draw_line(Vector2(-12, -36), Vector2(12, -36), color, width, true)
+	# Shape markers keep targeting readable without relying on the skill color.
+	if _target_affordance_job == "blocker":
+		draw_rect(Rect2(Vector2(-5, -48), Vector2(10, 10)), color, false, width)
+	elif _target_affordance_job == "digger":
+		draw_line(Vector2(-7, -46), Vector2(0, -39), color, width, true)
+		draw_line(Vector2(7, -46), Vector2(0, -39), color, width, true)
+	elif _target_affordance_job == "builder":
+		draw_line(Vector2(-9, -42), Vector2(8, -49), color, width, true)
 	if _target_affordance_job == "builder" and _target_affordance_valid and _target_hovered:
 		_draw_builder_preview_ghost(color)
 	elif _target_affordance_job == "featherfall" and _target_affordance_valid:
