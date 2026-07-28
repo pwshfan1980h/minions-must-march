@@ -9,9 +9,15 @@ const CAMERA_WHEEL_STEP := 220.0
 @onready var game_ui: CanvasLayer = $GameUI
 @onready var sfx: Node = $SfxPlayer
 @onready var camera: Camera2D = $Camera2D
+@onready var terrain: Node = $LevelController/TerrainRoot
+
+var _shake_time := 0.0
+var _shake_strength := 0.0
+var _shake_rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_shake_rng.randomize()
 	print("Minions Must March: GameRoot ready")
 	camera.position.x = VIEWPORT_WIDTH / 2.0
 	camera.limit_left = 0
@@ -20,7 +26,7 @@ func _ready() -> void:
 	camera.limit_bottom = 720
 	level_controller.stats_changed.connect(game_ui.update_stats)
 	level_controller.level_finished.connect(game_ui.show_level_finished)
-	level_controller.sfx_requested.connect(sfx.play_at)
+	level_controller.sfx_requested.connect(_on_world_sfx_requested)
 	level_controller.event_logged.connect(game_ui.add_event_log)
 	game_ui.restart_requested.connect(level_controller.restart_level)
 	game_ui.level_selected.connect(level_controller.select_level)
@@ -32,6 +38,48 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_update_camera_pan(delta)
+	_update_camera_feedback(delta)
+
+func _on_world_sfx_requested(sound_id: String, world_position: Vector2) -> void:
+	sfx.play_at(sound_id, world_position)
+	match sound_id:
+		"styx_impact":
+			if terrain.has_method("add_styx_impact"):
+				terrain.add_styx_impact(world_position, 1.15)
+			_kick_camera(5.2, 0.32)
+			game_ui.play_feedback("styx")
+		"digger_crack":
+			_kick_camera(2.8, 0.20)
+			game_ui.play_feedback("digger")
+		"builder_snap":
+			_kick_camera(1.2, 0.12)
+			game_ui.play_feedback("builder")
+		"blocker_brace":
+			_kick_camera(2.0, 0.15)
+			game_ui.play_feedback("blocker")
+		"feather_chime":
+			game_ui.play_feedback("featherfall")
+		"exit_rescue":
+			game_ui.play_feedback("rescue")
+		"level_fail":
+			_kick_camera(4.0, 0.28)
+			game_ui.play_feedback("failure")
+
+func _kick_camera(strength: float, duration: float) -> void:
+	_shake_strength = maxf(_shake_strength, strength)
+	_shake_time = maxf(_shake_time, duration)
+
+func _update_camera_feedback(delta: float) -> void:
+	if _shake_time <= 0.0:
+		camera.offset = Vector2.ZERO
+		return
+	_shake_time = maxf(0.0, _shake_time - delta)
+	var fade := clampf(_shake_time / 0.32, 0.0, 1.0)
+	camera.offset = Vector2(
+		_shake_rng.randf_range(-1.0, 1.0),
+		_shake_rng.randf_range(-0.7, 0.7)
+	) * _shake_strength * fade
+	_shake_strength = maxf(0.0, _shake_strength - delta * 8.0)
 
 func _on_job_selected(job_id: String) -> void:
 	sfx.play("job_select")

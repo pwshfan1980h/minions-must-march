@@ -53,6 +53,8 @@ var _objective_collapse_pending := false
 var _objective_collapse_elapsed := 0.0
 var _last_level_number := -1
 var _march_speed := 1
+var _feedback_flash: ColorRect
+var _feedback_tween: Tween
 static var tutorial_seen_this_session := false
 
 const COLOR_BONE := Color("f1eadb")
@@ -69,6 +71,7 @@ func _ready() -> void:
 	inspect_label.hide()
 	perf_label.hide()
 	_spooky_font = _make_spooky_font()
+	_build_feedback_flash()
 	_apply_visual_style()
 	blocker_button.pressed.connect(_select_blocker)
 	builder_button.pressed.connect(_select_builder)
@@ -166,6 +169,49 @@ func add_event_log(text: String) -> void:
 	while _event_lines.size() > 4:
 		_event_lines.pop_back()
 	_update_event_log()
+
+func play_feedback(kind: String) -> void:
+	var color := Color(1.0, 1.0, 1.0, 0.04)
+	var button: Button
+	match kind:
+		"builder":
+			color = Color(COLOR_BUILD, 0.065)
+			button = builder_button
+		"blocker":
+			color = Color(COLOR_BLOCK, 0.065)
+			button = blocker_button
+		"digger":
+			color = Color(COLOR_DIG, 0.075)
+			button = digger_button
+		"featherfall":
+			color = Color(COLOR_FEATHER, 0.075)
+			button = featherfall_button
+		"rescue":
+			color = Color(COLOR_RESCUE, 0.085)
+		"styx", "failure":
+			color = Color(0.82, 0.18, 0.10, 0.075)
+	if _feedback_tween != null:
+		_feedback_tween.kill()
+	_feedback_flash.color = color
+	_feedback_tween = create_tween()
+	_feedback_tween.tween_property(_feedback_flash, "color:a", 0.0, 0.34).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	if button != null and not button.disabled:
+		_pulse_button(button)
+
+func _build_feedback_flash() -> void:
+	_feedback_flash = ColorRect.new()
+	_feedback_flash.name = "FeedbackFlash"
+	_feedback_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_feedback_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_feedback_flash.color = Color(1.0, 1.0, 1.0, 0.0)
+	add_child(_feedback_flash)
+	move_child(_feedback_flash, 0)
+
+func _pulse_button(button: Button) -> void:
+	button.pivot_offset = button.size * 0.5
+	var tween := create_tween()
+	tween.tween_property(button, "scale", Vector2(1.045, 1.045), 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(button, "scale", Vector2.ONE, 0.13).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _update_event_log() -> void:
 	if _event_lines.is_empty():

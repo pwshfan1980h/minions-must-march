@@ -167,6 +167,8 @@ def test_river_has_bubbles_hands_and_pop_animation() -> None:
     terrain = read("scripts/terrain/terrain_root.gd")
     for token in ["_bubble_specs", "_bubble_pops", "_build_bubbles", "_draw_styx_bubbles", "_draw_bubble_pop", "_draw_styx_hands", "_draw_soul", "_draw_styx_caustics", "STYX_SULFUR", "luminous meniscus"]:
         require(token in terrain, f"terrain river polish missing {token}")
+    for token in ["add_styx_impact", "_styx_impact_displacement", "_draw_styx_impact_wakes"]:
+        require(token in terrain, f"reactive Styx impact feedback missing {token}")
 
 
 def test_platforms_are_jagged_and_emit_motes() -> None:
@@ -187,6 +189,7 @@ def test_audio_feedback_assets_and_hooks_exist() -> None:
     sfx = read("scripts/audio/sfx_player.gd")
     minions = read("scripts/minions/minion_root.gd")
     skeleton = read("scripts/minions/skeleton_minion.gd")
+    ui = read("scripts/ui/game_ui.gd")
     for sound_id in ["command_clatter", "death_yelp_tall", "death_yelp_wiry", "death_yelp_stocky", "death_knell"]:
         require(sound_id in sfx, f"SfxPlayer missing stream {sound_id}")
         require((ROOT / f"assets/audio/generated/{sound_id}.wav").exists(), f"missing generated wav for {sound_id}")
@@ -201,6 +204,9 @@ def test_audio_feedback_assets_and_hooks_exist() -> None:
     for sound_id in ["builder_snap", "digger_crack", "feather_chime"]:
         require(f'sfx_requested.emit("{sound_id}",' in minions, f"skill action should emit {sound_id}")
     require("AudioStreamPlayer2D" in sfx and "play_at" in sfx and "panning_strength" in sfx, "world SFX should use camera-relative spatial audio")
+    game_root = read("scripts/core/game_root.gd")
+    require("_on_world_sfx_requested" in game_root and "_kick_camera" in game_root, "world cues should drive restrained camera feedback")
+    require("play_feedback" in ui and "FeedbackFlash" in ui and "_pulse_button" in ui, "HUD should react to skill and outcome cues")
 
 
 def test_async_gait_no_beat_conductor() -> None:

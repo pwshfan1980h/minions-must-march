@@ -29,6 +29,7 @@ var _soul_specs: Array[Dictionary] = []
 var _hand_specs: Array[Dictionary] = []
 var _bubble_specs: Array[Dictionary] = []
 var _bubble_pops: Array[Dictionary] = []
+var _styx_impacts: Array[Dictionary] = []
 var _crumbling_sections: Array[Dictionary] = []
 var _platform_ash_specs: Array[Dictionary] = []
 var _ember_specs: Array[Dictionary] = []
@@ -65,7 +66,23 @@ func _process(delta: float) -> void:
 		_redraw_elapsed = 0.0
 		queue_redraw()
 	_tick_bubble_pops()
+	_tick_styx_impacts()
 	_tick_crumbling_sections()
+
+func add_styx_impact(world_position: Vector2, strength := 1.0) -> void:
+	_styx_impacts.append({
+		"x": world_position.x,
+		"born": _time,
+		"strength": clampf(strength, 0.35, 1.6),
+	})
+	while _styx_impacts.size() > 6:
+		_styx_impacts.pop_front()
+	queue_redraw()
+
+func _tick_styx_impacts() -> void:
+	for i in range(_styx_impacts.size() - 1, -1, -1):
+		if _time - float(_styx_impacts[i]["born"]) > 1.35:
+			_styx_impacts.remove_at(i)
 
 func _build_level_001_terrain() -> void:
 	# Bridge lab + crumbler: spawn on the left, build a bone bridge over the
@@ -1266,6 +1283,7 @@ func _draw_styx_surface_skin() -> void:
 	var bottom := PackedVector2Array()
 	for x in range(-24, WORLD_WIDTH + 49, 24):
 		var wave := sin(float(x) * 0.023 + _time * 0.72) * 3.0 + sin(float(x) * 0.011 - _time * 0.38) * 2.1
+		wave += _styx_impact_displacement(float(x))
 		top.append(Vector2(x, STYX_WATERLINE_Y + wave))
 		bottom.append(Vector2(x, STYX_WATERLINE_Y + 24.0 + wave * 0.34))
 	var skin := PackedVector2Array()
@@ -1283,6 +1301,7 @@ func _draw_styx_surface_skin() -> void:
 		var rim := PackedVector2Array()
 		for x in range(-24, WORLD_WIDTH + 49, 18):
 			var wave := sin(float(x) * 0.023 + _time * 0.72) * 3.0 + sin(float(x) * 0.011 - _time * 0.38) * 2.1
+			wave += _styx_impact_displacement(float(x))
 			var breakup := sin(float(x) * 0.071 + _time * 0.24)
 			if breakup < -0.72:
 				continue
@@ -1307,6 +1326,34 @@ func _draw_styx_caustics() -> void:
 			var fade := 1.0 - float(ribbon) / 11.0
 			var color := Color(STYX_SULFUR, 0.075 * fade) if ribbon < 4 else Color(STYX_SOUL, 0.038 * fade)
 			draw_polyline(points, color, 2.8 if ribbon < 3 else 1.6, true)
+	_draw_styx_impact_wakes()
+
+func _styx_impact_displacement(x: float) -> float:
+	var displacement := 0.0
+	for impact in _styx_impacts:
+		var age := _time - float(impact["born"])
+		var distance := absf(x - float(impact["x"]))
+		var radius := 22.0 + age * 150.0
+		var envelope := exp(-pow(distance / maxf(radius, 1.0), 2.0)) * (1.0 - age / 1.35)
+		displacement += sin(distance * 0.095 - age * 9.0) * 7.5 * float(impact["strength"]) * envelope
+	return displacement
+
+func _draw_styx_impact_wakes() -> void:
+	for impact in _styx_impacts:
+		var age := clampf(_time - float(impact["born"]), 0.0, 1.35)
+		var strength := float(impact["strength"])
+		var alpha := (1.0 - age / 1.35) * 0.30 * strength
+		var half_width := 20.0 + age * 132.0
+		var center := Vector2(float(impact["x"]), STYX_WATERLINE_Y + 3.0)
+		for wake_index in 3:
+			var width := half_width * (0.52 + float(wake_index) * 0.25)
+			var points := PackedVector2Array()
+			for j in 15:
+				var t := float(j) / 14.0
+				var px := lerpf(-width, width, t)
+				var py := sin(t * PI) * (2.6 + wake_index) + sin(t * TAU * 2.0 + age * 8.0) * 1.4
+				points.append(center + Vector2(px, py + float(wake_index) * 3.0))
+			draw_polyline(points, Color(STYX_SULFUR, alpha * (1.0 - float(wake_index) * 0.22)), 2.3 - float(wake_index) * 0.35, true)
 
 func _draw_styx_currents() -> void:
 	for band in 7:
